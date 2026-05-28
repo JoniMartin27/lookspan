@@ -1,0 +1,25 @@
+import { Collector } from '@lookspan/collector';
+import {
+  CostsRepository,
+  type LookspanDatabase,
+  SpansRepository,
+  TracesRepository,
+} from '@lookspan/storage';
+
+export interface ApiContext {
+  db: LookspanDatabase;
+  collector: Collector;
+  traces: TracesRepository;
+  spans: SpansRepository;
+  costs: CostsRepository;
+}
+
+export function createContext(db: LookspanDatabase): ApiContext {
+  return {
+    db,
+    collector: new Collector({ db }),
+    traces: new TracesRepository(db),
+    spans: new SpansRepository(db),
+    costs: new CostsRepository(db),
+  };
+}

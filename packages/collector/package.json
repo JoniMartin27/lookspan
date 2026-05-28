@@ -1,0 +1,30 @@
+{
+  "name": "@lookspan/collector",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Ingest pipeline for Lookspan: validates, normalizes, aggregates and persists spans.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters/agent-os": {
+      "types": "./dist/adapters/agent-os.d.ts",
+      "import": "./dist/adapters/agent-os.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "dependencies": {
+    "@lookspan/events": "*",
+    "@lookspan/storage": "*",
+    "@lookspan/types": "*"
+  },
+  "license": "MIT"
+}

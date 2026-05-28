@@ -1,0 +1,35 @@
+{
+  "name": "@lookspan/api",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Lookspan HTTP API and SSE stream — Express server.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@lookspan/collector": "*",
+    "@lookspan/events": "*",
+    "@lookspan/storage": "*",
+    "@lookspan/types": "*",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0"
+  },
+  "license": "MIT"
+}

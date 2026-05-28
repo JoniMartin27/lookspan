@@ -1,0 +1,59 @@
+{
+  "name": "lookspan",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Local-first observability dashboard for AI agents. MCP-native. Look at every span your agents emit.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "tsc --build",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "fix": "biome check --write .",
+    "ci": "npm run typecheck && npm run lint && npm test && npm run build",
+    "migrate": "npm --workspace @lookspan/storage run migrate",
+    "dev": "concurrently -n api,dashboard -c blue,magenta \"npm run dev:api\" \"npm run dev:dashboard\"",
+    "dev:api": "npm --workspace @lookspan/api run dev",
+    "dev:dashboard": "npm --workspace @lookspan/dashboard run dev",
+    "clean": "tsc --build --clean && rimraf \"packages/*/dist\" \"apps/*/dist\""
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lookspan/lookspan.git"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "observability",
+    "tracing",
+    "mcp",
+    "langgraph",
+    "crewai",
+    "llm",
+    "dashboard",
+    "local-first"
+  ],
+  "author": "Jonathan Martin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lookspan/lookspan/issues"
+  },
+  "homepage": "https://github.com/lookspan/lookspan#readme",
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.0",
+    "@types/node": "^22.10.0",
+    "concurrently": "^9.1.0",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.0.0"
+  }
+}

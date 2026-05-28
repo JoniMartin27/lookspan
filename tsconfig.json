@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/types" },
+    { "path": "./packages/events" },
+    { "path": "./packages/storage" },
+    { "path": "./packages/collector" },
+    { "path": "./packages/sdk-mcp" },
+    { "path": "./packages/api" },
+    { "path": "./packages/cli" },
+    { "path": "./apps/dashboard" }
+  ]
+}

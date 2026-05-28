@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lookspan-langgraph"
+version = "0.0.1"
+description = "Lookspan adapter for LangChain / LangGraph — emits spans for chains, LLM calls, and tools."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Jonathan Martin" }]
+keywords = ["lookspan", "langchain", "langgraph", "observability", "tracing"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "lookspan>=0.0.1",
+  "langchain-core>=0.3.0",
+]
+
+[project.optional-dependencies]
+langgraph = ["langgraph>=0.2.0"]
+
+[project.urls]
+Homepage = "https://github.com/lookspan/lookspan"
+Issues = "https://github.com/lookspan/lookspan/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lookspan_langgraph"]

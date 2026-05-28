@@ -1,0 +1,22 @@
+{
+  "name": "lookspan",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Lookspan CLI — start the local-first observability dashboard with one command.",
+  "type": "module",
+  "bin": {
+    "lookspan": "./dist/index.js"
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@lookspan/api": "*",
+    "@lookspan/storage": "*",
+    "@lookspan/types": "*"
+  },
+  "license": "MIT"
+}

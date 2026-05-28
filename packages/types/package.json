@@ -1,0 +1,21 @@
+{
+  "name": "@lookspan/types",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared TypeScript types for Lookspan: Span, Trace, Run, IngestPayload.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "license": "MIT"
+}

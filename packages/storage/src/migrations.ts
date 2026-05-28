@@ -1,0 +1,112 @@
+import type { LookspanDatabase } from './database.js';
+import { openDatabase } from './database.js';
+
+interface Migration {
+  version: number;
+  name: string;
+  up: string;
+}
+
+const MIGRATIONS: Migration[] = [
+  {
+    version: 1,
+    name: 'initial_schema',
+    up: `
+      CREATE TABLE IF NOT EXISTS traces (
+        trace_id TEXT PRIMARY KEY,
+        root_name TEXT NOT NULL,
+        framework TEXT NOT NULL,
+        agent_id TEXT,
+        session_id TEXT,
+        started_at TEXT NOT NULL,
+        ended_at TEXT,
+        duration_ms INTEGER,
+        status TEXT NOT NULL,
+        span_count INTEGER NOT NULL DEFAULT 0,
+        error_count INTEGER NOT NULL DEFAULT 0,
+        input_tokens INTEGER NOT NULL DEFAULT 0,
+        output_tokens INTEGER NOT NULL DEFAULT 0,
+        cached_input_tokens INTEGER NOT NULL DEFAULT 0,
+        reasoning_tokens INTEGER NOT NULL DEFAULT 0,
+        cost_usd REAL NOT NULL DEFAULT 0,
+        attributes TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_traces_started_at ON traces(started_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_traces_framework ON traces(framework, started_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_traces_session ON traces(session_id, started_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_traces_status ON traces(status, started_at DESC);
+
+      CREATE TABLE IF NOT EXISTS spans (
+        span_id TEXT PRIMARY KEY,
+        trace_id TEXT NOT NULL REFERENCES traces(trace_id) ON DELETE CASCADE,
+        parent_span_id TEXT,
+        type TEXT NOT NULL,
+        name TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        ended_at TEXT,
+        duration_ms INTEGER,
+        status TEXT NOT NULL,
+        framework TEXT NOT NULL,
+        agent_id TEXT,
+        session_id TEXT,
+        model TEXT,
+        provider TEXT,
+        input TEXT,
+        output TEXT,
+        error TEXT,
+        input_tokens INTEGER,
+        output_tokens INTEGER,
+        cached_input_tokens INTEGER,
+        reasoning_tokens INTEGER,
+        cost_usd REAL,
+        attributes TEXT,
+        received_at TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_spans_trace ON spans(trace_id, started_at);
+      CREATE INDEX IF NOT EXISTS idx_spans_parent ON spans(parent_span_id);
+      CREATE INDEX IF NOT EXISTS idx_spans_type ON spans(type, started_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_spans_model ON spans(model, started_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_spans_framework_time ON spans(framework, started_at DESC);
+    `,
+  },
+];
+
+export function getCurrentSchemaVersion(db: LookspanDatabase): number {
+  const row = db.pragma('user_version', { simple: true });
+  return typeof row === 'number' ? row : 0;
+}
+
+export function setSchemaVersion(db: LookspanDatabase, version: number): void {
+  db.pragma(`user_version = ${version}`);
+}
+
+export function migrate(db: LookspanDatabase): { applied: number[]; current: number } {
+  const current = getCurrentSchemaVersion(db);
+  const pending = MIGRATIONS.filter((m) => m.version > current).sort(
+    (a, b) => a.version - b.version,
+  );
+  const applied: number[] = [];
+
+  for (const m of pending) {
+    db.transaction(() => {
+      db.exec(m.up);
+      setSchemaVersion(db, m.version);
+    })();
+    applied.push(m.version);
+  }
+
+  return { applied, current: getCurrentSchemaVersion(db) };
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const db = openDatabase();
+  const result = migrate(db);
+  console.log(
+    `[lookspan/storage] migrations applied: ${result.applied.length === 0 ? 'none' : result.applied.join(', ')} (schema v${result.current})`,
+  );
+  db.close();
+}
