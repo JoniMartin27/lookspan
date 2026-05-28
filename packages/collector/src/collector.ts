@@ -43,6 +43,11 @@ export class Collector {
     }
 
     const receivedAt = new Date().toISOString();
+    // spans.trace_id has a FK to traces(trace_id) and foreign_keys is ON, so a
+    // trace row must exist before its spans are inserted. recomputeTrace() only
+    // runs after insertMany, so seed a placeholder trace per new traceId first
+    // (it's overwritten with the aggregated trace right below).
+    this.ensureTracePlaceholders(validSpans);
     const inserted = this.spans.insertMany(validSpans, receivedAt);
 
     const affectedTraces = new Set(inserted.map((s) => s.traceId));
@@ -62,5 +67,39 @@ export class Collector {
       rejected: errors.length,
       errors: errors.length > 0 ? errors : undefined,
     };
+  }
+
+  /**
+   * Seed a minimal trace row for every traceId that doesn't have one yet, so
+   * the spans FK is satisfied. The root span (no parentSpanId) supplies the
+   * metadata when present; otherwise the first span of the trace is used.
+   * recomputeTrace() overwrites these with the fully aggregated trace.
+   */
+  private ensureTracePlaceholders(spans: SpanInput[]): void {
+    const seeds = new Map<string, SpanInput>();
+    for (const s of spans) {
+      const existing = seeds.get(s.traceId);
+      if (!existing || (existing.parentSpanId && !s.parentSpanId)) {
+        seeds.set(s.traceId, s);
+      }
+    }
+    const stmt = this.db.prepare(
+      `INSERT OR IGNORE INTO traces (trace_id, root_name, framework, agent_id, session_id, started_at, status)
+       VALUES (@traceId, @rootName, @framework, @agentId, @sessionId, @startedAt, @status)`,
+    );
+    const insertAll = this.db.transaction((rows: SpanInput[]) => {
+      for (const s of rows) {
+        stmt.run({
+          traceId: s.traceId,
+          rootName: s.name,
+          framework: s.framework,
+          agentId: s.agentId ?? null,
+          sessionId: s.sessionId ?? null,
+          startedAt: s.startedAt,
+          status: s.status,
+        });
+      }
+    });
+    insertAll([...seeds.values()]);
   }
 }
