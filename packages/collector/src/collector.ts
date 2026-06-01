@@ -3,6 +3,7 @@ import { type LookspanDatabase, SpansRepository, TracesRepository } from '@looks
 import type { IngestResponse, SpanInput } from '@lookspan/types';
 import { recomputeTrace } from './aggregator.js';
 import { IngestValidationError, validatePayload, validateSpan } from './normalize.js';
+import { enrichSpanCost } from './pricing.js';
 
 export interface CollectorOptions {
   db: LookspanDatabase;
@@ -26,7 +27,7 @@ export class Collector {
 
     payload.spans.forEach((span, index) => {
       try {
-        validSpans.push(validateSpan(span, index));
+        validSpans.push(enrichSpanCost(validateSpan(span, index)));
       } catch (err) {
         const reason = err instanceof IngestValidationError ? err.message : (err as Error).message;
         errors.push({ index, reason });
