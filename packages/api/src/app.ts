@@ -5,6 +5,7 @@ import type { ApiContext } from './context.js';
 import { createCostsRouter } from './routes/costs.js';
 import { createHealthRouter } from './routes/health.js';
 import { createIngestRouter } from './routes/ingest.js';
+import { createOtlpRouter } from './routes/otlp.js';
 import { createStreamRouter } from './routes/stream.js';
 import { createTracesRouter } from './routes/traces.js';
 
@@ -35,6 +36,9 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/costs', createCostsRouter(options.context));
   app.use('/api/ingest', createIngestRouter(options.context));
   app.use('/api/stream', createStreamRouter());
+
+  // OpenTelemetry OTLP/HTTP trace receiver (default OTel endpoint path).
+  app.use('/v1/traces', createOtlpRouter(options.context));
 
   // Unknown /api routes are always JSON — never fall through to the SPA.
   app.use('/api', (_req, res) => {

@@ -363,6 +363,20 @@ El adaptador `AgentOsAdapter` (en `@lookspan/collector`) se suscribe al bus SSE 
 | `GET` | `/api/traces/:id` | Detalle de una traza con todos sus spans |
 | `GET` | `/api/costs/summary` | Resumen de costes (total, por modelo, por proveedor, por agente) |
 | `GET` | `/api/stream` | Stream SSE de eventos en tiempo real |
+| `POST` | `/v1/traces` | Receptor OTLP/HTTP de OpenTelemetry (JSON `ExportTraceServiceRequest`) |
+
+### OpenTelemetry (OTLP)
+
+Cualquier app instrumentada con OpenTelemetry puede exportar a Lookspan sin SDK
+propio apuntando el exporter OTLP/HTTP al endpoint estándar:
+
+```bash
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:3100/v1/traces
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/json  # el receptor acepta JSON
+```
+
+Los atributos semánticos `gen_ai.*` (system, request.model, usage.*) se mapean
+a `provider`/`model`/tokens, y el coste se calcula con la tabla de precios.
 
 ---
 
