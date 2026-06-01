@@ -4,13 +4,23 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { createApp, createContext } from '@lookspan/api';
-import { defaultDatabasePath, migrate, openDatabase } from '@lookspan/storage';
+import {
+  cutoffFrom,
+  defaultDatabasePath,
+  type LookspanDatabase,
+  migrate,
+  openDatabase,
+  parseDuration,
+  pruneOlderThan,
+  vacuum,
+} from '@lookspan/storage';
 
 interface CliFlags {
   port: number;
   host: string;
   db: string;
   open: boolean;
+  retentionMs: number | null;
 }
 
 function parseFlags(argv: string[]): CliFlags {
@@ -21,6 +31,7 @@ function parseFlags(argv: string[]): CliFlags {
       port: { type: 'string', short: 'p' },
       host: { type: 'string' },
       db: { type: 'string' },
+      retention: { type: 'string' },
       open: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', short: 'v', default: false },
@@ -37,12 +48,44 @@ function parseFlags(argv: string[]): CliFlags {
   }
 
   // Precedence: explicit flag > environment variable > built-in default.
+  const retentionRaw = (values.retention as string) ?? process.env.LOOKSPAN_RETENTION;
+  let retentionMs: number | null = null;
+  if (retentionRaw) {
+    retentionMs = parseDuration(retentionRaw);
+    if (retentionMs === null) {
+      console.error(`[lookspan] invalid --retention "${retentionRaw}" (use e.g. 7d, 24h, 30m)`);
+      process.exit(1);
+    }
+  }
+
   return {
     port: Number(values.port ?? process.env.LOOKSPAN_PORT ?? '3100'),
     host: (values.host as string) ?? process.env.LOOKSPAN_HOST ?? '127.0.0.1',
     db: (values.db as string) ?? process.env.LOOKSPAN_DB ?? defaultDatabasePath(),
     open: Boolean(values.open),
+    retentionMs,
   };
+}
+
+/**
+ * Prune traces older than the retention window now, then on an hourly timer.
+ * VACUUMs only when a prune actually deleted rows. Returns a stop() callback.
+ */
+function startRetention(db: LookspanDatabase, retentionMs: number): () => void {
+  const prune = () => {
+    const res = pruneOlderThan(db, cutoffFrom(retentionMs, Date.now()));
+    if (res.deletedTraces > 0) {
+      console.log(
+        `[lookspan] retention: pruned ${res.deletedTraces} trace(s) before ${res.cutoff}`,
+      );
+      vacuum(db);
+    }
+  };
+  prune();
+  const interval = Math.min(retentionMs, 3_600_000); // at most hourly
+  const timer = setInterval(prune, interval);
+  timer.unref();
+  return () => clearInterval(timer);
 }
 
 function printHelp(): void {
@@ -55,6 +98,7 @@ Options:
   -p, --port <port>     Port to listen on (default: 3100)
       --host <host>     Host to bind to (default: 127.0.0.1)
       --db <path>       SQLite database path (default: ~/.lookspan/lookspan.db)
+      --retention <dur> Prune traces older than <dur> (e.g. 7d, 24h, 30m)
       --open            Open the dashboard in your browser
   -h, --help            Show this help
   -v, --version         Show version
@@ -63,6 +107,7 @@ Environment:
   LOOKSPAN_PORT         Same as --port
   LOOKSPAN_HOST         Same as --host
   LOOKSPAN_DB           Same as --db
+  LOOKSPAN_RETENTION    Same as --retention
 
 Quick start:
   npx lookspan
@@ -102,11 +147,15 @@ function main(): void {
   const ctx = createContext(db);
   const dashboardDir = findDashboardDir();
   const app = createApp({ context: ctx, dashboardDir: dashboardDir ?? undefined });
+  const stopRetention = flags.retentionMs ? startRetention(db, flags.retentionMs) : null;
 
   const server = app.listen(flags.port, flags.host, () => {
     const url = `http://${flags.host}:${flags.port}`;
     console.log(`\n  Lookspan running at ${url}`);
     console.log(`  Database: ${flags.db}`);
+    if (flags.retentionMs) {
+      console.log(`  Retention: pruning traces older than ${flags.retentionMs / 86_400_000}d`);
+    }
     if (!dashboardDir) {
       console.log('  (dashboard not built — run `npm run build` to serve the UI)');
     }
@@ -118,6 +167,7 @@ function main(): void {
 
   const shutdown = (signal: string) => {
     console.log(`\n[lookspan] received ${signal}, shutting down`);
+    stopRetention?.();
     server.close(() => {
       db.close();
       process.exit(0);
