@@ -184,6 +184,17 @@ cd lookspan
 npm install
 ```
 
+Para servir el dashboard junto a la API desde un solo proceso, compílalo primero:
+
+```bash
+npm run build
+node packages/cli/dist/index.js   # API + dashboard en http://127.0.0.1:3100
+```
+
+En desarrollo, `npm run dev` levanta la API en `:3100` y el dashboard con hot-reload
+en `:5173` (Vite hace proxy de `/api` a la API). El CLI sirve el dashboard solo si
+existe `apps/dashboard/dist`; si no, arranca solo la API y avisa por consola.
+
 ---
 
 ## Comandos

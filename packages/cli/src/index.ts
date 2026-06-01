@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { createApp, createContext } from '@lookspan/api';
 import { defaultDatabasePath, migrate, openDatabase } from '@lookspan/storage';
@@ -15,8 +18,8 @@ function parseFlags(argv: string[]): CliFlags {
     args: argv,
     allowPositionals: false,
     options: {
-      port: { type: 'string', short: 'p', default: '3100' },
-      host: { type: 'string', default: '127.0.0.1' },
+      port: { type: 'string', short: 'p' },
+      host: { type: 'string' },
       db: { type: 'string' },
       open: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
@@ -33,10 +36,11 @@ function parseFlags(argv: string[]): CliFlags {
     process.exit(0);
   }
 
+  // Precedence: explicit flag > environment variable > built-in default.
   return {
-    port: Number(values.port),
-    host: values.host as string,
-    db: (values.db as string) ?? defaultDatabasePath(),
+    port: Number(values.port ?? process.env.LOOKSPAN_PORT ?? '3100'),
+    host: (values.host as string) ?? process.env.LOOKSPAN_HOST ?? '127.0.0.1',
+    db: (values.db as string) ?? process.env.LOOKSPAN_DB ?? defaultDatabasePath(),
     open: Boolean(values.open),
   };
 }
@@ -66,6 +70,26 @@ Quick start:
 `);
 }
 
+/**
+ * Locate the built dashboard (`apps/dashboard/dist`). Honors
+ * LOOKSPAN_DASHBOARD_DIR, otherwise walks up from this module looking for the
+ * monorepo's `apps/dashboard/dist/index.html`. Returns null if not built yet.
+ */
+function findDashboardDir(): string | null {
+  const fromEnv = process.env.LOOKSPAN_DASHBOARD_DIR;
+  if (fromEnv) return existsSync(join(fromEnv, 'index.html')) ? fromEnv : null;
+
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 8; i++) {
+    const candidate = join(dir, 'apps', 'dashboard', 'dist');
+    if (existsSync(join(candidate, 'index.html'))) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+
 function main(): void {
   const flags = parseFlags(process.argv.slice(2));
 
@@ -76,12 +100,16 @@ function main(): void {
   }
 
   const ctx = createContext(db);
-  const app = createApp({ context: ctx });
+  const dashboardDir = findDashboardDir();
+  const app = createApp({ context: ctx, dashboardDir: dashboardDir ?? undefined });
 
   const server = app.listen(flags.port, flags.host, () => {
     const url = `http://${flags.host}:${flags.port}`;
     console.log(`\n  Lookspan running at ${url}`);
     console.log(`  Database: ${flags.db}`);
+    if (!dashboardDir) {
+      console.log('  (dashboard not built — run `npm run build` to serve the UI)');
+    }
     console.log(`  Press Ctrl+C to stop\n`);
     if (flags.open) {
       void openInBrowser(url);
