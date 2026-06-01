@@ -1,28 +1,55 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
 
+const FRAMEWORKS = ['mcp', 'langgraph', 'crewai', 'agent-os', 'openai-agents', 'otlp', 'custom'];
+const STATUSES = ['ok', 'error', 'cancelled'];
+
 export default function TraceList() {
+  const [framework, setFramework] = useState('');
+  const [status, setStatus] = useState('');
+  const [search, setSearch] = useState('');
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['traces'],
-    queryFn: api.listTraces,
+    queryKey: ['traces', framework, status],
+    queryFn: () =>
+      api.listTraces({ framework: framework || undefined, status: status || undefined }),
     refetchInterval: 5_000,
   });
 
-  if (isLoading) {
-    return <div className="p-8 text-neutral-400">Loading traces…</div>;
-  }
-  if (error) {
-    return <div className="p-8 text-red-400">Error: {(error as Error).message}</div>;
-  }
-
-  const items = data?.items ?? [];
+  const allItems = data?.items ?? [];
+  const items = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q ? allItems.filter((t) => t.rootName.toLowerCase().includes(q)) : allItems;
+  }, [allItems, search]);
 
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-xl font-semibold">Recent traces</h1>
-      {items.length === 0 ? (
-        <EmptyState />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h1 className="mr-auto text-xl font-semibold">Recent traces</h1>
+        <input
+          type="search"
+          placeholder="Search name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm placeholder:text-neutral-600 focus:border-brand-500 focus:outline-none"
+        />
+        <Select
+          value={framework}
+          onChange={setFramework}
+          placeholder="All frameworks"
+          options={FRAMEWORKS}
+        />
+        <Select value={status} onChange={setStatus} placeholder="All statuses" options={STATUSES} />
+      </div>
+
+      {isLoading ? (
+        <div className="py-8 text-neutral-400">Loading traces…</div>
+      ) : error ? (
+        <div className="py-8 text-red-400">Error: {(error as Error).message}</div>
+      ) : items.length === 0 ? (
+        <EmptyState filtered={allItems.length > 0} />
       ) : (
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
@@ -65,7 +92,41 @@ export default function TraceList() {
   );
 }
 
-function EmptyState() {
+function Select({
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  options: string[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function EmptyState({ filtered }: { filtered: boolean }) {
+  if (filtered) {
+    return (
+      <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
+        <p className="text-sm">No traces match the current filters.</p>
+      </div>
+    );
+  }
   return (
     <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
       <p className="mb-2 text-base font-medium text-neutral-200">No traces yet</p>
