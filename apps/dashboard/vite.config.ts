@@ -16,5 +16,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Keep the heavy visualization libs out of the entry chunk; they load
+        // only on the routes that use them (TraceDetail / CostsView).
+        manualChunks: {
+          'react-flow': ['@xyflow/react'],
+          recharts: ['recharts'],
+        },
+      },
+    },
   },
 });
