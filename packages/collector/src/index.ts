@@ -3,3 +3,4 @@ export * from './aggregator.js';
 export * from './collector.js';
 export * from './normalize.js';
 export * from './pricing.js';
+export * from './redact.js';

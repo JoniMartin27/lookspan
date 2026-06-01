@@ -4,20 +4,35 @@ import type { IngestResponse, SpanInput } from '@lookspan/types';
 import { recomputeTrace } from './aggregator.js';
 import { IngestValidationError, validatePayload, validateSpan } from './normalize.js';
 import { enrichSpanCost } from './pricing.js';
+import { type RedactOptions, redactSpan } from './redact.js';
 
 export interface CollectorOptions {
   db: LookspanDatabase;
+  /**
+   * Redact credential-looking keys from span input/attributes before they hit
+   * the database. Enabled by default; pass `false` to store raw telemetry, or
+   * an options object to tune the key patterns.
+   */
+  redact?: boolean | RedactOptions;
 }
 
 export class Collector {
   private readonly spans: SpansRepository;
   private readonly traces: TracesRepository;
   private readonly db: LookspanDatabase;
+  private readonly redactOptions: RedactOptions | null;
 
   constructor(options: CollectorOptions) {
     this.db = options.db;
     this.spans = new SpansRepository(options.db);
     this.traces = new TracesRepository(options.db);
+    const redact = options.redact ?? true;
+    this.redactOptions = redact === false ? null : redact === true ? {} : redact;
+  }
+
+  private prepareSpan(span: unknown, index: number): SpanInput {
+    const validated = enrichSpanCost(validateSpan(span, index));
+    return this.redactOptions ? redactSpan(validated, this.redactOptions) : validated;
   }
 
   ingest(rawPayload: unknown): IngestResponse {
@@ -27,7 +42,7 @@ export class Collector {
 
     payload.spans.forEach((span, index) => {
       try {
-        validSpans.push(enrichSpanCost(validateSpan(span, index)));
+        validSpans.push(this.prepareSpan(span, index));
       } catch (err) {
         const reason = err instanceof IngestValidationError ? err.message : (err as Error).message;
         errors.push({ index, reason });
