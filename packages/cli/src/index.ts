@@ -102,8 +102,7 @@ function main(): void {
 async function openInBrowser(url: string): Promise<void> {
   const { spawn } = await import('node:child_process');
   const platform = process.platform;
-  const cmd =
-    platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
+  const cmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
   const args = platform === 'win32' ? ['', url] : [url];
   spawn(cmd, args, { detached: true, stdio: 'ignore', shell: platform === 'win32' }).unref();
 }

@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import '@xyflow/react/dist/style.css';
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
 @theme {
   --color-brand-50: #f5f3ff;
@@ -19,5 +19,5 @@ body,
 
 body {
   font-family: var(--font-display);
-  font-feature-settings: 'cv02', 'cv03', 'cv04';
+  font-feature-settings: "cv02", "cv03", "cv04";
 }

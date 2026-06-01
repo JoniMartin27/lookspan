@@ -40,7 +40,15 @@ export default function Layout({ children }: LayoutProps) {
   );
 }
 
-function NavLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+function NavLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: ReactNode;
+}) {
   return (
     <Link
       href={href}

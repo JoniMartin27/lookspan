@@ -29,9 +29,14 @@ export type LookspanEvent =
 
 type Listener = (event: LookspanEvent) => void;
 
+// Distributive Omit: a plain `Omit<LookspanEvent, 'receivedAt'>` collapses the
+// discriminated union to its common keys (only `type`), dropping `span`/`trace`/
+// `source`. Distributing over each member preserves the per-variant payload.
+type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
+
 const listeners = new Set<Listener>();
 
-export function emit(event: Omit<LookspanEvent, 'receivedAt'>): LookspanEvent {
+export function emit(event: DistributiveOmit<LookspanEvent, 'receivedAt'>): LookspanEvent {
   const enriched = { ...event, receivedAt: new Date().toISOString() } as LookspanEvent;
   for (const listener of listeners) {
     try {

@@ -1,10 +1,6 @@
-import type { IngestPayload, IngestResponse, SpanInput } from '@lookspan/types';
-import { LookspanEventType, emit } from '@lookspan/events';
-import {
-  type LookspanDatabase,
-  SpansRepository,
-  TracesRepository,
-} from '@lookspan/storage';
+import { emit, LookspanEventType } from '@lookspan/events';
+import { type LookspanDatabase, SpansRepository, TracesRepository } from '@lookspan/storage';
+import type { IngestResponse, SpanInput } from '@lookspan/types';
 import { recomputeTrace } from './aggregator.js';
 import { IngestValidationError, validatePayload, validateSpan } from './normalize.js';
 
@@ -32,8 +28,7 @@ export class Collector {
       try {
         validSpans.push(validateSpan(span, index));
       } catch (err) {
-        const reason =
-          err instanceof IngestValidationError ? err.message : (err as Error).message;
+        const reason = err instanceof IngestValidationError ? err.message : (err as Error).message;
         errors.push({ index, reason });
       }
     });

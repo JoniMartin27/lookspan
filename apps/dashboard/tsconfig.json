@@ -9,9 +9,9 @@
     "moduleResolution": "Bundler",
     "verbatimModuleSyntax": true,
     "noEmit": true,
-    "allowImportingTsExtensions": false,
+    "allowImportingTsExtensions": true,
     "composite": false
   },
-  "include": ["src/**/*", "vite.config.ts"],
+  "include": ["src/**/*"],
   "references": [{ "path": "../../packages/types" }]
 }

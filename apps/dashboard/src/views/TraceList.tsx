@@ -38,15 +38,9 @@ export default function TraceList() {
           </thead>
           <tbody>
             {items.map((t) => (
-              <tr
-                key={t.traceId}
-                className="border-t border-neutral-800 hover:bg-neutral-900"
-              >
+              <tr key={t.traceId} className="border-t border-neutral-800 hover:bg-neutral-900">
                 <td className="px-3 py-2">
-                  <Link
-                    href={`/traces/${t.traceId}`}
-                    className="text-brand-500 hover:underline"
-                  >
+                  <Link href={`/traces/${t.traceId}`} className="text-brand-500 hover:underline">
                     {t.rootName}
                   </Link>
                 </td>
@@ -58,9 +52,7 @@ export default function TraceList() {
                   {t.durationMs !== null ? `${t.durationMs} ms` : '—'}
                 </td>
                 <td className="px-3 py-2 text-neutral-400">{t.spanCount}</td>
-                <td className="px-3 py-2 text-neutral-400">
-                  ${t.costUsd.toFixed(4)}
-                </td>
+                <td className="px-3 py-2 text-neutral-400">${t.costUsd.toFixed(4)}</td>
                 <td className="px-3 py-2">
                   <StatusBadge status={t.status} />
                 </td>
@@ -95,7 +87,5 @@ function StatusBadge({ status }: { status: string }) {
       : status === 'error'
         ? 'bg-red-500/10 text-red-400'
         : 'bg-neutral-700/30 text-neutral-400';
-  return (
-    <span className={`rounded px-2 py-0.5 text-xs font-medium ${styles}`}>{status}</span>
-  );
+  return <span className={`rounded px-2 py-0.5 text-xs font-medium ${styles}`}>{status}</span>;
 }

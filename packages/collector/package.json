@@ -16,7 +16,10 @@
       "import": "./dist/adapters/agent-os.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean"

@@ -1,6 +1,6 @@
+import { FrameworkName } from '@lookspan/types';
 import type { Collector } from '../collector.js';
 import type { CollectorAdapter } from './types.js';
-import { FrameworkName } from '@lookspan/types';
 
 export interface AgentOsAdapterOptions {
   baseUrl: string;
@@ -10,7 +10,8 @@ export interface AgentOsAdapterOptions {
 
 export class AgentOsAdapter implements CollectorAdapter {
   readonly name = FrameworkName.AgentOs;
-  readonly description = 'Subscribes to the AGENT-OS SSE control event bus and converts events into Lookspan spans.';
+  readonly description =
+    'Subscribes to the AGENT-OS SSE control event bus and converts events into Lookspan spans.';
 
   private controller: AbortController | null = null;
   private reconnectTimer: NodeJS.Timeout | null = null;

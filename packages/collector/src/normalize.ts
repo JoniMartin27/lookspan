@@ -32,7 +32,11 @@ export function validateSpan(span: unknown, index: number): SpanInput {
   if (!VALID_STATUSES.has(s.status as string)) {
     throw new IngestValidationError(`span.status "${String(s.status)}" is not recognized`, index);
   }
-  if (s.parentSpanId !== null && s.parentSpanId !== undefined && typeof s.parentSpanId !== 'string') {
+  if (
+    s.parentSpanId !== null &&
+    s.parentSpanId !== undefined &&
+    typeof s.parentSpanId !== 'string'
+  ) {
     throw new IngestValidationError('span.parentSpanId must be string or null', index);
   }
 

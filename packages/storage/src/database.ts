@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
+import { dirname, resolve } from 'node:path';
+import Database from 'better-sqlite3';
 
 export type LookspanDatabase = Database.Database;
 

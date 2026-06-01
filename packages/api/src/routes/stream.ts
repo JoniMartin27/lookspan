@@ -1,5 +1,5 @@
-import { Router } from 'express';
 import { type LookspanEvent, subscribe } from '@lookspan/events';
+import { Router } from 'express';
 
 export function createStreamRouter(): Router {
   const router = Router();

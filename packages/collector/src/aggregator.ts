@@ -1,6 +1,6 @@
-import type { Span, Trace } from '@lookspan/types';
-import { SpanStatus, type FrameworkName } from '@lookspan/types';
 import type { LookspanDatabase } from '@lookspan/storage';
+import type { Span, Trace } from '@lookspan/types';
+import { type FrameworkName, SpanStatus } from '@lookspan/types';
 
 export interface TraceAggregate {
   rootName: string;

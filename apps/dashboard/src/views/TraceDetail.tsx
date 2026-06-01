@@ -1,15 +1,9 @@
+import type { Span } from '@lookspan/types';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Background,
-  Controls,
-  type Edge,
-  type Node,
-  ReactFlow,
-} from '@xyflow/react';
+import { Background, Controls, type Edge, type Node, ReactFlow } from '@xyflow/react';
 import { useMemo } from 'react';
 import { useParams } from 'wouter';
 import { api } from '../api/client.ts';
-import type { Span } from '@lookspan/types';
 
 export default function TraceDetail() {
   const params = useParams<{ id: string }>();
@@ -75,7 +69,7 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
 function depthOf(span: Span, all: Span[]): number {
   let depth = 0;
   let current: Span | undefined = span;
-  while (current && current.parentSpanId) {
+  while (current?.parentSpanId) {
     const parentId: string = current.parentSpanId;
     current = all.find((s) => s.spanId === parentId);
     depth++;

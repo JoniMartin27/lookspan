@@ -12,7 +12,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean"
@@ -24,7 +27,9 @@
     "@modelcontextprotocol/sdk": ">=1.0.0"
   },
   "peerDependenciesMeta": {
-    "@modelcontextprotocol/sdk": { "optional": true }
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    }
   },
   "license": "MIT"
 }

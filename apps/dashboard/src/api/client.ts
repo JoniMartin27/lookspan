@@ -1,9 +1,4 @@
-import type {
-  CostBreakdown,
-  Span,
-  Trace,
-  TraceListItem,
-} from '@lookspan/types';
+import type { CostBreakdown, Span, Trace, TraceListItem } from '@lookspan/types';
 
 const API_BASE = '/api';
 

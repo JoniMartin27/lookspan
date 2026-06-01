@@ -5,7 +5,10 @@ export interface StreamEvent {
   [key: string]: unknown;
 }
 
-export function useStream(url = '/api/stream'): { lastEvent: StreamEvent | null; connected: boolean } {
+export function useStream(url = '/api/stream'): {
+  lastEvent: StreamEvent | null;
+  connected: boolean;
+} {
   const [lastEvent, setLastEvent] = useState<StreamEvent | null>(null);
   const [connected, setConnected] = useState(false);
   const sourceRef = useRef<EventSource | null>(null);
