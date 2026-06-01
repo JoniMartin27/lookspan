@@ -10,21 +10,87 @@ import type { ModelPricing, SpanInput, TokenUsage } from '@lookspan/types';
  */
 const DEFAULT_PRICING: ModelPricing[] = [
   // Anthropic
-  { provider: 'anthropic', model: 'claude-opus-4', inputPer1M: 15, outputPer1M: 75, cachedInputPer1M: 1.5 },
-  { provider: 'anthropic', model: 'claude-sonnet-4', inputPer1M: 3, outputPer1M: 15, cachedInputPer1M: 0.3 },
-  { provider: 'anthropic', model: 'claude-haiku-4', inputPer1M: 1, outputPer1M: 5, cachedInputPer1M: 0.1 },
-  { provider: 'anthropic', model: 'claude-3-5-sonnet', inputPer1M: 3, outputPer1M: 15, cachedInputPer1M: 0.3 },
-  { provider: 'anthropic', model: 'claude-3-5-haiku', inputPer1M: 0.8, outputPer1M: 4, cachedInputPer1M: 0.08 },
-  { provider: 'anthropic', model: 'claude-3-opus', inputPer1M: 15, outputPer1M: 75, cachedInputPer1M: 1.5 },
-  { provider: 'anthropic', model: 'claude-3-haiku', inputPer1M: 0.25, outputPer1M: 1.25, cachedInputPer1M: 0.03 },
+  {
+    provider: 'anthropic',
+    model: 'claude-opus-4',
+    inputPer1M: 15,
+    outputPer1M: 75,
+    cachedInputPer1M: 1.5,
+  },
+  {
+    provider: 'anthropic',
+    model: 'claude-sonnet-4',
+    inputPer1M: 3,
+    outputPer1M: 15,
+    cachedInputPer1M: 0.3,
+  },
+  {
+    provider: 'anthropic',
+    model: 'claude-haiku-4',
+    inputPer1M: 1,
+    outputPer1M: 5,
+    cachedInputPer1M: 0.1,
+  },
+  {
+    provider: 'anthropic',
+    model: 'claude-3-5-sonnet',
+    inputPer1M: 3,
+    outputPer1M: 15,
+    cachedInputPer1M: 0.3,
+  },
+  {
+    provider: 'anthropic',
+    model: 'claude-3-5-haiku',
+    inputPer1M: 0.8,
+    outputPer1M: 4,
+    cachedInputPer1M: 0.08,
+  },
+  {
+    provider: 'anthropic',
+    model: 'claude-3-opus',
+    inputPer1M: 15,
+    outputPer1M: 75,
+    cachedInputPer1M: 1.5,
+  },
+  {
+    provider: 'anthropic',
+    model: 'claude-3-haiku',
+    inputPer1M: 0.25,
+    outputPer1M: 1.25,
+    cachedInputPer1M: 0.03,
+  },
   // OpenAI
-  { provider: 'openai', model: 'gpt-4o-mini', inputPer1M: 0.15, outputPer1M: 0.6, cachedInputPer1M: 0.075 },
+  {
+    provider: 'openai',
+    model: 'gpt-4o-mini',
+    inputPer1M: 0.15,
+    outputPer1M: 0.6,
+    cachedInputPer1M: 0.075,
+  },
   { provider: 'openai', model: 'gpt-4o', inputPer1M: 2.5, outputPer1M: 10, cachedInputPer1M: 1.25 },
-  { provider: 'openai', model: 'gpt-4.1-mini', inputPer1M: 0.4, outputPer1M: 1.6, cachedInputPer1M: 0.1 },
+  {
+    provider: 'openai',
+    model: 'gpt-4.1-mini',
+    inputPer1M: 0.4,
+    outputPer1M: 1.6,
+    cachedInputPer1M: 0.1,
+  },
   { provider: 'openai', model: 'gpt-4.1', inputPer1M: 2, outputPer1M: 8, cachedInputPer1M: 0.5 },
   { provider: 'openai', model: 'gpt-4-turbo', inputPer1M: 10, outputPer1M: 30 },
-  { provider: 'openai', model: 'o3-mini', inputPer1M: 1.1, outputPer1M: 4.4, cachedInputPer1M: 0.55 },
-  { provider: 'openai', model: 'o1-mini', inputPer1M: 1.1, outputPer1M: 4.4, cachedInputPer1M: 0.55 },
+  {
+    provider: 'openai',
+    model: 'o3-mini',
+    inputPer1M: 1.1,
+    outputPer1M: 4.4,
+    cachedInputPer1M: 0.55,
+  },
+  {
+    provider: 'openai',
+    model: 'o1-mini',
+    inputPer1M: 1.1,
+    outputPer1M: 4.4,
+    cachedInputPer1M: 0.55,
+  },
   { provider: 'openai', model: 'o1', inputPer1M: 15, outputPer1M: 60, cachedInputPer1M: 7.5 },
   // Google
   { provider: 'google', model: 'gemini-2.0-flash', inputPer1M: 0.1, outputPer1M: 0.4 },
@@ -76,7 +142,9 @@ export function computeCostUsd(
   const output = usage.outputTokens ?? 0;
   const cachedRate = pricing.cachedInputPer1M ?? pricing.inputPer1M;
 
-  return (input * pricing.inputPer1M + cached * cachedRate + output * pricing.outputPer1M) / 1_000_000;
+  return (
+    (input * pricing.inputPer1M + cached * cachedRate + output * pricing.outputPer1M) / 1_000_000
+  );
 }
 
 /**
