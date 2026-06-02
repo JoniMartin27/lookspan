@@ -5,11 +5,34 @@ import {
   enrichSpanCost,
   findPricing,
   getPricingTable,
+  parsePricingTable,
   setPricingTable,
 } from './pricing.js';
 
 const defaultTable = getPricingTable();
 afterEach(() => setPricingTable(defaultTable));
+
+describe('parsePricingTable', () => {
+  it('parses a valid pricing list', () => {
+    const table = parsePricingTable([
+      { provider: 'x', model: 'foo', inputPer1M: 1, outputPer1M: 2, cachedInputPer1M: 0.5 },
+      { model: 'bar', inputPer1M: 3, outputPer1M: 4 },
+    ]);
+    expect(table).toHaveLength(2);
+    expect(table[0]).toMatchObject({ model: 'foo', cachedInputPer1M: 0.5 });
+    expect(table[1]).toMatchObject({ provider: 'unknown', model: 'bar' });
+  });
+
+  it('rejects non-arrays and malformed entries', () => {
+    expect(() => parsePricingTable({})).toThrow(/must be a JSON array/);
+    expect(() => parsePricingTable([{ model: '', inputPer1M: 1, outputPer1M: 2 }])).toThrow(
+      /model/,
+    );
+    expect(() => parsePricingTable([{ model: 'x', inputPer1M: 'a', outputPer1M: 2 }])).toThrow(
+      /numeric/,
+    );
+  });
+});
 
 describe('findPricing', () => {
   it('matches a model by substring', () => {

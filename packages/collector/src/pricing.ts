@@ -105,6 +105,32 @@ export function setPricingTable(table: ModelPricing[]): void {
   pricingTable = table;
 }
 
+/**
+ * Validate and normalize a raw pricing list (e.g. parsed from a user JSON file).
+ * Each entry needs at least `model`, `inputPer1M` and `outputPer1M`. Throws on
+ * malformed input. Use to keep prices current without forking the code.
+ */
+export function parsePricingTable(raw: unknown): ModelPricing[] {
+  if (!Array.isArray(raw)) throw new Error('pricing must be a JSON array');
+  return raw.map((entry, i) => {
+    const e = entry as Record<string, unknown>;
+    if (typeof e.model !== 'string' || !e.model) {
+      throw new Error(`pricing[${i}].model must be a non-empty string`);
+    }
+    if (typeof e.inputPer1M !== 'number' || typeof e.outputPer1M !== 'number') {
+      throw new Error(`pricing[${i}] must have numeric inputPer1M and outputPer1M`);
+    }
+    return {
+      provider: typeof e.provider === 'string' ? e.provider : 'unknown',
+      model: e.model,
+      inputPer1M: e.inputPer1M,
+      outputPer1M: e.outputPer1M,
+      ...(typeof e.cachedInputPer1M === 'number' ? { cachedInputPer1M: e.cachedInputPer1M } : {}),
+      ...(typeof e.reasoningPer1M === 'number' ? { reasoningPer1M: e.reasoningPer1M } : {}),
+    };
+  });
+}
+
 /** The pricing table currently in effect. */
 export function getPricingTable(): ModelPricing[] {
   return pricingTable;

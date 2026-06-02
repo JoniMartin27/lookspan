@@ -9,6 +9,7 @@
     { "path": "../types" },
     { "path": "../events" },
     { "path": "../storage" },
+    { "path": "../collector" },
     { "path": "../api" }
   ]
 }

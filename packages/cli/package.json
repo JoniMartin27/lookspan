@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@lookspan/api": "*",
+    "@lookspan/collector": "*",
     "@lookspan/events": "*",
     "@lookspan/storage": "*",
     "@lookspan/types": "*",

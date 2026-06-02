@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { createApp, createContext } from '@lookspan/api';
+import { parsePricingTable, setPricingTable } from '@lookspan/collector';
 import { LookspanEventType, subscribe } from '@lookspan/events';
 import {
   cutoffFrom,
@@ -25,6 +26,7 @@ interface CliFlags {
   retentionMs: number | null;
   token: string | undefined;
   alertRules: AlertRule[];
+  pricingFile: string | undefined;
 }
 
 function buildAlertRules(values: Record<string, unknown>): AlertRule[] {
@@ -62,6 +64,7 @@ function parseFlags(argv: string[]): CliFlags {
       db: { type: 'string' },
       retention: { type: 'string' },
       token: { type: 'string' },
+      pricing: { type: 'string' },
       'alert-error': { type: 'boolean', default: false },
       'alert-cost': { type: 'string' },
       'alert-tokens': { type: 'string' },
@@ -100,7 +103,21 @@ function parseFlags(argv: string[]): CliFlags {
     retentionMs,
     token: (values.token as string) ?? process.env.LOOKSPAN_TOKEN ?? undefined,
     alertRules: buildAlertRules(values),
+    pricingFile: (values.pricing as string) ?? process.env.LOOKSPAN_PRICING ?? undefined,
   };
+}
+
+/** Load a user pricing JSON file and install it as the active price table. */
+function applyPricingFile(file: string): void {
+  try {
+    const raw = JSON.parse(readFileSync(file, 'utf8'));
+    const table = parsePricingTable(raw);
+    setPricingTable(table);
+    console.log(`[lookspan] pricing: loaded ${table.length} model(s) from ${file}`);
+  } catch (err) {
+    console.error(`[lookspan] failed to load pricing file "${file}": ${(err as Error).message}`);
+    process.exit(1);
+  }
 }
 
 /**
@@ -136,6 +153,7 @@ Options:
       --db <path>       SQLite database path (default: ~/.lookspan/lookspan.db)
       --retention <dur> Prune traces older than <dur> (e.g. 7d, 24h, 30m)
       --token <token>   Require Authorization: Bearer <token> on the API
+      --pricing <file>  Load a custom model pricing table (JSON) to keep costs current
       --alert-error     Alert when a trace fails
       --alert-cost <usd>      Alert when a trace costs more than <usd>
       --alert-tokens <n>      Alert when a trace exceeds <n> tokens
@@ -150,6 +168,7 @@ Environment:
   LOOKSPAN_DB           Same as --db
   LOOKSPAN_RETENTION    Same as --retention
   LOOKSPAN_TOKEN        Same as --token
+  LOOKSPAN_PRICING      Same as --pricing
   LOOKSPAN_ALERT_ERROR / _COST / _TOKENS / _DURATION   Same as --alert-*
 
 Quick start:
@@ -195,6 +214,8 @@ function main(): void {
   if (result.applied.length > 0) {
     console.log(`[lookspan] migrations applied: ${result.applied.join(', ')}`);
   }
+
+  if (flags.pricingFile) applyPricingFile(flags.pricingFile);
 
   const ctx = createContext(db, { alertRules: flags.alertRules });
   const dashboardDir = findDashboardDir();
