@@ -11,7 +11,8 @@ interfiere con `npm run build`.
 website/
 ├── index.html      # Landing completa (hero, características, integraciones, costes, CTA)
 ├── styles.css      # Estilos (tema oscuro, responsive, prefers-reduced-motion)
-├── main.js         # Copiar al portapapeles, tabs de código, menú móvil, reveal on scroll
+├── main.js         # i18n, copiar al portapapeles, tabs de código, menú móvil, reveal on scroll
+├── i18n.js         # Diccionario de traducciones (es / en)
 ├── favicon.svg     # Marca (waterfall de spans)
 └── og-cover.svg    # Imagen Open Graph / Twitter (1200×630)
 ```
@@ -27,9 +28,26 @@ npx serve website
 python -m http.server 8000 --directory website
 ```
 
+## Idiomas (i18n)
+
+La landing es bilingüe **español / inglés** con **autodetección**:
+
+- Al cargar, lee `navigator.language`: si empieza por `es` muestra español, en
+  cualquier otro caso inglés. La preferencia se guarda en `localStorage`
+  (`lookspan-lang`) y tiene prioridad sobre la autodetección.
+- El conmutador **ES / EN** del header (y del menú móvil) permite cambiar a mano.
+- El HTML se sirve en español como *fallback* (para crawlers y navegación sin JS);
+  `main.js` intercambia los textos según el idioma detectado/elegido.
+
+Para **editar o añadir traducciones**, toca `i18n.js`: cada clave tiene su versión
+`es` y `en`. En el HTML, el texto traducible lleva `data-i18n="clave"` (contenido)
+o `data-i18n-aria="clave"` (atributo `aria-label`). Los valores admiten HTML inline
+(`<strong>`, `<code>`, `<span>`). Para añadir un **tercer idioma**, replica el bloque
+de claves bajo una nueva clave de idioma y ajusta la detección en `main.js`.
+
 ## Personalizar
 
-- **Textos y secciones:** `index.html`.
+- **Textos y traducciones:** `i18n.js` (es / en); marca nuevos nodos con `data-i18n` en `index.html`.
 - **Colores / espaciados / radios:** variables CSS en `:root` (`styles.css`).
 - **URL del repo:** busca `JoniMartin27/lookspan` en `index.html`.
 - **Ejemplos de código:** los `<pre class="tab-panel">` de la sección Integraciones.

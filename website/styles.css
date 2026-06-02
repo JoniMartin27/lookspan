@@ -266,6 +266,41 @@ pre {
   gap: 10px;
 }
 
+/* Language switch (ES / EN) */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.lang-opt {
+  font-family: var(--font);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 9px;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+.lang-opt:hover {
+  color: var(--text-muted);
+}
+.lang-opt.is-active {
+  color: #fff;
+  background: rgba(139, 92, 246, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.35);
+}
+.lang-switch--mobile {
+  align-self: flex-start;
+  margin-top: 14px;
+}
+
 /* Mobile nav */
 .nav-toggle {
   display: none;
@@ -1323,6 +1358,9 @@ pre {
     grid-template-columns: 1fr;
   }
   .header-actions .btn-ghost span {
+    display: none;
+  }
+  .header-actions .lang-switch {
     display: none;
   }
   .hero-cmd,

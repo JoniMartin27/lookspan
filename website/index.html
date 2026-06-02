@@ -30,10 +30,26 @@
       rel="stylesheet"
     />
 
+    <!-- Set <html lang> as early as possible from saved/auto-detected preference,
+         before paint, to avoid a flash of the wrong language. -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('lookspan-lang');
+          var lang = saved === 'es' || saved === 'en' ? saved : null;
+          if (!lang) {
+            var nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+            lang = String(nav).toLowerCase().indexOf('es') === 0 ? 'es' : 'en';
+          }
+          document.documentElement.lang = lang;
+        } catch (e) {}
+      })();
+    </script>
+
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <a class="skip-link" href="#main" data-i18n="a11y.skip">Saltar al contenido</a>
 
     <!-- Background decoration -->
     <div class="bg-decor" aria-hidden="true">
@@ -45,7 +61,7 @@
     <!-- ===================== HEADER ===================== -->
     <header class="site-header" id="top">
       <div class="container header-inner">
-        <a class="brand" href="#top" aria-label="Lookspan — inicio">
+        <a class="brand" href="#top" aria-label="Lookspan">
           <svg class="brand-mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
             <rect x="5" y="7" width="22" height="4.5" rx="2.25" fill="#a78bfa" />
             <rect x="9" y="13.75" width="15" height="4.5" rx="2.25" fill="#8b5cf6" />
@@ -55,20 +71,24 @@
         </a>
 
         <nav class="main-nav" aria-label="Principal">
-          <a href="#caracteristicas">Características</a>
-          <a href="#como-funciona">Cómo funciona</a>
-          <a href="#integraciones">Integraciones</a>
-          <a href="#costes">Costes</a>
+          <a href="#caracteristicas" data-i18n="nav.features">Características</a>
+          <a href="#como-funciona" data-i18n="nav.how">Cómo funciona</a>
+          <a href="#integraciones" data-i18n="nav.integrations">Integraciones</a>
+          <a href="#costes" data-i18n="nav.costs">Costes</a>
         </nav>
 
         <div class="header-actions">
+          <div class="lang-switch" role="group" data-i18n-aria="aria.langGroup" aria-label="Idioma">
+            <button type="button" class="lang-opt" data-lang-btn="es">ES</button>
+            <button type="button" class="lang-opt" data-lang-btn="en">EN</button>
+          </div>
           <a class="btn btn-ghost btn-sm" href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
               <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z" />
             </svg>
             <span>GitHub</span>
           </a>
-          <a class="btn btn-primary btn-sm header-cta" href="#empezar">Empezar</a>
+          <a class="btn btn-primary btn-sm header-cta" href="#empezar" data-i18n="cta.start">Empezar</a>
           <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu">
             <span></span><span></span><span></span>
           </button>
@@ -76,11 +96,15 @@
       </div>
 
       <div class="mobile-menu" id="mobile-menu" hidden>
-        <a href="#caracteristicas">Características</a>
-        <a href="#como-funciona">Cómo funciona</a>
-        <a href="#integraciones">Integraciones</a>
-        <a href="#costes">Costes</a>
-        <a href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="#caracteristicas" data-i18n="nav.features">Características</a>
+        <a href="#como-funciona" data-i18n="nav.how">Cómo funciona</a>
+        <a href="#integraciones" data-i18n="nav.integrations">Integraciones</a>
+        <a href="#costes" data-i18n="nav.costs">Costes</a>
+        <a href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener" data-i18n="nav.githubMobile">GitHub ↗</a>
+        <div class="lang-switch lang-switch--mobile" role="group" data-i18n-aria="aria.langGroup" aria-label="Idioma">
+          <button type="button" class="lang-opt" data-lang-btn="es">ES</button>
+          <button type="button" class="lang-opt" data-lang-btn="en">EN</button>
+        </div>
       </div>
     </header>
 
@@ -91,14 +115,14 @@
           <div class="hero-copy reveal">
             <span class="eyebrow">
               <span class="eyebrow-dot"></span>
-              Observabilidad local-first · Nativo para MCP
+              <span data-i18n="hero.eyebrow">Observabilidad local-first · Nativo para MCP</span>
             </span>
 
-            <h1 class="hero-title">
+            <h1 class="hero-title" data-i18n="hero.title">
               Mira cada <span class="gradient-text">span</span> que emiten tus agentes de IA.
             </h1>
 
-            <p class="hero-lead">
+            <p class="hero-lead" data-i18n="hero.lead">
               Lookspan captura cada llamada LLM, cada herramienta MCP y cada token de coste de tus
               agentes <strong>LangGraph</strong>, <strong>CrewAI</strong> y <strong>MCP</strong>.
               Todo corre en tu máquina: sin nube, sin API keys, sin que tus datos salgan de tu equipo.
@@ -106,29 +130,29 @@
 
             <div class="hero-cmd" id="empezar">
               <code><span class="cmd-prompt">$</span> npx lookspan</code>
-              <button class="copy-btn" data-copy="npx lookspan" aria-label="Copiar comando">
+              <button class="copy-btn" data-copy="npx lookspan" data-i18n-aria="aria.copyCmd" aria-label="Copiar comando">
                 <svg class="icon-copy" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
-                <span class="copy-label">Copiar</span>
+                <span class="copy-label" data-i18n="copy.label">Copiar</span>
               </button>
             </div>
-            <p class="hero-cmd-hint">Arranca el servidor y el dashboard en <code>http://127.0.0.1:3100</code> — sin instalación global.</p>
+            <p class="hero-cmd-hint" data-i18n="hero.cmdHint">Arranca el servidor y el dashboard en <code>http://127.0.0.1:3100</code> — sin instalación global.</p>
 
             <div class="hero-actions">
-              <a class="btn btn-primary" href="#integraciones">Instrumentar mi agente</a>
+              <a class="btn btn-primary" href="#integraciones" data-i18n="hero.ctaInstrument">Instrumentar mi agente</a>
               <a class="btn btn-ghost" href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
                   <path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z" />
                 </svg>
-                Ver en GitHub
+                <span data-i18n="hero.ctaGithub">Ver en GitHub</span>
               </a>
             </div>
 
             <ul class="hero-trust">
-              <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Datos 100% en local</li>
-              <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Coste de infra cero</li>
-              <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Open source · MIT</li>
+              <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <span data-i18n="hero.trust1">Datos 100% en local</span></li>
+              <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <span data-i18n="hero.trust2">Coste de infra cero</span></li>
+              <li><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <span data-i18n="hero.trust3">Open source · MIT</span></li>
             </ul>
           </div>
 
@@ -144,8 +168,8 @@
                 <div class="mock-meta">
                   <span class="tag tag-fw">langgraph</span>
                   <span class="tag tag-ok">● ok</span>
-                  <span class="mock-stat"><span class="mock-stat-k">duración</span> 1,284&nbsp;ms</span>
-                  <span class="mock-stat"><span class="mock-stat-k">coste</span> $0.0241</span>
+                  <span class="mock-stat"><span class="mock-stat-k" data-i18n="mock.duration">duración</span> 1,284&nbsp;ms</span>
+                  <span class="mock-stat"><span class="mock-stat-k" data-i18n="mock.cost">coste</span> $0.0241</span>
                 </div>
 
                 <ul class="waterfall">
@@ -184,21 +208,21 @@
             </div>
 
             <div class="float-card float-cost">
-              <span class="float-cost-k">coste de la sesión</span>
+              <span class="float-cost-k" data-i18n="float.sessionCost">coste de la sesión</span>
               <span class="float-cost-v">$0.0241</span>
               <span class="float-cost-sub">4.2k tokens · gpt-4o</span>
             </div>
             <div class="float-card float-live">
-              <span class="live-dot"></span> 3 trazas nuevas
+              <span class="live-dot"></span> <span data-i18n="float.newTraces">3 trazas nuevas</span>
             </div>
           </div>
         </div>
       </section>
 
       <!-- ===================== FRAMEWORKS STRIP ===================== -->
-      <section class="strip" aria-label="Frameworks compatibles">
+      <section class="strip" aria-label="Frameworks">
         <div class="container">
-          <p class="strip-label">Funciona con tu stack de agentes</p>
+          <p class="strip-label" data-i18n="strip.label">Funciona con tu stack de agentes</p>
           <ul class="strip-logos">
             <li>MCP</li>
             <li>LangGraph</li>
@@ -215,9 +239,9 @@
       <section class="section problem">
         <div class="container">
           <div class="section-head reveal">
-            <span class="kicker">El problema</span>
-            <h2>Cuando un agente falla, te quedas a ciegas.</h2>
-            <p class="section-sub">
+            <span class="kicker" data-i18n="problem.kicker">El problema</span>
+            <h2 data-i18n="problem.title">Cuando un agente falla, te quedas a ciegas.</h2>
+            <p class="section-sub" data-i18n="problem.sub">
               Cuando un agente tarda demasiado, gasta más tokens de lo esperado o simplemente se rompe,
               no hay forma nativa de ver qué ocurrió paso a paso. Las herramientas de observabilidad clásicas
               te piden una cuenta en la nube, claves de API y enviar datos de producción a servidores ajenos.
@@ -226,22 +250,22 @@
 
           <div class="compare reveal">
             <div class="compare-col compare-bad">
-              <h3>Observabilidad en la nube</h3>
+              <h3 data-i18n="compare.bad.title">Observabilidad en la nube</h3>
               <ul>
-                <li>Cuenta, facturación y claves de API</li>
-                <li>Tus prompts y datos salen a servidores externos</li>
-                <li>Coste por evento o por GB ingerido</li>
-                <li>Latencia de red y límites de retención</li>
+                <li data-i18n="compare.bad.1">Cuenta, facturación y claves de API</li>
+                <li data-i18n="compare.bad.2">Tus prompts y datos salen a servidores externos</li>
+                <li data-i18n="compare.bad.3">Coste por evento o por GB ingerido</li>
+                <li data-i18n="compare.bad.4">Latencia de red y límites de retención</li>
               </ul>
             </div>
             <div class="compare-col compare-good">
               <span class="compare-badge">Lookspan</span>
-              <h3>Observabilidad local-first</h3>
+              <h3 data-i18n="compare.good.title">Observabilidad local-first</h3>
               <ul>
-                <li><strong>Todo corre en tu máquina</strong>, los datos nunca salen de ella</li>
-                <li>SQLite en <code>~/.lookspan/lookspan.db</code> — tú eres el dueño</li>
-                <li>Coste de infraestructura <strong>cero</strong></li>
-                <li>Un comando: <code>npx lookspan</code> y a observar</li>
+                <li data-i18n="compare.good.1"><strong>Todo corre en tu máquina</strong>, los datos nunca salen de ella</li>
+                <li data-i18n="compare.good.2">SQLite en <code>~/.lookspan/lookspan.db</code> — tú eres el dueño</li>
+                <li data-i18n="compare.good.3">Coste de infraestructura <strong>cero</strong></li>
+                <li data-i18n="compare.good.4">Un comando: <code>npx lookspan</code> y a observar</li>
               </ul>
             </div>
           </div>
@@ -252,9 +276,9 @@
       <section class="section features" id="caracteristicas">
         <div class="container">
           <div class="section-head reveal">
-            <span class="kicker">Características</span>
-            <h2>Todo lo que necesitas para depurar agentes, en local.</h2>
-            <p class="section-sub">
+            <span class="kicker" data-i18n="features.kicker">Características</span>
+            <h2 data-i18n="features.title">Todo lo que necesitas para depurar agentes, en local.</h2>
+            <p class="section-sub" data-i18n="features.sub">
               Ingesta, trazas, grafo de spans, costes y alertas. Sin montar infraestructura
               y sin renunciar a la privacidad de tus datos.
             </p>
@@ -265,8 +289,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
               </div>
-              <h3>Nativo para MCP</h3>
-              <p>
+              <h3 data-i18n="feat.mcp.title">Nativo para MCP</h3>
+              <p data-i18n="feat.mcp.body">
                 El SDK <code>@lookspan/mcp</code> envuelve cualquier <code>McpClient</code> y emite un span
                 por cada llamada a herramienta, sin tocar el código de tu agente.
               </p>
@@ -276,8 +300,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
               </div>
-              <h3>Streaming en tiempo real</h3>
-              <p>
+              <h3 data-i18n="feat.realtime.title">Streaming en tiempo real</h3>
+              <p data-i18n="feat.realtime.body">
                 El endpoint SSE <code>/api/stream</code> empuja cada <code>span.ingested</code> al
                 dashboard al instante. Ves las trazas mientras tu agente las ejecuta, sin polling.
               </p>
@@ -287,8 +311,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7.5 16 7.5M7.5 8l3.5 7.8M16.5 8 13 15.8"/></svg>
               </div>
-              <h3>Grafo de spans interactivo</h3>
-              <p>
+              <h3 data-i18n="feat.graph.title">Grafo de spans interactivo</h3>
+              <p data-i18n="feat.graph.body">
                 Vista de detalle de cada traza con un grafo navegable (React Flow): jerarquía,
                 duraciones, estados y atributos de cada paso del agente.
               </p>
@@ -298,8 +322,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></svg>
               </div>
-              <h3>Seguimiento de costes</h3>
-              <p>
+              <h3 data-i18n="feat.cost.title">Seguimiento de costes</h3>
+              <p data-i18n="feat.cost.body">
                 Agrega tokens de entrada, salida, caché y razonamiento; calcula el <code>cost_usd</code>
                 por span y por traza, con desglose por modelo y por proveedor.
               </p>
@@ -309,8 +333,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
               </div>
-              <h3>SQLite local</h3>
-              <p>
+              <h3 data-i18n="feat.sqlite.title">SQLite local</h3>
+              <p data-i18n="feat.sqlite.body">
                 Esquema con migraciones versionadas y base de datos en <code>~/.lookspan/lookspan.db</code>.
                 Configurable por flag o variable de entorno. Tus datos, tu disco.
               </p>
@@ -320,8 +344,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="16" rx="2"/><path d="m6 9 3 3-3 3M12.5 15h4"/></svg>
               </div>
-              <h3>CLI en una línea</h3>
-              <p>
+              <h3 data-i18n="feat.cli.title">CLI en una línea</h3>
+              <p data-i18n="feat.cli.body">
                 <code>npx lookspan</code> arranca servidor y dashboard sin instalación global.
                 Puertos, host y ruta de la BD configurables por flag o entorno.
               </p>
@@ -331,8 +355,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
               </div>
-              <h3>Alertas configurables</h3>
-              <p>
+              <h3 data-i18n="feat.alerts.title">Alertas configurables</h3>
+              <p data-i18n="feat.alerts.body">
                 Avísate cuando una traza falla, supera un coste, gasta demasiados tokens o tarda de más.
                 Toast en el dashboard, notificación de escritorio y consola.
               </p>
@@ -342,8 +366,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg>
               </div>
-              <h3>Privado por defecto</h3>
-              <p>
+              <h3 data-i18n="feat.privacy.title">Privado por defecto</h3>
+              <p data-i18n="feat.privacy.body">
                 Escucha en <code>127.0.0.1</code> y redacta credenciales (<code>api_key</code>,
                 <code>token</code>, <code>password</code>…) antes de persistir. Token opcional si lo expones.
               </p>
@@ -353,8 +377,8 @@
               <div class="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M3 7.5h18M5.5 7.5 8 12M18.5 7.5 16 12M9.5 7.5 12 12l2.5-4.5"/></svg>
               </div>
-              <h3>OpenTelemetry (OTLP)</h3>
-              <p>
+              <h3 data-i18n="feat.otel.title">OpenTelemetry (OTLP)</h3>
+              <p data-i18n="feat.otel.body">
                 Receptor OTLP/HTTP en <code>/v1/traces</code>. Apunta cualquier app instrumentada con OTel
                 a Lookspan: los atributos <code>gen_ai.*</code> se mapean a modelo, proveedor y tokens.
               </p>
@@ -367,19 +391,19 @@
       <section class="section how" id="como-funciona">
         <div class="container">
           <div class="section-head reveal">
-            <span class="kicker">Cómo funciona</span>
-            <h2>De tu agente al dashboard en tres pasos.</h2>
-            <p class="section-sub">
+            <span class="kicker" data-i18n="how.kicker">Cómo funciona</span>
+            <h2 data-i18n="how.title">De tu agente al dashboard en tres pasos.</h2>
+            <p class="section-sub" data-i18n="how.sub">
               Instrumenta una vez con un adaptador, arranca el CLI y observa. Los spans viajan por HTTP,
               se validan y normalizan, y aparecen en tiempo real.
             </p>
           </div>
 
-          <div class="flow reveal" aria-label="Flujo de datos">
+          <div class="flow reveal" aria-hidden="true">
             <div class="flow-node">
               <span class="flow-ico">🤖</span>
-              <strong>Agente</strong>
-              <small>MCP · LangGraph · CrewAI · HTTP</small>
+              <strong data-i18n="flow.agent">Agente</strong>
+              <small data-i18n="flow.agent.sub">MCP · LangGraph · CrewAI · HTTP</small>
             </div>
             <span class="flow-arrow">
               <code>POST /api/ingest</code>
@@ -388,7 +412,7 @@
             <div class="flow-node">
               <span class="flow-ico">⚙️</span>
               <strong>Collector</strong>
-              <small>valida · normaliza · redacta</small>
+              <small data-i18n="flow.collector.sub">valida · normaliza · redacta</small>
             </div>
             <span class="flow-arrow">
               <svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M0 6h34M30 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -405,25 +429,25 @@
             <div class="flow-node flow-node--accent">
               <span class="flow-ico">📊</span>
               <strong>Dashboard</strong>
-              <small>trazas · grafo · costes</small>
+              <small data-i18n="flow.dashboard.sub">trazas · grafo · costes</small>
             </div>
           </div>
 
           <ol class="steps reveal">
             <li>
               <span class="step-num">1</span>
-              <h3>Instrumenta</h3>
-              <p>Envuelve tu cliente MCP o añade el callback de LangGraph/CrewAI. Una línea, sin reescribir tu agente.</p>
+              <h3 data-i18n="step1.title">Instrumenta</h3>
+              <p data-i18n="step1.body">Envuelve tu cliente MCP o añade el callback de LangGraph/CrewAI. Una línea, sin reescribir tu agente.</p>
             </li>
             <li>
               <span class="step-num">2</span>
-              <h3>Arranca</h3>
-              <p>Ejecuta <code>npx lookspan</code>. El servidor escucha en <code>:3100</code> y sirve el dashboard.</p>
+              <h3 data-i18n="step2.title">Arranca</h3>
+              <p data-i18n="step2.body">Ejecuta <code>npx lookspan</code>. El servidor escucha en <code>:3100</code> y sirve el dashboard.</p>
             </li>
             <li>
               <span class="step-num">3</span>
-              <h3>Observa</h3>
-              <p>Cada span aparece en vivo: jerarquía, duraciones, estados, tokens y coste en USD.</p>
+              <h3 data-i18n="step3.title">Observa</h3>
+              <p data-i18n="step3.body">Cada span aparece en vivo: jerarquía, duraciones, estados, tokens y coste en USD.</p>
             </li>
           </ol>
         </div>
@@ -433,9 +457,9 @@
       <section class="section integrations" id="integraciones">
         <div class="container">
           <div class="section-head reveal">
-            <span class="kicker">Integraciones</span>
-            <h2>Instrumentar tu agente es una línea de código.</h2>
-            <p class="section-sub">
+            <span class="kicker" data-i18n="int.kicker">Integraciones</span>
+            <h2 data-i18n="int.title">Instrumentar tu agente es una línea de código.</h2>
+            <p class="section-sub" data-i18n="int.sub">
               Elige tu framework. Compatible con cualquier agente capaz de hacer una petición HTTP.
             </p>
           </div>
@@ -450,9 +474,9 @@
             </div>
 
             <div class="code-body">
-              <button class="copy-btn copy-code" aria-label="Copiar código"><span class="copy-label">Copiar</span></button>
+              <button class="copy-btn copy-code" data-i18n-aria="aria.copyCode" aria-label="Copiar código"><span class="copy-label" data-i18n="copy.label">Copiar</span></button>
 
-              <pre class="tab-panel is-active" data-panel="mcp"><code><span class="c">// Instrumenta cualquier cliente MCP — cada callTool emite un span</span>
+              <pre class="tab-panel is-active" data-panel="mcp"><code><span class="c" data-i18n="code.mcp.c1">// Instrumenta cualquier cliente MCP — cada callTool emite un span</span>
 <span class="k">import</span> { wrapMcpClient, HttpSpanExporter } <span class="k">from</span> <span class="s">'@lookspan/mcp'</span>;
 
 <span class="k">const</span> exporter = <span class="k">new</span> <span class="f">HttpSpanExporter</span>({
@@ -464,7 +488,7 @@
   agentId: <span class="s">'mi-agente'</span>,
 });
 
-<span class="c">// Úsalo exactamente igual que antes</span>
+<span class="c" data-i18n="code.mcp.c2">// Úsalo exactamente igual que antes</span>
 <span class="k">await</span> client.<span class="f">callTool</span>({ name: <span class="s">'read_file'</span>, arguments: { path: <span class="s">'/tmp/foo.txt'</span> } });</code></pre>
 
               <pre class="tab-panel" data-panel="langgraph"><code><span class="k">from</span> lookspan <span class="k">import</span> LookspanClient
@@ -473,7 +497,7 @@
 client = <span class="f">LookspanClient</span>(endpoint=<span class="s">"http://127.0.0.1:3100/api/ingest"</span>)
 handler = <span class="f">LookspanCallbackHandler</span>(client=client, agent_id=<span class="s">"mi-agente"</span>)
 
-<span class="c"># Pasa el handler como callback — LangGraph hace el resto</span>
+<span class="c" data-i18n="code.lg.c1"># Pasa el handler como callback — LangGraph hace el resto</span>
 result = graph.<span class="f">invoke</span>({<span class="s">"messages"</span>: []}, config={<span class="s">"callbacks"</span>: [handler]})
 client.<span class="f">flush</span>()</code></pre>
 
@@ -484,12 +508,12 @@ client.<span class="f">flush</span>()</code></pre>
 client = <span class="f">LookspanClient</span>(endpoint=<span class="s">"http://127.0.0.1:3100/api/ingest"</span>)
 <span class="f">attach_lookspan</span>(client, agent_id=<span class="s">"research-crew"</span>)
 
-<span class="c"># Una llamada y toda la crew queda instrumentada</span>
+<span class="c" data-i18n="code.crew.c1"># Una llamada y toda la crew queda instrumentada</span>
 crew = <span class="f">Crew</span>(agents=[...], tasks=[...])
 crew.<span class="f">kickoff</span>()
 client.<span class="f">flush</span>()</code></pre>
 
-              <pre class="tab-panel" data-panel="http"><code><span class="c"># Cualquier lenguaje que pueda hacer un POST</span>
+              <pre class="tab-panel" data-panel="http"><code><span class="c" data-i18n="code.http.c1"># Cualquier lenguaje que pueda hacer un POST</span>
 curl -X POST http://127.0.0.1:3100/api/ingest \
   -H <span class="s">"Content-Type: application/json"</span> \
   -d <span class="s">'{
@@ -506,12 +530,12 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
     }]
   }'</span></code></pre>
 
-              <pre class="tab-panel" data-panel="otel"><code><span class="c"># Reutiliza tu instrumentación OpenTelemetry existente</span>
+              <pre class="tab-panel" data-panel="otel"><code><span class="c" data-i18n="code.otel.c1"># Reutiliza tu instrumentación OpenTelemetry existente</span>
 <span class="k">export</span> OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:3100/v1/traces
 <span class="k">export</span> OTEL_EXPORTER_OTLP_PROTOCOL=http/json
 
-<span class="c"># Los atributos gen_ai.* se mapean a modelo, proveedor y tokens,</span>
-<span class="c"># y el coste se calcula con la tabla de precios.</span></code></pre>
+<span class="c" data-i18n="code.otel.c2"># Los atributos gen_ai.* se mapean a modelo, proveedor y tokens,</span>
+<span class="c" data-i18n="code.otel.c3"># y el coste se calcula con la tabla de precios.</span></code></pre>
             </div>
           </div>
         </div>
@@ -521,25 +545,25 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
       <section class="section costs" id="costes">
         <div class="container costs-grid">
           <div class="costs-copy reveal">
-            <span class="kicker">Costes</span>
-            <h2>Sabe exactamente cuánto cuesta cada agente.</h2>
-            <p class="section-sub">
+            <span class="kicker" data-i18n="costs.kicker">Costes</span>
+            <h2 data-i18n="costs.title">Sabe exactamente cuánto cuesta cada agente.</h2>
+            <p class="section-sub" data-i18n="costs.sub">
               Lookspan agrega tokens de entrada, salida, caché y razonamiento, y calcula el coste
               en USD por span y por traza. Desglosa el gasto por modelo y por proveedor para que
               ninguna factura te pille por sorpresa.
             </p>
             <ul class="check-list">
-              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <code>cost_usd</code> por span y por traza</li>
-              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Desglose por modelo y por proveedor</li>
-              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Latencia p50 / p95 / p99 y tasa de error</li>
-              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Alerta automática al superar tu umbral</li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <span data-i18n="costs.check1"><code>cost_usd</code> por span y por traza</span></li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <span data-i18n="costs.check2">Desglose por modelo y por proveedor</span></li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <span data-i18n="costs.check3">Latencia p50 / p95 / p99 y tasa de error</span></li>
+              <li><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> <span data-i18n="costs.check4">Alerta automática al superar tu umbral</span></li>
             </ul>
           </div>
 
           <div class="costs-visual reveal" aria-hidden="true">
             <div class="cost-panel">
               <div class="cost-panel-head">
-                <span>Coste por modelo</span>
+                <span data-i18n="cost.byModel">Coste por modelo</span>
                 <span class="cost-total">$2.84 <small>/ 7d</small></span>
               </div>
               <ul class="cost-bars">
@@ -565,8 +589,8 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
                 </li>
               </ul>
               <div class="cost-stats">
-                <div><span class="cost-stat-v">12.4k</span><span class="cost-stat-k">trazas</span></div>
-                <div><span class="cost-stat-v">1.8%</span><span class="cost-stat-k">errores</span></div>
+                <div><span class="cost-stat-v">12.4k</span><span class="cost-stat-k" data-i18n="cost.stat.traces">trazas</span></div>
+                <div><span class="cost-stat-v">1.8%</span><span class="cost-stat-k" data-i18n="cost.stat.errors">errores</span></div>
                 <div><span class="cost-stat-v">840ms</span><span class="cost-stat-k">p95</span></div>
               </div>
             </div>
@@ -578,20 +602,20 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
       <section class="section cta">
         <div class="container">
           <div class="cta-card reveal">
-            <h2>Empieza a ver tus agentes en 30 segundos.</h2>
-            <p>Sin cuenta, sin claves, sin que tus datos salgan de tu máquina.</p>
+            <h2 data-i18n="cta.title">Empieza a ver tus agentes en 30 segundos.</h2>
+            <p data-i18n="cta.sub">Sin cuenta, sin claves, sin que tus datos salgan de tu máquina.</p>
             <div class="hero-cmd cta-cmd">
               <code><span class="cmd-prompt">$</span> npx lookspan</code>
-              <button class="copy-btn" data-copy="npx lookspan" aria-label="Copiar comando">
+              <button class="copy-btn" data-copy="npx lookspan" data-i18n-aria="aria.copyCmd" aria-label="Copiar comando">
                 <svg class="icon-copy" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
-                <span class="copy-label">Copiar</span>
+                <span class="copy-label" data-i18n="copy.label">Copiar</span>
               </button>
             </div>
             <div class="cta-actions">
-              <a class="btn btn-primary" href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener">Ver en GitHub</a>
-              <a class="btn btn-ghost" href="https://github.com/JoniMartin27/lookspan#readme" target="_blank" rel="noopener">Leer la documentación</a>
+              <a class="btn btn-primary" href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener" data-i18n="cta.github">Ver en GitHub</a>
+              <a class="btn btn-ghost" href="https://github.com/JoniMartin27/lookspan#readme" target="_blank" rel="noopener" data-i18n="cta.docs">Leer la documentación</a>
             </div>
           </div>
         </div>
@@ -602,7 +626,7 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
     <footer class="site-footer">
       <div class="container footer-grid">
         <div class="footer-brand">
-          <a class="brand" href="#top" aria-label="Lookspan — inicio">
+          <a class="brand" href="#top" aria-label="Lookspan">
             <svg class="brand-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
               <rect x="5" y="7" width="22" height="4.5" rx="2.25" fill="#a78bfa" />
               <rect x="9" y="13.75" width="15" height="4.5" rx="2.25" fill="#8b5cf6" />
@@ -610,37 +634,38 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
             </svg>
             <span class="brand-name">Lookspan</span>
           </a>
-          <p>Dashboard de observabilidad local-first para agentes de IA. Nativo para MCP.</p>
+          <p data-i18n="footer.tagline">Dashboard de observabilidad local-first para agentes de IA. Nativo para MCP.</p>
         </div>
 
         <nav class="footer-col" aria-label="Producto">
-          <h4>Producto</h4>
-          <a href="#caracteristicas">Características</a>
-          <a href="#como-funciona">Cómo funciona</a>
-          <a href="#integraciones">Integraciones</a>
-          <a href="#costes">Costes</a>
+          <h4 data-i18n="footer.product">Producto</h4>
+          <a href="#caracteristicas" data-i18n="nav.features">Características</a>
+          <a href="#como-funciona" data-i18n="nav.how">Cómo funciona</a>
+          <a href="#integraciones" data-i18n="nav.integrations">Integraciones</a>
+          <a href="#costes" data-i18n="nav.costs">Costes</a>
         </nav>
 
         <nav class="footer-col" aria-label="Recursos">
-          <h4>Recursos</h4>
-          <a href="https://github.com/JoniMartin27/lookspan#readme" target="_blank" rel="noopener">Documentación</a>
-          <a href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener">Repositorio</a>
-          <a href="https://github.com/JoniMartin27/lookspan/issues" target="_blank" rel="noopener">Issues</a>
+          <h4 data-i18n="footer.resources">Recursos</h4>
+          <a href="https://github.com/JoniMartin27/lookspan#readme" target="_blank" rel="noopener" data-i18n="footer.docs">Documentación</a>
+          <a href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener" data-i18n="footer.repo">Repositorio</a>
+          <a href="https://github.com/JoniMartin27/lookspan/issues" target="_blank" rel="noopener" data-i18n="footer.issues">Issues</a>
         </nav>
 
         <nav class="footer-col" aria-label="Proyecto">
-          <h4>Proyecto</h4>
-          <a href="https://github.com/JoniMartin27/lookspan/blob/main/LICENSE" target="_blank" rel="noopener">Licencia MIT</a>
-          <a href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener">Changelog</a>
+          <h4 data-i18n="footer.project">Proyecto</h4>
+          <a href="https://github.com/JoniMartin27/lookspan/blob/main/LICENSE" target="_blank" rel="noopener" data-i18n="footer.license">Licencia MIT</a>
+          <a href="https://github.com/JoniMartin27/lookspan" target="_blank" rel="noopener" data-i18n="footer.changelog">Changelog</a>
         </nav>
       </div>
 
       <div class="container footer-bottom">
-        <span>© 2026 Jonathan Martin · Licencia MIT</span>
-        <span class="footer-made">Hecho con SQLite y cariño · 100% local</span>
+        <span data-i18n="footer.copy">© 2026 Jonathan Martin · Licencia MIT</span>
+        <span class="footer-made" data-i18n="footer.made">Hecho con SQLite y cariño · 100% local</span>
       </div>
     </footer>
 
+    <script src="i18n.js" defer></script>
     <script src="main.js" defer></script>
   </body>
 </html>

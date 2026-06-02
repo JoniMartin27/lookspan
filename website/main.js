@@ -1,8 +1,76 @@
 /* ============================================================
-   Lookspan landing — interactions
+   Lookspan landing — interactions + i18n
    ============================================================ */
 (() => {
-  'use strict';
+  const I18N = window.LOOKSPAN_I18N || { es: {}, en: {} };
+  const STORAGE_KEY = 'lookspan-lang';
+
+  /* ---------- Language detection ---------- */
+  const readSaved = () => {
+    try {
+      const v = localStorage.getItem(STORAGE_KEY);
+      return v === 'es' || v === 'en' ? v : null;
+    } catch {
+      return null;
+    }
+  };
+  const save = (lang) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, lang);
+    } catch {
+      /* localStorage unavailable (private mode) — ignore */
+    }
+  };
+  const detectLang = () => {
+    const saved = readSaved();
+    if (saved) return saved;
+    const nav = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    return String(nav).toLowerCase().indexOf('es') === 0 ? 'es' : 'en';
+  };
+
+  let currentLang = I18N[detectLang()] ? detectLang() : 'es';
+  const t = (key) =>
+    (I18N[currentLang] && I18N[currentLang][key]) || (I18N.es && I18N.es[key]) || '';
+
+  /* ---------- Apply a language across the page ---------- */
+  const applyLang = (lang) => {
+    currentLang = I18N[lang] ? lang : 'es';
+    const dict = I18N[currentLang];
+    document.documentElement.lang = currentLang;
+
+    // Text / inline-HTML content
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const v = dict[el.getAttribute('data-i18n')];
+      if (v != null) el.innerHTML = v;
+    });
+    // aria-label attributes
+    document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+      const v = dict[el.getAttribute('data-i18n-aria')];
+      if (v != null) el.setAttribute('aria-label', v);
+    });
+    // <title> + meta description
+    if (dict['meta.title']) document.title = dict['meta.title'];
+    const md = document.querySelector('meta[name="description"]');
+    if (md && dict['meta.description']) md.setAttribute('content', dict['meta.description']);
+
+    // Reflect active language on the toggle(s)
+    document.querySelectorAll('[data-lang-btn]').forEach((b) => {
+      const on = b.getAttribute('data-lang-btn') === currentLang;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+
+    // Keep the menu toggle's label in sync with the current state + language
+    if (toggle) {
+      const open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-label', open ? t('menu.close') : t('menu.open'));
+    }
+  };
+
+  const setLang = (lang) => {
+    save(lang);
+    applyLang(lang);
+  };
 
   /* ---------- Header shadow on scroll ---------- */
   const header = document.querySelector('.site-header');
@@ -16,12 +84,13 @@
   /* ---------- Mobile menu ---------- */
   const toggle = document.querySelector('.nav-toggle');
   const menu = document.getElementById('mobile-menu');
+  const setOpen = (open) => {
+    if (!toggle || !menu) return;
+    toggle.setAttribute('aria-expanded', String(open));
+    menu.hidden = !open;
+    toggle.setAttribute('aria-label', open ? t('menu.close') : t('menu.open'));
+  };
   if (toggle && menu) {
-    const setOpen = (open) => {
-      toggle.setAttribute('aria-expanded', String(open));
-      menu.hidden = !open;
-      toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
-    };
     toggle.addEventListener('click', () => {
       setOpen(toggle.getAttribute('aria-expanded') !== 'true');
     });
@@ -32,6 +101,11 @@
       if (e.matches) setOpen(false);
     });
   }
+
+  /* ---------- Language toggle buttons ---------- */
+  document.querySelectorAll('[data-lang-btn]').forEach((b) => {
+    b.addEventListener('click', () => setLang(b.getAttribute('data-lang-btn')));
+  });
 
   /* ---------- Copy to clipboard ---------- */
   const copyText = async (text) => {
@@ -61,7 +135,7 @@
     const label = btn.querySelector('.copy-label');
     const original = label ? label.textContent : null;
     btn.classList.add('copied');
-    if (label) label.textContent = '¡Copiado!';
+    if (label) label.textContent = t('copy.done');
     setTimeout(() => {
       btn.classList.remove('copied');
       if (label && original !== null) label.textContent = original;
@@ -79,14 +153,14 @@
   const tabs = Array.from(document.querySelectorAll('.tab'));
   const panels = Array.from(document.querySelectorAll('.tab-panel'));
   const activate = (name) => {
-    tabs.forEach((t) => {
-      const on = t.dataset.tab === name;
-      t.classList.toggle('is-active', on);
-      t.setAttribute('aria-selected', String(on));
+    tabs.forEach((tab) => {
+      const on = tab.dataset.tab === name;
+      tab.classList.toggle('is-active', on);
+      tab.setAttribute('aria-selected', String(on));
     });
     panels.forEach((p) => p.classList.toggle('is-active', p.dataset.panel === name));
   };
-  tabs.forEach((t) => t.addEventListener('click', () => activate(t.dataset.tab)));
+  tabs.forEach((tab) => tab.addEventListener('click', () => activate(tab.dataset.tab)));
 
   const copyCodeBtn = document.querySelector('.copy-code');
   if (copyCodeBtn) {
@@ -108,13 +182,13 @@
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
     );
     reveals.forEach((el) => io.observe(el));
   } else {
     reveals.forEach((el) => el.classList.add('in'));
   }
 
-  /* ---------- Footer year (keep current if markup changes) ---------- */
-  // Year is hardcoded in markup (2026); nothing to compute here.
+  /* ---------- Init: paint the detected language ---------- */
+  applyLang(currentLang);
 })();
