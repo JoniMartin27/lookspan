@@ -61,6 +61,8 @@ export const api = {
   costsSummary: () => request<CostBreakdown>('/costs/summary'),
   stats: () => request<StatsSummary>('/stats'),
   listAlerts: () => request<{ items: Alert[] }>('/alerts'),
+  scoresSummary: () =>
+    request<{ items: { name: string; avg: number; count: number }[] }>('/scores/summary'),
   listSessions: () => request<{ items: SessionSummary[] }>('/sessions'),
   getSession: (id: string) =>
     request<{ session: SessionSummary; traces: TraceListItem[] }>(`/sessions/${id}`),

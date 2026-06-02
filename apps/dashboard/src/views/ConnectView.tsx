@@ -101,6 +101,18 @@ await client.callTool({ name: 'read_file', arguments: { path: '/tmp/foo.txt' } }
       />
 
       <Section
+        title="Vercel AI SDK / Mastra / LangChain (via OpenTelemetry)"
+        subtitle="These frameworks already emit OpenTelemetry — just route it to Lookspan."
+        code={`# Point your OTel exporter at Lookspan (works for any OTel-instrumented framework):
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${ORIGIN}/v1/traces
+
+# Vercel AI SDK: enable telemetry per call
+#   generateText({ model, prompt, experimental_telemetry: { isEnabled: true } })
+# Mastra: telemetry is on by default — set the OTLP endpoint above.
+# LangChain/LangGraph (Python): pip install traceloop-sdk; Traceloop.init(...)`}
+      />
+
+      <Section
         title="OpenTelemetry (raw)"
         subtitle="Already using OTel? Point your exporter here — no Lookspan SDK."
         code={`export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${ORIGIN}/v1/traces

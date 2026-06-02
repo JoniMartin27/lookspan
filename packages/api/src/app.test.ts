@@ -185,6 +185,22 @@ describe('aggregation & session routes', () => {
     const a = await (await fetch(`${base}/api/alerts`)).json();
     expect(Array.isArray(a.items)).toBe(true);
   });
+
+  it('GET /api/scores/summary averages scores by name', async () => {
+    await fetch(`${base}/api/traces/tr_a/scores`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'quality', value: 1 }),
+    });
+    await fetch(`${base}/api/traces/tr_b/scores`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'quality', value: 0 }),
+    });
+    const { items } = await (await fetch(`${base}/api/scores/summary`)).json();
+    const q = items.find((i: { name: string }) => i.name === 'quality');
+    expect(q).toMatchObject({ name: 'quality', avg: 0.5, count: 2 });
+  });
 });
 
 describe('createApp auth token', () => {

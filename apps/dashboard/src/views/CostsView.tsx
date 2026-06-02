@@ -13,6 +13,11 @@ export default function CostsView() {
     queryFn: api.stats,
     refetchInterval: 10_000,
   });
+  const { data: scores } = useQuery({
+    queryKey: ['scores', 'summary'],
+    queryFn: api.scoresSummary,
+    refetchInterval: 10_000,
+  });
 
   if (isLoading) return <div className="p-8 text-neutral-400">Loading costs…</div>;
   if (error) return <div className="p-8 text-red-400">Error: {(error as Error).message}</div>;
@@ -49,6 +54,24 @@ export default function CostsView() {
           <Stat label="Latency p50" value={stats.latencyMs ? `${stats.latencyMs.p50} ms` : '—'} />
           <Stat label="Latency p95" value={stats.latencyMs ? `${stats.latencyMs.p95} ms` : '—'} />
         </div>
+      )}
+
+      {scores && scores.items.length > 0 && (
+        <Card title="Eval scores (average)">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {scores.items.map((s) => (
+              <div key={s.name}>
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500">
+                  {s.name}
+                </div>
+                <div className="mt-0.5 font-mono text-xl text-neutral-100">
+                  {s.avg.toFixed(2)}
+                  <span className="ml-1 text-xs text-neutral-500">n={s.count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {byDay.length > 0 && (
