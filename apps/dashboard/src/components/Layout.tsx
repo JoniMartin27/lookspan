@@ -51,6 +51,9 @@ export default function Layout({ children }: LayoutProps) {
             <NavLink href="/alerts" active={location === '/alerts'}>
               Alerts
             </NavLink>
+            <NavLink href="/connect" active={location === '/connect'}>
+              Connect
+            </NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-500">

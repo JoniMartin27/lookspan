@@ -146,11 +146,11 @@ function EmptyState({ filtered }: { filtered: boolean }) {
     <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
       <p className="mb-2 text-base font-medium text-neutral-200">No traces yet</p>
       <p className="text-sm">
-        Send your first span via{' '}
-        <code className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-xs">
-          POST /api/ingest
-        </code>{' '}
-        or wire up the MCP / LangGraph adapter.
+        Head to{' '}
+        <Link href="/connect" className="text-brand-500 hover:underline">
+          Connect
+        </Link>{' '}
+        to wire up your agent in a couple of lines.
       </p>
     </div>
   );
