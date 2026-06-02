@@ -28,7 +28,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lookspan/lookspan.git"
+    "url": "git+https://github.com/JoniMartin27/lookspan.git"
   },
   "keywords": [
     "ai",
@@ -45,9 +45,9 @@
   "author": "Jonathan Martin",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lookspan/lookspan/issues"
+    "url": "https://github.com/JoniMartin27/lookspan/issues"
   },
-  "homepage": "https://github.com/lookspan/lookspan#readme",
+  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
     "@types/node": "^22.10.0",
