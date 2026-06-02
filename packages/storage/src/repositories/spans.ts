@@ -18,14 +18,14 @@ export class SpansRepository {
       INSERT INTO spans (
         span_id, trace_id, parent_span_id, type, name,
         started_at, ended_at, duration_ms, status, framework,
-        agent_id, session_id, model, provider,
+        agent_id, session_id, model, provider, parent_trace_id,
         input, output, error,
         input_tokens, output_tokens, cached_input_tokens, reasoning_tokens, cost_usd,
         attributes, received_at
       ) VALUES (
         @spanId, @traceId, @parentSpanId, @type, @name,
         @startedAt, @endedAt, @durationMs, @status, @framework,
-        @agentId, @sessionId, @model, @provider,
+        @agentId, @sessionId, @model, @provider, @parentTraceId,
         @input, @output, @error,
         @inputTokens, @outputTokens, @cachedInputTokens, @reasoningTokens, @costUsd,
         @attributes, @receivedAt
@@ -59,6 +59,7 @@ export class SpansRepository {
         sessionId: span.sessionId ?? null,
         model: span.model ?? null,
         provider: span.provider ?? null,
+        parentTraceId: span.parentTraceId ?? null,
         input: span.input ? JSON.stringify(span.input) : null,
         output: span.output ?? null,
         error: span.error ? JSON.stringify(span.error) : null,

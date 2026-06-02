@@ -34,6 +34,7 @@ interface AggregateRow {
   framework: string;
   agent_id: string | null;
   session_id: string | null;
+  parent_trace_id: string | null;
 }
 
 export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | null {
@@ -52,7 +53,8 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
         COALESCE(SUM(cost_usd), 0) as cost_usd,
         framework,
         agent_id,
-        session_id
+        session_id,
+        MAX(parent_trace_id) as parent_trace_id
       FROM spans
       WHERE trace_id = ?
       GROUP BY trace_id
@@ -82,6 +84,7 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
     framework: agg.framework as FrameworkName,
     agentId: agg.agent_id,
     sessionId: agg.session_id,
+    parentTraceId: agg.parent_trace_id,
     startedAt,
     endedAt,
     durationMs,

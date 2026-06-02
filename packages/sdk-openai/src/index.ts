@@ -9,6 +9,8 @@ export interface ObserveOptions {
   /** Attribution shown in the dashboard. */
   agentId?: string;
   sessionId?: string;
+  /** Link this client's traces to a spawning trace (cross-agent handoff). */
+  parentTraceId?: string;
   /** Provider label stored on the span. Default: "openai". */
   provider?: string;
 }
@@ -96,6 +98,7 @@ export function observeOpenAI<T extends object>(client: T, options: ObserveOptio
       framework: 'custom',
       agentId: options.agentId ?? null,
       sessionId: options.sessionId ?? null,
+      parentTraceId: options.parentTraceId ?? null,
       model: extractModel(args, result),
       provider,
       error,

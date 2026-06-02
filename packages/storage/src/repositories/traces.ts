@@ -58,17 +58,18 @@ export class TracesRepository {
       .prepare(
         `
       INSERT INTO traces (
-        trace_id, root_name, framework, agent_id, session_id,
+        trace_id, root_name, framework, agent_id, session_id, parent_trace_id,
         started_at, ended_at, duration_ms, status, span_count, error_count,
         input_tokens, output_tokens, cached_input_tokens, reasoning_tokens,
         cost_usd, attributes
       ) VALUES (
-        @traceId, @rootName, @framework, @agentId, @sessionId,
+        @traceId, @rootName, @framework, @agentId, @sessionId, @parentTraceId,
         @startedAt, @endedAt, @durationMs, @status, @spanCount, @errorCount,
         @inputTokens, @outputTokens, @cachedInputTokens, @reasoningTokens,
         @costUsd, @attributes
       )
       ON CONFLICT(trace_id) DO UPDATE SET
+        parent_trace_id = COALESCE(excluded.parent_trace_id, traces.parent_trace_id),
         ended_at = excluded.ended_at,
         duration_ms = excluded.duration_ms,
         status = excluded.status,
@@ -88,6 +89,7 @@ export class TracesRepository {
         framework: trace.framework,
         agentId: trace.agentId,
         sessionId: trace.sessionId,
+        parentTraceId: trace.parentTraceId ?? null,
         startedAt: trace.startedAt,
         endedAt: trace.endedAt,
         durationMs: trace.durationMs,

@@ -8,6 +8,8 @@ export interface ObserveOptions {
   exporter?: SpanExporter;
   agentId?: string;
   sessionId?: string;
+  /** Link this client's traces to a spawning trace (cross-agent handoff). */
+  parentTraceId?: string;
   /** Provider label stored on the span. Default: "anthropic". */
   provider?: string;
 }
@@ -95,6 +97,7 @@ export function observeAnthropic<T extends object>(client: T, options: ObserveOp
       framework: 'custom',
       agentId: options.agentId ?? null,
       sessionId: options.sessionId ?? null,
+      parentTraceId: options.parentTraceId ?? null,
       model: extractModel(args, result),
       provider,
       error,

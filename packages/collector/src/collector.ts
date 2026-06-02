@@ -50,6 +50,12 @@ export class Collector {
 
   private prepareSpan(span: unknown, index: number): SpanInput {
     const validated = enrichSpanCost(validateSpan(span, index));
+    // Allow cross-agent linking via an attribute too (OTel/instrumentations that
+    // can only set attributes), not just the top-level field.
+    if (!validated.parentTraceId) {
+      const fromAttr = validated.attributes?.['lookspan.parent_trace_id'];
+      if (typeof fromAttr === 'string' && fromAttr) validated.parentTraceId = fromAttr;
+    }
     return this.redactOptions ? redactSpan(validated, this.redactOptions) : validated;
   }
 

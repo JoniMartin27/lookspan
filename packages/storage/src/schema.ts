@@ -8,6 +8,7 @@ export interface TraceRow {
   ended_at: string | null;
   duration_ms: number | null;
   status: string;
+  parent_trace_id: string | null;
   span_count: number;
   error_count: number;
   input_tokens: number;
@@ -34,6 +35,7 @@ export interface SpanRow {
   session_id: string | null;
   model: string | null;
   provider: string | null;
+  parent_trace_id: string | null;
   input: string | null;
   output: string | null;
   error: string | null;

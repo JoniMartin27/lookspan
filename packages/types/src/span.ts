@@ -33,6 +33,9 @@ export interface SpanInput {
   framework: FrameworkName;
   agentId?: string | null;
   sessionId?: string | null;
+  /** Trace that spawned this one (cross-agent handoff). Lets the session view
+   *  render who delegated to whom across agents. */
+  parentTraceId?: string | null;
   model?: string | null;
   provider?: string | null;
   input?: Record<string, unknown> | null;

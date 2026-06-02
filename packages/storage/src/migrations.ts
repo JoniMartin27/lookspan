@@ -110,6 +110,15 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_scores_name ON scores(name);
     `,
   },
+  {
+    version: 4,
+    name: 'parent_trace_id',
+    up: `
+      ALTER TABLE traces ADD COLUMN parent_trace_id TEXT;
+      ALTER TABLE spans ADD COLUMN parent_trace_id TEXT;
+      CREATE INDEX IF NOT EXISTS idx_traces_parent_trace ON traces(parent_trace_id);
+    `,
+  },
 ];
 
 export function getCurrentSchemaVersion(db: LookspanDatabase): number {

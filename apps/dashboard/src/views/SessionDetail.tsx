@@ -1,5 +1,6 @@
 import type { TraceListItem } from '@lookspan/types';
 import { useQuery } from '@tanstack/react-query';
+import { Background, Controls, type Edge, type Node, Position, ReactFlow } from '@xyflow/react';
 import { useMemo, useState } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { api } from '../api/client.ts';
@@ -36,6 +37,8 @@ export default function SessionDetail() {
         />
         <Stat label="Cost" value={`$${session.totalCostUsd.toFixed(4)}`} />
       </div>
+
+      <DelegationGraph traces={traces} />
 
       <h2 className="mb-2 text-sm font-medium text-neutral-300">Timeline by agent</h2>
       <Timeline traces={traces} />
@@ -215,6 +218,118 @@ function Pair({ label, value }: { label: string; value: string }) {
       <dd className="truncate font-mono text-neutral-200" title={value}>
         {value}
       </dd>
+    </div>
+  );
+}
+
+/**
+ * Cross-agent delegation graph: an edge from trace A → B means A spawned B
+ * (B.parentTraceId === A.traceId). Renders only when the session actually has
+ * handoffs; otherwise the timeline alone tells the story.
+ */
+function DelegationGraph({ traces }: { traces: TraceListItem[] }) {
+  const [, navigate] = useLocation();
+
+  const { nodes, edges, hasLinks } = useMemo(() => {
+    const byId = new Map(traces.map((t) => [t.traceId, t]));
+    const links = traces.filter((t) => t.parentTraceId && byId.has(t.parentTraceId));
+    if (links.length === 0) return { nodes: [], edges: [], hasLinks: false };
+
+    // only traces that participate in a handoff
+    const involved = new Set<string>();
+    for (const t of links) {
+      involved.add(t.traceId);
+      involved.add(t.parentTraceId as string);
+    }
+
+    const children = new Map<string, string[]>();
+    for (const t of links) {
+      const p = t.parentTraceId as string;
+      const arr = children.get(p);
+      if (arr) arr.push(t.traceId);
+      else children.set(p, [t.traceId]);
+    }
+    const roots = [...involved].filter((id) => {
+      const t = byId.get(id);
+      return !t?.parentTraceId || !byId.has(t.parentTraceId);
+    });
+
+    const pos = new Map<string, { x: number; y: number }>();
+    const seen = new Set<string>();
+    let row = 0;
+    const layout = (id: string, depth: number): number => {
+      if (seen.has(id)) return pos.get(id)?.y ?? 0;
+      seen.add(id);
+      const kids = children.get(id) ?? [];
+      if (kids.length === 0) {
+        const y = row++ * 64;
+        pos.set(id, { x: depth * 230, y });
+        return y;
+      }
+      const ys = kids.map((k) => layout(k, depth + 1));
+      const y = ((ys[0] ?? 0) + (ys[ys.length - 1] ?? 0)) / 2;
+      pos.set(id, { x: depth * 230, y });
+      return y;
+    };
+    for (const r of roots) layout(r, 0);
+
+    const nodes: Node[] = [...involved].map((id) => {
+      const t = byId.get(id);
+      const accent = agentColor(t?.agentId ?? null);
+      return {
+        id,
+        position: pos.get(id) ?? { x: 0, y: 0 },
+        data: {
+          label: (
+            <div className="text-left leading-tight">
+              <div className="truncate font-medium text-neutral-100">{t?.rootName ?? id}</div>
+              <div className="text-[10px] text-neutral-400">{t?.agentId ?? '—'}</div>
+            </div>
+          ),
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
+        style: {
+          background: t?.status === 'error' ? '#2a1416' : '#18181b',
+          color: '#f5f5f5',
+          border: '1px solid #3f3f46',
+          borderLeft: `4px solid ${accent}`,
+          borderRadius: 8,
+          padding: '6px 10px',
+          fontSize: 12,
+          width: 190,
+        },
+      };
+    });
+    const edges: Edge[] = links.map((t) => ({
+      id: `${t.parentTraceId}-${t.traceId}`,
+      source: t.parentTraceId as string,
+      target: t.traceId,
+      animated: true,
+      style: { stroke: '#52525b' },
+    }));
+    return { nodes, edges, hasLinks: true };
+  }, [traces]);
+
+  if (!hasLinks) return null;
+
+  return (
+    <div className="mb-6">
+      <h2 className="mb-2 text-sm font-medium text-neutral-300">Agent delegation</h2>
+      <div className="h-72 rounded-lg border border-neutral-800 bg-neutral-950/40">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          nodesConnectable={false}
+          onNodeClick={(_, n) => navigate(`/traces/${n.id}`)}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={16} size={1} color="#27272a" />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      </div>
     </div>
   );
 }

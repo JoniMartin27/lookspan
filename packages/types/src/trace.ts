@@ -8,6 +8,7 @@ export interface Trace {
   framework: FrameworkName;
   agentId: string | null;
   sessionId: string | null;
+  parentTraceId: string | null;
   startedAt: string;
   endedAt: string | null;
   durationMs: number | null;
@@ -24,6 +25,7 @@ export interface TraceListItem {
   rootName: string;
   framework: FrameworkName;
   agentId: string | null;
+  parentTraceId: string | null;
   startedAt: string;
   durationMs: number | null;
   status: SpanStatus;

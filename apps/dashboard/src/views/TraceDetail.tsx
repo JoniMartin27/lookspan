@@ -49,6 +49,17 @@ export default function TraceDetail() {
                 </Link>
               </>
             )}
+            {data.trace.parentTraceId && (
+              <>
+                {' · '}
+                <Link
+                  href={`/traces/${data.trace.parentTraceId}`}
+                  className="text-brand-500 hover:underline"
+                >
+                  spawned by ↑
+                </Link>
+              </>
+            )}
           </p>
         </div>
         {agentIds.length > 0 && (
