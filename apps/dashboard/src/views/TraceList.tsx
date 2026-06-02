@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
@@ -6,20 +6,30 @@ import { agentColor } from '../lib/agentColor.ts';
 
 const FRAMEWORKS = ['mcp', 'langgraph', 'crewai', 'agent-os', 'openai-agents', 'otlp', 'custom'];
 const STATUSES = ['ok', 'error', 'cancelled'];
+const PAGE = 50;
 
 export default function TraceList() {
   const [framework, setFramework] = useState('');
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['traces', framework, status],
-    queryFn: () =>
-      api.listTraces({ framework: framework || undefined, status: status || undefined }),
-    refetchInterval: 5_000,
-  });
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ['traces', framework, status],
+      queryFn: ({ pageParam }) =>
+        api.listTraces({
+          framework: framework || undefined,
+          status: status || undefined,
+          cursor: pageParam,
+          limit: PAGE,
+        }),
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (last) =>
+        last.items.length === PAGE ? last.items[last.items.length - 1]?.startedAt : undefined,
+      refetchInterval: 10_000,
+    });
 
-  const allItems = data?.items ?? [];
+  const allItems = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
   const items = useMemo(() => {
     const q = search.trim().toLowerCase();
     return q ? allItems.filter((t) => t.rootName.toLowerCase().includes(q)) : allItems;
@@ -102,6 +112,24 @@ export default function TraceList() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {!search && hasNextPage && (
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="rounded border border-neutral-800 px-4 py-1.5 text-sm text-neutral-300 hover:border-brand-500 hover:text-neutral-100 disabled:opacity-40"
+          >
+            {isFetchingNextPage ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
+      {!isLoading && allItems.length > 0 && (
+        <p className="mt-3 text-center text-xs text-neutral-600">
+          {search ? `${items.length} of ${allItems.length} loaded` : `${allItems.length} loaded`}
+        </p>
       )}
     </div>
   );

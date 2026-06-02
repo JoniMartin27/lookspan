@@ -36,6 +36,8 @@ export interface TraceFilters {
   framework?: string;
   status?: string;
   sessionId?: string;
+  cursor?: string;
+  limit?: number;
 }
 
 function toQuery(filters: TraceFilters): string {
@@ -43,6 +45,8 @@ function toQuery(filters: TraceFilters): string {
   if (filters.framework) params.set('framework', filters.framework);
   if (filters.status) params.set('status', filters.status);
   if (filters.sessionId) params.set('sessionId', filters.sessionId);
+  if (filters.cursor) params.set('cursor', filters.cursor);
+  if (filters.limit) params.set('limit', String(filters.limit));
   const qs = params.toString();
   return qs ? `?${qs}` : '';
 }
