@@ -1,6 +1,6 @@
 # Lookspan
 
-**Dashboard de observabilidad local-first para agentes de IA. Nativo para MCP. Mira cada span que emiten tus agentes.**
+**Local-first observability dashboard for AI agents. MCP-native. See every span your agents emit.**
 
 [![CI](https://github.com/JoniMartin27/lookspan/actions/workflows/ci.yml/badge.svg)](https://github.com/JoniMartin27/lookspan/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/lookspan)](https://www.npmjs.com/package/lookspan)
@@ -11,476 +11,205 @@
 npx lookspan          # → http://127.0.0.1:3100
 ```
 
-<!-- TODO: grabar y enlazar un GIF de 30s aquí (npx lookspan → correr un agente → ver spans en vivo). Ver ROADMAP.md. -->
+<!-- TODO: record and link a 30s GIF here (npx lookspan → run an agent → watch spans live). See ROADMAP.md. -->
 <!-- ![Lookspan demo](docs/demo.gif) -->
 
 ```
-Agente (MCP · LangGraph · CrewAI · OpenTelemetry · HTTP)  →  POST /api/ingest  →  SQLite  →  Dashboard en tiempo real
+Agent (MCP · LangGraph · CrewAI · OpenTelemetry · HTTP)  →  POST /api/ingest  →  SQLite  →  real-time dashboard
 ```
 
----
-
-## Qué problema resuelve
-
-Cuando un agente de IA falla —o simplemente tarda demasiado o gasta más tokens de lo esperado— no hay forma nativa de ver qué ocurrió paso a paso. Las herramientas de observabilidad existentes requieren cuentas en la nube, claves de API y enviar datos de producción a servidores externos.
-
-Lookspan resuelve esto de forma distinta: **todo corre en tu máquina, los datos nunca salen de ella, y el coste de infraestructura es cero**. Basta con instrumentar tu agente con un adaptador y abrir el dashboard en el navegador.
+> 🇪🇸 ¿Prefieres español? Lee el [README en español](README.es.md).
 
 ---
 
-## Características
+## The problem
 
-- **Ingesta de spans via HTTP** — endpoint `POST /api/ingest` que acepta batches de spans en formato JSON. Compatible con cualquier agente que pueda hacer una petición HTTP.
-- **Nativo para MCP** — SDK TypeScript (`@lookspan/mcp`) que envuelve cualquier `McpClient` y emite automáticamente un span por cada llamada a herramienta MCP, sin modificar el código del agente.
-- **Adaptadores Python** — SDKs para LangGraph/LangChain (`lookspan-langgraph`) y CrewAI (`lookspan-crewai`). También un cliente genérico (`lookspan`) para cualquier framework Python.
-- **Adaptador AGENT-OS** — integración opt-in con AGENT-OS que se suscribe al bus SSE de eventos de control y convierte los eventos en spans de Lookspan.
-- **Streaming en tiempo real** — endpoint SSE `GET /api/stream` que emite eventos `span.ingested` y `trace.updated` al dashboard sin polling.
-- **Dashboard React** — lista de trazas reciente con nombre, framework, duración, número de spans, coste y estado; vista de detalle de traza con grafo de spans interactivo (React Flow); vista de costes con gráficos por modelo y proveedor.
-- **Seguimiento de costes** — agrega tokens de entrada, salida, caché y razonamiento; calcula `cost_usd` por span y por traza; desglose por modelo y proveedor.
-- **SQLite local** — esquema con migraciones versionadas. Base de datos en `~/.lookspan/lookspan.db` por defecto, configurable vía flag o variable de entorno.
-- **CLI en una línea** — `npx lookspan` arranca el servidor y el dashboard sin instalación global.
-- **Tipos de span** — `agent_step`, `llm_call`, `tool_call`, `retrieval`, `embedding`, `error`, `custom`.
-- **Frameworks soportados** — `mcp`, `langgraph`, `crewai`, `agent-os`, `openai-agents`, `otlp`, `custom`.
+When an AI agent misbehaves — fails, stalls, or quietly burns more tokens than
+expected — there's no native way to see what happened step by step. Existing
+observability tools are cloud-first: they want accounts, API keys, and shipping
+your production data to someone else's servers.
+
+Lookspan takes the opposite approach: **everything runs on your machine, data
+never leaves it, and infra cost is zero.** Instrument your agent with an adapter
+(or just POST JSON) and open the dashboard in your browser.
 
 ---
 
-## Stack tecnológico
-
-### Servidor y lógica de negocio (TypeScript / Node.js)
-
-| Paquete | Versión | Rol |
-|---|---|---|
-| Node.js | >=20.0.0 | Runtime |
-| TypeScript | ^5.9.0 | Lenguaje |
-| Express | ^5.1.0 | Servidor HTTP y SSE |
-| better-sqlite3 | ^12.9.0 | Base de datos SQLite |
-| `@modelcontextprotocol/sdk` | >=1.0.0 | Peer dep. del SDK MCP |
-
-### Dashboard (React)
-
-| Paquete | Versión | Rol |
-|---|---|---|
-| React | ^19.0.0 | UI |
-| Vite | ^6.0.0 | Bundler / dev server |
-| Tailwind CSS | ^4.0.0 | Estilos |
-| @tanstack/react-query | ^5.62.0 | Cache y fetching de datos |
-| @xyflow/react | ^12.4.0 | Grafo de spans interactivo |
-| Recharts | ^2.15.0 | Gráficos de costes |
-| Wouter | ^3.5.0 | Enrutado SPA |
-
-### SDKs Python
-
-| Paquete | Versión mínima | Rol |
-|---|---|---|
-| Python | >=3.10 | Runtime |
-| httpx | >=0.27.0 | Cliente HTTP asíncrono |
-| langchain-core | >=0.3.0 | Dep. del adaptador LangGraph |
-| crewai | >=0.80.0 | Dep. del adaptador CrewAI |
-
-### Herramientas de desarrollo
-
-| Herramienta | Versión | Rol |
-|---|---|---|
-| Biome | ^2.2.0 | Linter y formatter |
-| Vitest | ^3.0.0 | Tests |
-| concurrently | ^9.1.0 | Arranque en paralelo |
-| tsx | ^4.20.0 | Ejecución TypeScript en dev |
-
----
-
-## Arquitectura y estructura del proyecto
-
-El monorepo usa npm workspaces. La capa `packages/` expone librerías internas; `apps/` contiene las aplicaciones finales; `python/` contiene los SDKs Python independientes.
-
-```
-lookspan/
-├── apps/
-│   └── dashboard/          # SPA React + Vite (UI del dashboard)
-│       └── src/
-│           ├── views/
-│           │   ├── TraceList.tsx     # Tabla de trazas recientes
-│           │   ├── TraceDetail.tsx   # Grafo de spans de una traza
-│           │   └── CostsView.tsx     # Gráficos de costes
-│           ├── api/client.ts         # Cliente HTTP tipado
-│           └── hooks/useStream.ts    # Hook SSE para actualizaciones en tiempo real
-│
-├── packages/
-│   ├── api/                # Servidor Express (HTTP + SSE)
-│   │   └── src/routes/
-│   │       ├── ingest.ts   # POST /api/ingest
-│   │       ├── traces.ts   # GET /api/traces, GET /api/traces/:id
-│   │       ├── costs.ts    # GET /api/costs/summary
-│   │       ├── stream.ts   # GET /api/stream (SSE)
-│   │       └── health.ts   # GET /api/health
-│   │
-│   ├── collector/          # Pipeline de ingesta: validación, normalización, persistencia
-│   │   └── src/
-│   │       ├── collector.ts          # Orquestador principal
-│   │       ├── normalize.ts          # Validación de payloads
-│   │       ├── aggregator.ts         # Recomputa metadatos de traza
-│   │       └── adapters/
-│   │           └── agent-os.ts       # Adaptador SSE para AGENT-OS
-│   │
-│   ├── storage/            # Capa SQLite: esquema, migraciones, repositorios
-│   │   └── src/
-│   │       ├── database.ts
-│   │       ├── migrations.ts         # Migraciones versionadas
-│   │       ├── schema.ts             # Tipos de filas SQLite
-│   │       └── repositories/
-│   │           ├── spans.ts
-│   │           ├── traces.ts
-│   │           └── costs.ts
-│   │
-│   ├── sdk-mcp/            # SDK TypeScript para instrumentar clientes MCP
-│   │   └── src/
-│   │       ├── instrument.ts         # wrapMcpClient()
-│   │       └── exporter.ts           # HttpSpanExporter (batching + retry)
-│   │
-│   ├── events/             # Bus de eventos in-process (emit / subscribe)
-│   ├── types/              # Tipos TypeScript compartidos (Span, Trace, IngestPayload…)
-│   └── cli/                # Binario `lookspan` para arrancar todo con npx
-│
-└── python/
-    ├── lookspan-core/      # SDK Python genérico (LookspanClient)
-    ├── lookspan-langgraph/ # Adaptador LangChain / LangGraph
-    └── lookspan-crewai/    # Adaptador CrewAI
-```
-
-### Flujo de datos
-
-```
-Agente (MCP / LangGraph / CrewAI / HTTP directo)
-        │
-        │  POST /api/ingest  { spans: [...] }
-        ▼
-  @lookspan/api  (Express)
-        │
-        ▼
-  @lookspan/collector  (valida → normaliza → inserta en SQLite)
-        │
-        ├──▶  @lookspan/storage  (better-sqlite3, ~/.lookspan/lookspan.db)
-        │
-        └──▶  @lookspan/events  (bus in-process)
-                    │
-                    ▼
-             GET /api/stream  (SSE)
-                    │
-                    ▼
-             Dashboard React  (React Query + useStream)
-```
-
----
-
-## Requisitos
-
-- **Node.js** >= 20.0.0
-- **npm** >= 10 (incluido con Node 20)
-- Para los SDKs Python: **Python** >= 3.10
-
----
-
-## Instalación
-
-### Inicio rápido sin instalación
+## Quick start
 
 ```bash
-npx lookspan
-# → http://127.0.0.1:3100
+npx lookspan              # → http://127.0.0.1:3100, no install, no cloud
 ```
 
-### Instalación local (desarrollo / contribución)
+Send your first span from any language:
 
 ```bash
-git clone https://github.com/JoniMartin27/lookspan.git
-cd lookspan
-npm install
+curl -X POST http://127.0.0.1:3100/api/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"spans":[{"traceId":"t1","spanId":"s1","parentSpanId":null,"type":"llm_call","name":"agent.run","startedAt":"2026-06-02T10:00:00Z","endedAt":"2026-06-02T10:00:01Z","status":"ok","framework":"custom","model":"gpt-4o","provider":"openai","usage":{"inputTokens":1000,"outputTokens":500,"costUsd":0}}]}'
 ```
 
-Para servir el dashboard junto a la API desde un solo proceso, compílalo primero:
-
-```bash
-npm run build
-node packages/cli/dist/index.js   # API + dashboard en http://127.0.0.1:3100
-```
-
-En desarrollo, `npm run dev` levanta la API en `:3100` y el dashboard con hot-reload
-en `:5173` (Vite hace proxy de `/api` a la API). El CLI sirve el dashboard solo si
-existe `apps/dashboard/dist`; si no, arranca solo la API y avisa por consola.
+Open `http://127.0.0.1:3100` and watch the trace appear — with its cost computed server-side.
 
 ---
 
-## Comandos
+## Features
 
-Todos los comandos se ejecutan desde la raíz del monorepo.
-
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Arranca API y dashboard en paralelo (modo desarrollo) |
-| `npm run dev:api` | Solo el servidor API (`tsx watch`, hot-reload) |
-| `npm run dev:dashboard` | Solo el dashboard (`vite dev`) |
-| `npm run build` | Compila todos los paquetes |
-| `npm run typecheck` | Verificación de tipos TypeScript (proyecto completo) |
-| `npm run lint` | Linting con Biome |
-| `npm run format` | Formatea el código con Biome |
-| `npm run fix` | Aplica correcciones automáticas de Biome |
-| `npm run migrate` | Aplica migraciones SQLite pendientes |
-| `npm run ci` | Pipeline completo: typecheck + lint + test + build |
-| `npm run clean` | Elimina artefactos compilados |
-
-### CLI (opciones completas)
-
-```
-npx lookspan [opciones]
-
-Opciones:
-  -p, --port <puerto>    Puerto de escucha         (por defecto: 3100)
-      --host <host>      Host de escucha            (por defecto: 127.0.0.1)
-      --db <ruta>        Ruta de la base de datos   (por defecto: ~/.lookspan/lookspan.db)
-      --open             Abre el dashboard en el navegador al arrancar
-  -h, --help             Muestra esta ayuda
-  -v, --version          Muestra la versión
-
-Variables de entorno equivalentes:
-  LOOKSPAN_PORT
-  LOOKSPAN_HOST
-  LOOKSPAN_DB
-```
+- **HTTP span ingest** — `POST /api/ingest` accepts JSON batches of spans. Works with any agent that can make an HTTP request.
+- **MCP-native** — the `@lookspan/mcp` TypeScript SDK wraps any `McpClient` and emits a span per MCP tool call, without changing your agent code.
+- **Python SDKs** — `lookspan` (generic client) plus adapters for LangGraph/LangChain (`lookspan-langgraph`) and CrewAI (`lookspan-crewai`).
+- **OpenTelemetry** — an OTLP/HTTP receiver at `POST /v1/traces`; point any OTel exporter at it with no Lookspan SDK. `gen_ai.*` attributes map to provider/model/tokens.
+- **Real-time streaming** — SSE endpoint `GET /api/stream` pushes `span.ingested`, `trace.updated` and `alert.triggered` to the dashboard, no polling.
+- **React dashboard** — recent traces with filters/search; trace detail with an interactive span graph (React Flow); costs & overview (error rate, latency p50/p95/p99, cost per day); alerts history.
+- **Cost tracking** — aggregates input/output/cached/reasoning tokens and computes `cost_usd` per span and per trace from a model pricing table, overridable with `--pricing`.
+- **Alerts** — get notified when a trace fails or exceeds a cost/token/duration threshold (toast + desktop notification + CLI + persisted history).
+- **Evaluation scores** — attach metrics to a trace (`POST /api/traces/:id/scores`) from an LLM judge, an assertion, or by hand.
+- **Local SQLite** — versioned migrations. Database at `~/.lookspan/lookspan.db` by default; configurable via flag or env var. Optional retention with `--retention`.
+- **Security** — binds to `127.0.0.1` by default; optional `--token` auth; server-side redaction of credential-looking attributes before storage.
+- **One-line CLI** — `npx lookspan` starts the server and the dashboard with no global install.
 
 ---
 
-## Integración con agentes
+## Integrating your agents
 
 ### TypeScript / MCP
 
-Instrumenta cualquier cliente MCP con `wrapMcpClient`. Cada llamada a `callTool` genera automáticamente un span de tipo `tool_call`.
+```bash
+npm install @lookspan/mcp
+```
 
 ```typescript
 import { wrapMcpClient, HttpSpanExporter } from '@lookspan/mcp';
 
-const exporter = new HttpSpanExporter({
-  endpoint: 'http://127.0.0.1:3100/api/ingest',
-});
+const exporter = new HttpSpanExporter({ endpoint: 'http://127.0.0.1:3100/api/ingest' });
+const { client } = wrapMcpClient(mcpClient, { exporter, agentId: 'my-agent' });
 
-const { client, traceId } = wrapMcpClient(mcpClient, {
-  exporter,
-  agentId: 'mi-agente',
-  sessionId: 'sesion-001',
-});
-
-// Úsalo exactamente igual que antes
+// Use it exactly as before — every callTool emits a tool_call span.
 await client.callTool({ name: 'read_file', arguments: { path: '/tmp/foo.txt' } });
-
-// Al terminar la sesión
 await exporter.flush();
 ```
 
-### Python — cliente genérico
+### Python (generic, LangGraph, CrewAI)
 
-```python
-from lookspan import LookspanClient, Span, SpanType, SpanStatus
-
-client = LookspanClient(endpoint="http://127.0.0.1:3100/api/ingest")
-
-trace_id = client.new_trace_id()
-client.send([
-    Span(
-        trace_id=trace_id,
-        span_id=client.new_span_id(),
-        parent_span_id=None,
-        type=SpanType.LLM_CALL,
-        name="mi-agente.completion",
-        started_at="2026-05-29T10:00:00Z",
-        ended_at="2026-05-29T10:00:01Z",
-        status=SpanStatus.OK,
-        framework="custom",
-        model="claude-sonnet-4-6",
-        provider="anthropic",
-    )
-])
-client.flush()
+```bash
+pip install lookspan            # + lookspan-langgraph / lookspan-crewai
 ```
-
-### Python — LangGraph / LangChain
 
 ```python
 from lookspan import LookspanClient
 from lookspan_langgraph import LookspanCallbackHandler
 
 client = LookspanClient(endpoint="http://127.0.0.1:3100/api/ingest")
-handler = LookspanCallbackHandler(client=client, agent_id="mi-agente")
+handler = LookspanCallbackHandler(client=client, agent_id="my-agent")
 
-# LangChain
-result = chain.invoke({"input": "hola"}, config={"callbacks": [handler]})
-
-# LangGraph
 result = graph.invoke({"messages": []}, config={"callbacks": [handler]})
-
 client.flush()
 ```
 
-### Python — CrewAI
+### OpenTelemetry (no SDK)
 
-```python
-from crewai import Crew
-from lookspan import LookspanClient
-from lookspan_crewai import attach_lookspan
-
-client = LookspanClient(endpoint="http://127.0.0.1:3100/api/ingest")
-attach_lookspan(client, agent_id="research-crew")
-
-crew = Crew(agents=[...], tasks=[...])
-result = crew.kickoff()
-client.flush()
-```
-
-### HTTP directo (cualquier lenguaje)
-
-```bash
-curl -X POST http://127.0.0.1:3100/api/ingest \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "mi-agente",
-    "sentAt": "2026-05-29T10:00:00Z",
-    "spans": [
-      {
-        "traceId": "tr_abc123",
-        "spanId": "sp_def456",
-        "parentSpanId": null,
-        "type": "llm_call",
-        "name": "mi-agente.completion",
-        "startedAt": "2026-05-29T10:00:00Z",
-        "endedAt": "2026-05-29T10:00:01Z",
-        "status": "ok",
-        "framework": "custom",
-        "model": "gpt-4o",
-        "provider": "openai"
-      }
-    ]
-  }'
-```
-
-### Integración con AGENT-OS
-
-El adaptador `AgentOsAdapter` (en `@lookspan/collector`) se suscribe al bus SSE de eventos de control de AGENT-OS en `GET /api/events` y convierte los eventos recibidos en spans de Lookspan. Es una integración opt-in: basta con instanciar el adaptador apuntando a la URL de AGENT-OS.
-
----
-
-## API HTTP
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/health` | Estado del servicio |
-| `POST` | `/api/ingest` | Ingesta de spans (body: `IngestPayload`) |
-| `GET` | `/api/traces` | Lista de trazas (paginada, filtrable por `framework`, `status`, `sessionId`) |
-| `GET` | `/api/traces/:id` | Detalle de una traza con todos sus spans |
-| `GET` | `/api/costs/summary` | Resumen de costes (total, por modelo, por proveedor, por agente) |
-| `GET` | `/api/stream` | Stream SSE de eventos en tiempo real |
-| `GET` | `/api/stats` | Resumen de stats (totales, tasa de error, latencia p50/p95/p99, coste por día) |
-| `GET` | `/api/alerts` | Historial de alertas disparadas |
-| `POST` | `/api/traces/:id/scores` | Adjunta un score de evaluación a una traza (`{name, value, comment?, source?}`) |
-| `POST` | `/v1/traces` | Receptor OTLP/HTTP de OpenTelemetry (JSON `ExportTraceServiceRequest`) |
-
-### OpenTelemetry (OTLP)
-
-Cualquier app instrumentada con OpenTelemetry puede exportar a Lookspan sin SDK
-propio apuntando el exporter OTLP/HTTP al endpoint estándar:
+Point any OTel exporter at the standard OTLP endpoint:
 
 ```bash
 export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:3100/v1/traces
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json  # el receptor acepta JSON
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
 ```
 
-Los atributos semánticos `gen_ai.*` (system, request.model, usage.*) se mapean
-a `provider`/`model`/tokens, y el coste se calcula con la tabla de precios.
+More runnable examples in [`examples/`](examples/).
 
 ---
 
-## Alertas
+## HTTP API
 
-Lookspan puede avisarte cuando una traza cumple una condición. Las reglas se
-configuran al arrancar; cada alerta se persiste, se emite por SSE y aparece en
-el dashboard (toast + notificación de escritorio si das permiso) y en la vista
-**Alerts**. El CLI también las imprime en consola.
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/health` | Service status |
+| `POST` | `/api/ingest` | Ingest spans (body: `IngestPayload`) |
+| `GET` | `/api/traces` | List traces (paginated; filter by `framework`, `status`, `sessionId`) |
+| `GET` | `/api/traces/:id` | Trace detail with all its spans and scores |
+| `POST` | `/api/traces/:id/scores` | Attach an evaluation score (`{name, value, comment?, source?}`) |
+| `GET` | `/api/costs/summary` | Cost breakdown (total, by model, provider, agent) |
+| `GET` | `/api/stats` | Stats summary (totals, error rate, latency p50/p95/p99, cost per day) |
+| `GET` | `/api/alerts` | History of triggered alerts |
+| `GET` | `/api/stream` | Real-time SSE event stream |
+| `POST` | `/v1/traces` | OpenTelemetry OTLP/HTTP trace receiver (JSON `ExportTraceServiceRequest`) |
 
-```bash
-npx lookspan \
-  --alert-error \            # traza fallida
-  --alert-cost 0.50 \        # coste > $0.50
-  --alert-tokens 100000 \    # > 100k tokens
-  --alert-duration 30000     # > 30s
+---
+
+## CLI options
+
+```
+npx lookspan [options]
+  -p, --port <port>        Port to listen on            (default: 3100)
+      --host <host>        Host to bind to              (default: 127.0.0.1)
+      --db <path>          SQLite database path         (default: ~/.lookspan/lookspan.db)
+      --retention <dur>    Prune traces older than e.g. 7d, 24h, 30m
+      --token <token>      Require Authorization: Bearer <token> on the API
+      --pricing <file>     Custom model pricing table (JSON)
+      --alert-error                Alert when a trace fails
+      --alert-cost <usd>           Alert when a trace costs more than <usd>
+      --alert-tokens <n>           Alert when a trace exceeds <n> tokens
+      --alert-duration <ms>        Alert when a trace takes longer than <ms>
+      --open               Open the dashboard in your browser
+  -h, --help               Show help
+  -v, --version            Show version
 ```
 
-Equivalentes por entorno: `LOOKSPAN_ALERT_ERROR`, `LOOKSPAN_ALERT_COST`,
-`LOOKSPAN_ALERT_TOKENS`, `LOOKSPAN_ALERT_DURATION`. Cada regla dispara una vez
-por traza. Historial vía `GET /api/alerts`.
+Every flag has a `LOOKSPAN_*` environment-variable equivalent (`LOOKSPAN_PORT`, `LOOKSPAN_TOKEN`, `LOOKSPAN_PRICING`, `LOOKSPAN_ALERT_*`, …).
 
-## Evaluación (scores)
+---
 
-Adjunta métricas a una traza desde un juez LLM, un assert o a mano — la primitiva
-para construir evals encima de la observabilidad:
-
-```bash
-curl -X POST http://127.0.0.1:3100/api/traces/tr_abc/scores \
-  -H "Content-Type: application/json" \
-  -d '{"name":"correctness","value":1,"comment":"respuesta correcta","source":"llm-judge"}'
-```
-
-Los scores se ven en el detalle de la traza (y se pueden añadir desde la UI).
-El *replay* (re-ejecutar el prompt contra otro modelo y comparar) está en el
-roadmap.
-
-## Seguridad
-
-Por defecto Lookspan escucha en `127.0.0.1` (loopback) y no requiere
-autenticación — apropiado para uso local. Si lo expones fuera de loopback
-(`--host 0.0.0.0`), protégelo con un token:
-
-```bash
-LOOKSPAN_TOKEN=mi-token npx lookspan --host 0.0.0.0
-# las peticiones a /api/* y /v1/* exigen Authorization: Bearer mi-token
-# (/api/health queda exento). El CLI avisa si expones sin token.
-```
-
-Además, el collector **redacta** valores de claves sensibles
-(`authorization`, `api_key`, `token`, `secret`, `password`, `cookie`…) en
-`input`/`attributes` antes de persistir, para que la telemetría no arrastre
-credenciales a la BD. Desactivable vía la opción `redact: false` del collector.
-
-## Precios personalizables
-
-El coste se calcula en el servidor con una tabla de precios por modelo. Para
-mantenerla al día sin tocar código, pásala como JSON:
-
-```bash
-npx lookspan --pricing ./mi-tabla-de-precios.json
-```
-
-Formato en [`examples/pricing.example.json`](examples/pricing.example.json).
-
-## Ejemplos
-
-Ejemplos ejecutables en [`examples/`](examples/): HTTP directo, OpenTelemetry sin
-SDK, instrumentación MCP y tabla de precios personalizada.
-
-## Comparación
+## How it compares
 
 | | **Lookspan** | Langfuse | Phoenix (Arize) |
 |---|---|---|---|
-| Arranque | `npx lookspan` (cero infra) | Docker + Postgres + ClickHouse | `pip install` (Python) |
-| Almacenamiento | SQLite local | Postgres + ClickHouse | local / en memoria |
-| Foco | stack **TS/JS + MCP** | plataforma completa (evals, prompts) | evals / RAG (Python) |
-| Datos | nunca salen de tu máquina | self-host o nube | local o nube |
-| OpenTelemetry | receptor OTLP nativo | sí | sí (OTel-native) |
+| Startup | `npx lookspan` (zero infra) | Docker + Postgres + ClickHouse | `pip install` (Python) |
+| Storage | local SQLite | Postgres + ClickHouse | local / in-memory |
+| Focus | **TS/JS + MCP** stack | full platform (evals, prompts) | evals / RAG (Python) |
+| Your data | never leaves your machine | self-host or cloud | local or cloud |
+| OpenTelemetry | native OTLP receiver | yes | yes (OTel-native) |
 
-Lookspan no intenta ser una plataforma completa: apuesta por ser **la capa de
-observabilidad sin setup para agentes TypeScript/MCP**, con la mejor experiencia
-en los primeros 5 minutos. Roadmap en [ROADMAP.md](ROADMAP.md).
+Lookspan isn't trying to be a full platform. It bets on being **the zero-setup
+observability layer for the TypeScript/MCP agent stack**, with the best
+first-five-minutes experience. See the [ROADMAP](ROADMAP.md).
 
-## Contribuir
+---
 
-PRs bienvenidos — lee [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md). Para
-publicar releases, [PUBLISHING.md](PUBLISHING.md).
+## Security
 
-## Licencia
+Lookspan binds to `127.0.0.1` (loopback) and requires no auth by default — right
+for local use. If you expose it (`--host 0.0.0.0`), protect it with a token:
 
-MIT — Copyright (c) 2026 Jonathan Martin. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+```bash
+LOOKSPAN_TOKEN=my-token npx lookspan --host 0.0.0.0
+# /api/* and /v1/* then require Authorization: Bearer my-token (/api/health is exempt).
+```
+
+The collector also **redacts** values of credential-looking keys
+(`authorization`, `api_key`, `token`, `secret`, `password`, `cookie`…) from
+`input`/`attributes` before persisting, so telemetry never drags secrets into
+the database.
+
+---
+
+## Development
+
+This is an npm-workspaces monorepo. `packages/` holds internal libraries, `apps/`
+the dashboard, `python/` the standalone Python SDKs.
+
+```bash
+git clone https://github.com/JoniMartin27/lookspan.git
+cd lookspan
+npm install
+npm run dev        # API on :3100, dashboard with hot-reload on :5173
+npm run ci         # typecheck + lint + test + build
+```
+
+Contributions welcome — see [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
+Release process in [PUBLISHING.md](PUBLISHING.md).
+
+---
+
+## License
+
+MIT — Copyright (c) 2026 Jonathan Martin. See [LICENSE](LICENSE).
