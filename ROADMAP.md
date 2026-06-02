@@ -8,11 +8,10 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 
 - [x] **`npx lookspan` works for real** — CLI bundles the dashboard + inlines the
       internal `@lookspan/*` deps; verified from a clean `npm pack` install.
-- [x] **SDKs ready to publish** — `@lookspan/mcp` + `@lookspan/types` (npm) and the
-      Python SDKs are un-private'd and versioned; see [PUBLISHING.md](PUBLISHING.md).
-      *(The actual `npm publish` / PyPI upload is maintainer-gated.)*
-- [x] **Discovery** — README with badges, a real quickstart, comparison section,
-      and `examples/`. *(GIF still to record.)*
+- [x] **SDKs published** — `@lookspan/mcp` + `@lookspan/types` on npm and
+      `lookspan` / `lookspan-langgraph` / `lookspan-crewai` on PyPI (all v0.1.0).
+- [x] **Discovery** — README (English primary, Spanish in `README.es.md`) with
+      badges, quickstart, comparison, and `examples/`. *(Demo GIF still to record.)*
 
 ## P1 — Win the niche
 

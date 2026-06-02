@@ -1,8 +1,10 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 — 2026-06-02
 
-First publishable release.
+First public release. Published to **npm** (`lookspan`, `@lookspan/mcp`,
+`@lookspan/types`) and **PyPI** (`lookspan`, `lookspan-langgraph`,
+`lookspan-crewai`).
 
 ### Added
 - **`npx lookspan`** — self-contained CLI that bundles the dashboard and serves
