@@ -19,6 +19,13 @@ export interface CreateAppOptions {
    * its `index.html` so client-side routing works on hard refresh.
    */
   dashboardDir?: string;
+  /**
+   * When set, every API/OTLP request (except `/api/health` and the dashboard
+   * assets) must present `Authorization: Bearer <token>` or `?token=<token>`.
+   * Intended for when the server is exposed beyond loopback. Unset = open,
+   * which is fine on the default `127.0.0.1` bind.
+   */
+  authToken?: string;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -31,6 +38,23 @@ export function createApp(options: CreateAppOptions): Express {
     }),
   );
   app.use(express.json({ limit: '10mb' }));
+
+  if (options.authToken) {
+    const token = options.authToken;
+    app.use((req, res, next) => {
+      if (req.path === '/api/health') return next();
+      if (!req.path.startsWith('/api') && !req.path.startsWith('/v1')) return next();
+      const header = req.get('authorization');
+      const bearer = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+      const provided =
+        bearer ?? (typeof req.query.token === 'string' ? req.query.token : undefined);
+      if (provided !== token) {
+        res.status(401).json({ error: 'unauthorized' });
+        return;
+      }
+      next();
+    });
+  }
 
   app.use('/api/health', createHealthRouter());
   app.use('/api/traces', createTracesRouter(options.context));

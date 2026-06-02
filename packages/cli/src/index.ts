@@ -21,6 +21,7 @@ interface CliFlags {
   db: string;
   open: boolean;
   retentionMs: number | null;
+  token: string | undefined;
 }
 
 function parseFlags(argv: string[]): CliFlags {
@@ -32,6 +33,7 @@ function parseFlags(argv: string[]): CliFlags {
       host: { type: 'string' },
       db: { type: 'string' },
       retention: { type: 'string' },
+      token: { type: 'string' },
       open: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', short: 'v', default: false },
@@ -64,6 +66,7 @@ function parseFlags(argv: string[]): CliFlags {
     db: (values.db as string) ?? process.env.LOOKSPAN_DB ?? defaultDatabasePath(),
     open: Boolean(values.open),
     retentionMs,
+    token: (values.token as string) ?? process.env.LOOKSPAN_TOKEN ?? undefined,
   };
 }
 
@@ -99,6 +102,7 @@ Options:
       --host <host>     Host to bind to (default: 127.0.0.1)
       --db <path>       SQLite database path (default: ~/.lookspan/lookspan.db)
       --retention <dur> Prune traces older than <dur> (e.g. 7d, 24h, 30m)
+      --token <token>   Require Authorization: Bearer <token> on the API
       --open            Open the dashboard in your browser
   -h, --help            Show this help
   -v, --version         Show version
@@ -108,6 +112,7 @@ Environment:
   LOOKSPAN_HOST         Same as --host
   LOOKSPAN_DB           Same as --db
   LOOKSPAN_RETENTION    Same as --retention
+  LOOKSPAN_TOKEN        Same as --token
 
 Quick start:
   npx lookspan
@@ -146,7 +151,11 @@ function main(): void {
 
   const ctx = createContext(db);
   const dashboardDir = findDashboardDir();
-  const app = createApp({ context: ctx, dashboardDir: dashboardDir ?? undefined });
+  const app = createApp({
+    context: ctx,
+    dashboardDir: dashboardDir ?? undefined,
+    authToken: flags.token,
+  });
   const stopRetention = flags.retentionMs ? startRetention(db, flags.retentionMs) : null;
 
   const server = app.listen(flags.port, flags.host, () => {
@@ -155,6 +164,14 @@ function main(): void {
     console.log(`  Database: ${flags.db}`);
     if (flags.retentionMs) {
       console.log(`  Retention: pruning traces older than ${flags.retentionMs / 86_400_000}d`);
+    }
+    if (flags.token) {
+      console.log('  Auth: Bearer token required');
+    }
+    const loopback =
+      flags.host === '127.0.0.1' || flags.host === 'localhost' || flags.host === '::1';
+    if (!loopback && !flags.token) {
+      console.log(`  ⚠ Bound to ${flags.host} with no --token: the API is open to your network.`);
     }
     if (!dashboardDir) {
       console.log('  (dashboard not built — run `npm run build` to serve the UI)');

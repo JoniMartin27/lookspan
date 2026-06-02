@@ -380,6 +380,23 @@ a `provider`/`model`/tokens, y el coste se calcula con la tabla de precios.
 
 ---
 
+## Seguridad
+
+Por defecto Lookspan escucha en `127.0.0.1` (loopback) y no requiere
+autenticación — apropiado para uso local. Si lo expones fuera de loopback
+(`--host 0.0.0.0`), protégelo con un token:
+
+```bash
+LOOKSPAN_TOKEN=mi-token npx lookspan --host 0.0.0.0
+# las peticiones a /api/* y /v1/* exigen Authorization: Bearer mi-token
+# (/api/health queda exento). El CLI avisa si expones sin token.
+```
+
+Además, el collector **redacta** valores de claves sensibles
+(`authorization`, `api_key`, `token`, `secret`, `password`, `cookie`…) en
+`input`/`attributes` antes de persistir, para que la telemetría no arrastre
+credenciales a la BD. Desactivable vía la opción `redact: false` del collector.
+
 ## Licencia
 
 MIT — Copyright (c) 2026 Jonathan Martin. Consulta el archivo [LICENSE](LICENSE) para más detalles.

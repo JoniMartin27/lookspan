@@ -10,8 +10,8 @@ Dashboard de observabilidad TS para agentes IA, MCP-native, ingiere spans de tel
 
 | Sev | Fichero:línea | Descripción | Remediación |
 |-----|---------------|-------------|-------------|
-| MEDIUM | `packages/api/src/app.ts:18-23` | CORS por defecto `origin: true` (refleja cualquier origen, `credentials:false`) y **ningún endpoint tiene auth** (`/api/ingest`, `/api/traces`, `/api/costs`, `/api/stream`). Cualquiera que alcance la API puede leer trazas o inyectar spans. Mitigado por bind a `127.0.0.1` (`server.ts`). | Si se expone (`LOOKSPAN_HOST=0.0.0.0`): token de ingest + auth en lectura; acotar `corsOrigin`. |
-| MEDIUM | `packages/sdk-mcp/src/exporter.ts` | El exporter envía atributos de spans **sin redacción**. Telemetría de agentes puede arrastrar prompts/headers/API keys a la BD y al dashboard. | Allowlist/denylist de atributos; redactar claves conocidas (`authorization`, `api_key`, `*token*`, `*secret*`) antes de exportar. |
+| ~~MEDIUM~~ RESUELTO | `packages/api/src/app.ts` | CORS por defecto `origin: true` y **ningún endpoint tenía auth**. **Remediado:** opción `authToken` en `createApp` + `--token`/`LOOKSPAN_TOKEN` en el CLI; exige `Authorization: Bearer` (o `?token=`) en `/api/*` y `/v1/*` (`/api/health` exento). El CLI avisa si se expone fuera de loopback sin token. Sigue abierto por defecto en `127.0.0.1` (uso local). |
+| ~~MEDIUM~~ RESUELTO | `packages/collector/src/redact.ts` | El exporter enviaba atributos **sin redacción**. **Remediado:** el collector redacta en el servidor (cubre todos los SDKs) los valores de claves sensibles (`authorization`, `api_key`, `*token*`, `*secret*`, `password`, `cookie`…) en `input`/`attributes` antes de persistir. On por defecto; `redact: false` para desactivar. |
 
 ## Verificaciones OK (sin hallazgos)
 - **SQL** (`packages/storage/src/repositories/{traces,costs}.ts`): los `${where}` solo concatenan **fragmentos SQL estáticos** (`'framework = @framework'`); los valores van por binding nombrado (`@param`) a better-sqlite3. `limit` clamped a 500. **Sin inyección SQL.**
