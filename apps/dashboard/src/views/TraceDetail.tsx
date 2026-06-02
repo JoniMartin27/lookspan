@@ -1,6 +1,6 @@
 import type { Score, Span } from '@lookspan/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Background, Controls, type Edge, type Node, ReactFlow } from '@xyflow/react';
+import { Background, Controls, type Edge, type Node, Position, ReactFlow } from '@xyflow/react';
 import { useMemo, useState } from 'react';
 import { useParams } from 'wouter';
 import { api } from '../api/client.ts';
@@ -129,13 +129,14 @@ function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
   );
 }
 
-const X_GAP = 200;
-const Y_GAP = 110;
+const X_GAP = 240; // horizontal: depth → x (left-to-right)
+const Y_GAP = 56; // vertical: sibling order → y (stacks down)
 
 /**
- * Tidy-tree layout: leaves get sequential x positions, each parent is centered
- * over its children, and depth maps to the y axis. Avoids the "everything on one
- * line" problem of an index-based layout when a trace has many spans.
+ * Left-to-right tidy-tree: depth maps to x, leaves stack down the y axis, and
+ * each parent is vertically centered over its children. Agent traces are often
+ * shallow and wide (one step → many tool calls); stacking children in a column
+ * reads far better than a single very wide horizontal row.
  */
 function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
   if (spans.length === 0) return { nodes: [], edges: [] };
@@ -154,25 +155,25 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
   }
 
   const pos = new Map<string, { x: number; y: number }>();
-  let nextLeafX = 0;
+  let nextRowY = 0;
   const seen = new Set<string>();
 
   const layout = (id: string, depth: number): number => {
-    if (seen.has(id)) return pos.get(id)?.x ?? 0; // guard against cycles
+    if (seen.has(id)) return pos.get(id)?.y ?? 0; // guard against cycles
     seen.add(id);
     const kids = children.get(id) ?? [];
     if (kids.length === 0) {
-      const x = nextLeafX * X_GAP;
-      nextLeafX++;
-      pos.set(id, { x, y: depth * Y_GAP });
-      return x;
+      const y = nextRowY * Y_GAP;
+      nextRowY++;
+      pos.set(id, { x: depth * X_GAP, y });
+      return y;
     }
-    const xs = kids.map((k) => layout(k, depth + 1));
-    const first = xs[0] ?? 0;
-    const last = xs[xs.length - 1] ?? first;
-    const x = (first + last) / 2;
-    pos.set(id, { x, y: depth * Y_GAP });
-    return x;
+    const ys = kids.map((k) => layout(k, depth + 1));
+    const first = ys[0] ?? 0;
+    const last = ys[ys.length - 1] ?? first;
+    const y = (first + last) / 2;
+    pos.set(id, { x: depth * X_GAP, y });
+    return y;
   };
   for (const r of roots) layout(r, 0);
 
@@ -180,6 +181,8 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
     id: span.spanId,
     position: pos.get(span.spanId) ?? { x: 0, y: 0 },
     data: { label: span.name },
+    sourcePosition: Position.Right,
+    targetPosition: Position.Left,
     style: {
       background: span.status === 'error' ? '#7f1d1d' : '#1f1f23',
       color: '#f5f5f5',
