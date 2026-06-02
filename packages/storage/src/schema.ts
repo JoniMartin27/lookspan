@@ -46,3 +46,14 @@ export interface SpanRow {
   received_at: string;
   created_at: string;
 }
+
+export interface AlertRow {
+  id: number;
+  rule_id: string;
+  trace_id: string;
+  condition: string;
+  message: string;
+  value: number | null;
+  threshold: number | null;
+  created_at: string;
+}

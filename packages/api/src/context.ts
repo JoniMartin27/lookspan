@@ -1,11 +1,13 @@
 import { Collector } from '@lookspan/collector';
 import {
+  AlertsRepository,
   CostsRepository,
   type LookspanDatabase,
   SpansRepository,
   StatsRepository,
   TracesRepository,
 } from '@lookspan/storage';
+import type { AlertRule } from '@lookspan/types';
 
 export interface ApiContext {
   db: LookspanDatabase;
@@ -14,15 +16,24 @@ export interface ApiContext {
   spans: SpansRepository;
   costs: CostsRepository;
   stats: StatsRepository;
+  alerts: AlertsRepository;
 }
 
-export function createContext(db: LookspanDatabase): ApiContext {
+export interface CreateContextOptions {
+  alertRules?: AlertRule[];
+}
+
+export function createContext(
+  db: LookspanDatabase,
+  options: CreateContextOptions = {},
+): ApiContext {
   return {
     db,
-    collector: new Collector({ db }),
+    collector: new Collector({ db, alertRules: options.alertRules }),
     traces: new TracesRepository(db),
     spans: new SpansRepository(db),
     costs: new CostsRepository(db),
     stats: new StatsRepository(db),
+    alerts: new AlertsRepository(db),
   };
 }

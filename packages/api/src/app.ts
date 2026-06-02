@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import type { ApiContext } from './context.js';
+import { createAlertsRouter } from './routes/alerts.js';
 import { createCostsRouter } from './routes/costs.js';
 import { createHealthRouter } from './routes/health.js';
 import { createIngestRouter } from './routes/ingest.js';
@@ -60,6 +61,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/traces', createTracesRouter(options.context));
   app.use('/api/costs', createCostsRouter(options.context));
   app.use('/api/stats', createStatsRouter(options.context));
+  app.use('/api/alerts', createAlertsRouter(options.context));
   app.use('/api/ingest', createIngestRouter(options.context));
   app.use('/api/stream', createStreamRouter());
 

@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { createApp, createContext } from '@lookspan/api';
+import { LookspanEventType, subscribe } from '@lookspan/events';
 import {
   cutoffFrom,
   defaultDatabasePath,
@@ -14,6 +15,7 @@ import {
   pruneOlderThan,
   vacuum,
 } from '@lookspan/storage';
+import { AlertCondition, type AlertRule } from '@lookspan/types';
 
 interface CliFlags {
   port: number;
@@ -22,6 +24,32 @@ interface CliFlags {
   open: boolean;
   retentionMs: number | null;
   token: string | undefined;
+  alertRules: AlertRule[];
+}
+
+function buildAlertRules(values: Record<string, unknown>): AlertRule[] {
+  const rules: AlertRule[] = [];
+  const numFromEnv = (flag: unknown, env: string | undefined): number | undefined => {
+    const raw = (flag as string) ?? env;
+    if (raw === undefined) return undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  if (values['alert-error'] || process.env.LOOKSPAN_ALERT_ERROR) {
+    rules.push({ id: 'error', condition: AlertCondition.Error });
+  }
+  const cost = numFromEnv(values['alert-cost'], process.env.LOOKSPAN_ALERT_COST);
+  if (cost !== undefined)
+    rules.push({ id: 'cost', condition: AlertCondition.CostOver, threshold: cost });
+  const tokens = numFromEnv(values['alert-tokens'], process.env.LOOKSPAN_ALERT_TOKENS);
+  if (tokens !== undefined)
+    rules.push({ id: 'tokens', condition: AlertCondition.TokensOver, threshold: tokens });
+  const duration = numFromEnv(values['alert-duration'], process.env.LOOKSPAN_ALERT_DURATION);
+  if (duration !== undefined)
+    rules.push({ id: 'duration', condition: AlertCondition.DurationOver, threshold: duration });
+
+  return rules;
 }
 
 function parseFlags(argv: string[]): CliFlags {
@@ -34,6 +62,10 @@ function parseFlags(argv: string[]): CliFlags {
       db: { type: 'string' },
       retention: { type: 'string' },
       token: { type: 'string' },
+      'alert-error': { type: 'boolean', default: false },
+      'alert-cost': { type: 'string' },
+      'alert-tokens': { type: 'string' },
+      'alert-duration': { type: 'string' },
       open: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', short: 'v', default: false },
@@ -67,6 +99,7 @@ function parseFlags(argv: string[]): CliFlags {
     open: Boolean(values.open),
     retentionMs,
     token: (values.token as string) ?? process.env.LOOKSPAN_TOKEN ?? undefined,
+    alertRules: buildAlertRules(values),
   };
 }
 
@@ -103,6 +136,10 @@ Options:
       --db <path>       SQLite database path (default: ~/.lookspan/lookspan.db)
       --retention <dur> Prune traces older than <dur> (e.g. 7d, 24h, 30m)
       --token <token>   Require Authorization: Bearer <token> on the API
+      --alert-error     Alert when a trace fails
+      --alert-cost <usd>      Alert when a trace costs more than <usd>
+      --alert-tokens <n>      Alert when a trace exceeds <n> tokens
+      --alert-duration <ms>   Alert when a trace takes longer than <ms>
       --open            Open the dashboard in your browser
   -h, --help            Show this help
   -v, --version         Show version
@@ -113,6 +150,7 @@ Environment:
   LOOKSPAN_DB           Same as --db
   LOOKSPAN_RETENTION    Same as --retention
   LOOKSPAN_TOKEN        Same as --token
+  LOOKSPAN_ALERT_ERROR / _COST / _TOKENS / _DURATION   Same as --alert-*
 
 Quick start:
   npx lookspan
@@ -149,7 +187,7 @@ function main(): void {
     console.log(`[lookspan] migrations applied: ${result.applied.join(', ')}`);
   }
 
-  const ctx = createContext(db);
+  const ctx = createContext(db, { alertRules: flags.alertRules });
   const dashboardDir = findDashboardDir();
   const app = createApp({
     context: ctx,
@@ -157,6 +195,15 @@ function main(): void {
     authToken: flags.token,
   });
   const stopRetention = flags.retentionMs ? startRetention(db, flags.retentionMs) : null;
+
+  let unsubscribeAlerts: (() => void) | null = null;
+  if (flags.alertRules.length > 0) {
+    unsubscribeAlerts = subscribe((event) => {
+      if (event.type === LookspanEventType.AlertTriggered) {
+        console.log(`\n  🔔 ALERT [${event.alert.condition}] ${event.alert.message}\n`);
+      }
+    });
+  }
 
   const server = app.listen(flags.port, flags.host, () => {
     const url = `http://${flags.host}:${flags.port}`;
@@ -167,6 +214,9 @@ function main(): void {
     }
     if (flags.token) {
       console.log('  Auth: Bearer token required');
+    }
+    if (flags.alertRules.length > 0) {
+      console.log(`  Alerts: ${flags.alertRules.map((r) => r.id).join(', ')}`);
     }
     const loopback =
       flags.host === '127.0.0.1' || flags.host === 'localhost' || flags.host === '::1';
@@ -185,6 +235,7 @@ function main(): void {
   const shutdown = (signal: string) => {
     console.log(`\n[lookspan] received ${signal}, shutting down`);
     stopRetention?.();
+    unsubscribeAlerts?.();
     server.close(() => {
       db.close();
       process.exit(0);

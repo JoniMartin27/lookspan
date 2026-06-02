@@ -1,10 +1,11 @@
-import type { Span, Trace } from '@lookspan/types';
+import type { Alert, Span, Trace } from '@lookspan/types';
 
 export const LookspanEventType = {
   SpanIngested: 'span.ingested',
   TraceStarted: 'trace.started',
   TraceCompleted: 'trace.completed',
   TraceUpdated: 'trace.updated',
+  AlertTriggered: 'alert.triggered',
   CollectorConnected: 'collector.connected',
   CollectorDisconnected: 'collector.disconnected',
 } as const;
@@ -16,6 +17,7 @@ export type LookspanEvent =
   | { type: typeof LookspanEventType.TraceStarted; trace: Trace; receivedAt: string }
   | { type: typeof LookspanEventType.TraceCompleted; trace: Trace; receivedAt: string }
   | { type: typeof LookspanEventType.TraceUpdated; trace: Trace; receivedAt: string }
+  | { type: typeof LookspanEventType.AlertTriggered; alert: Alert; receivedAt: string }
   | {
       type: typeof LookspanEventType.CollectorConnected;
       source: string;

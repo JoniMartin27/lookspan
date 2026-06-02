@@ -1,7 +1,13 @@
 import { emit, LookspanEventType } from '@lookspan/events';
-import { type LookspanDatabase, SpansRepository, TracesRepository } from '@lookspan/storage';
-import type { IngestResponse, SpanInput } from '@lookspan/types';
+import {
+  AlertsRepository,
+  type LookspanDatabase,
+  SpansRepository,
+  TracesRepository,
+} from '@lookspan/storage';
+import type { AlertRule, IngestResponse, SpanInput } from '@lookspan/types';
 import { recomputeTrace } from './aggregator.js';
+import { AlertEngine } from './alerts.js';
 import { IngestValidationError, validatePayload, validateSpan } from './normalize.js';
 import { enrichSpanCost } from './pricing.js';
 import { type RedactOptions, redactSpan } from './redact.js';
@@ -14,11 +20,15 @@ export interface CollectorOptions {
    * an options object to tune the key patterns.
    */
   redact?: boolean | RedactOptions;
+  /** Alert rules evaluated on every trace update. Empty = alerting off. */
+  alertRules?: AlertRule[];
 }
 
 export class Collector {
   private readonly spans: SpansRepository;
   private readonly traces: TracesRepository;
+  private readonly alertsRepo: AlertsRepository;
+  private readonly alerts: AlertEngine;
   private readonly db: LookspanDatabase;
   private readonly redactOptions: RedactOptions | null;
 
@@ -26,6 +36,8 @@ export class Collector {
     this.db = options.db;
     this.spans = new SpansRepository(options.db);
     this.traces = new TracesRepository(options.db);
+    this.alertsRepo = new AlertsRepository(options.db);
+    this.alerts = new AlertEngine(options.alertRules ?? []);
     const redact = options.redact ?? true;
     this.redactOptions = redact === false ? null : redact === true ? {} : redact;
   }
@@ -67,6 +79,13 @@ export class Collector {
       if (!trace) continue;
       this.traces.upsert(trace);
       emit({ type: LookspanEventType.TraceUpdated, trace });
+
+      if (this.alerts.enabled) {
+        for (const alert of this.alerts.evaluate(trace, receivedAt)) {
+          const stored = this.alertsRepo.insert(alert);
+          emit({ type: LookspanEventType.AlertTriggered, alert: stored });
+        }
+      }
     }
 
     for (const span of inserted) {

@@ -8,6 +8,7 @@ import TraceList from './views/TraceList.tsx';
 // landing view, so it stays in the main bundle.
 const TraceDetail = lazy(() => import('./views/TraceDetail.tsx'));
 const CostsView = lazy(() => import('./views/CostsView.tsx'));
+const AlertsView = lazy(() => import('./views/AlertsView.tsx'));
 
 function Loading() {
   return <div className="p-8 text-neutral-400">Loading…</div>;
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/" component={TraceList} />
           <Route path="/traces/:id" component={TraceDetail} />
           <Route path="/costs" component={CostsView} />
+          <Route path="/alerts" component={AlertsView} />
           <Route>
             <div className="p-8 text-neutral-400">Not found.</div>
           </Route>

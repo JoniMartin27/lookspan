@@ -363,6 +363,8 @@ El adaptador `AgentOsAdapter` (en `@lookspan/collector`) se suscribe al bus SSE 
 | `GET` | `/api/traces/:id` | Detalle de una traza con todos sus spans |
 | `GET` | `/api/costs/summary` | Resumen de costes (total, por modelo, por proveedor, por agente) |
 | `GET` | `/api/stream` | Stream SSE de eventos en tiempo real |
+| `GET` | `/api/stats` | Resumen de stats (totales, tasa de error, latencia p50/p95/p99, coste por día) |
+| `GET` | `/api/alerts` | Historial de alertas disparadas |
 | `POST` | `/v1/traces` | Receptor OTLP/HTTP de OpenTelemetry (JSON `ExportTraceServiceRequest`) |
 
 ### OpenTelemetry (OTLP)
@@ -379,6 +381,25 @@ Los atributos semánticos `gen_ai.*` (system, request.model, usage.*) se mapean
 a `provider`/`model`/tokens, y el coste se calcula con la tabla de precios.
 
 ---
+
+## Alertas
+
+Lookspan puede avisarte cuando una traza cumple una condición. Las reglas se
+configuran al arrancar; cada alerta se persiste, se emite por SSE y aparece en
+el dashboard (toast + notificación de escritorio si das permiso) y en la vista
+**Alerts**. El CLI también las imprime en consola.
+
+```bash
+npx lookspan \
+  --alert-error \            # traza fallida
+  --alert-cost 0.50 \        # coste > $0.50
+  --alert-tokens 100000 \    # > 100k tokens
+  --alert-duration 30000     # > 30s
+```
+
+Equivalentes por entorno: `LOOKSPAN_ALERT_ERROR`, `LOOKSPAN_ALERT_COST`,
+`LOOKSPAN_ALERT_TOKENS`, `LOOKSPAN_ALERT_DURATION`. Cada regla dispara una vez
+por traza. Historial vía `GET /api/alerts`.
 
 ## Seguridad
 

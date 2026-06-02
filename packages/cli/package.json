@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@lookspan/api": "*",
+    "@lookspan/events": "*",
     "@lookspan/storage": "*",
     "@lookspan/types": "*"
   },

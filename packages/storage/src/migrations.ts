@@ -73,6 +73,25 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_spans_framework_time ON spans(framework, started_at DESC);
     `,
   },
+  {
+    version: 2,
+    name: 'alerts',
+    up: `
+      CREATE TABLE IF NOT EXISTS alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rule_id TEXT NOT NULL,
+        trace_id TEXT NOT NULL,
+        condition TEXT NOT NULL,
+        message TEXT NOT NULL,
+        value REAL,
+        threshold REAL,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_alerts_created ON alerts(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_alerts_trace ON alerts(trace_id);
+    `,
+  },
 ];
 
 export function getCurrentSchemaVersion(db: LookspanDatabase): number {

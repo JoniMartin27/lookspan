@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { Alert } from '@lookspan/types';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStream } from '../hooks/useStream.ts';
 
@@ -8,7 +9,27 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
-  const { connected } = useStream();
+  const [toasts, setToasts] = useState<{ id: number; alert: Alert }[]>([]);
+  const nextId = useRef(0);
+
+  // Ask for desktop-notification permission once, lazily.
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      void Notification.requestPermission();
+    }
+  }, []);
+
+  const { connected } = useStream((event) => {
+    if (event.type !== 'alert.triggered') return;
+    const alert = event.alert as Alert;
+    const id = nextId.current++;
+    setToasts((t) => [...t, { id, alert }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 8000);
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Lookspan alert', { body: alert.message });
+    }
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -24,6 +45,9 @@ export default function Layout({ children }: LayoutProps) {
             <NavLink href="/costs" active={location === '/costs'}>
               Costs
             </NavLink>
+            <NavLink href="/alerts" active={location === '/alerts'}>
+              Alerts
+            </NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-500">
@@ -36,6 +60,20 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </header>
       <main className="flex-1 overflow-auto">{children}</main>
+
+      <div className="pointer-events-none fixed bottom-4 right-4 flex w-80 flex-col gap-2">
+        {toasts.map(({ id, alert }) => (
+          <div
+            key={id}
+            className="pointer-events-auto rounded-lg border border-red-500/40 bg-neutral-900 p-3 shadow-lg"
+          >
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-red-400">
+              🔔 Alert · {alert.condition}
+            </div>
+            <p className="mt-1 text-sm text-neutral-200">{alert.message}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
