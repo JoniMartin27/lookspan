@@ -11,7 +11,7 @@
 npx lookspan          # → http://127.0.0.1:3100
 ```
 
-<!-- TODO: grabar y enlazar un GIF de 30s aquí (npx lookspan → correr un agente → ver spans en vivo). Ver ROADMAP.md. -->
+<!-- TODO: grabar y enlazar un GIF de 30s aquí (npx lookspan → correr un agente → ver spans en vivo). Ver docs/ROADMAP.md. -->
 <!-- ![Lookspan demo](docs/demo.gif) -->
 
 ```
@@ -171,7 +171,7 @@ Cada flag tiene equivalente por entorno `LOOKSPAN_*` (`LOOKSPAN_PORT`, `LOOKSPAN
 
 Lookspan no intenta ser una plataforma completa: apuesta por ser **la capa de
 observabilidad sin setup para agentes TypeScript/MCP**, con la mejor experiencia
-en los primeros 5 minutos. Roadmap en [ROADMAP.md](ROADMAP.md).
+en los primeros 5 minutos. Roadmap en [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
@@ -205,7 +205,7 @@ npm run ci         # typecheck + lint + test + build
 ```
 
 Contribuciones bienvenidas — ver [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
-Proceso de release en [PUBLISHING.md](PUBLISHING.md).
+Proceso de release en [docs/PUBLISHING.md](docs/PUBLISHING.md). Política de seguridad: [SECURITY.md](SECURITY.md).
 
 ---
 

@@ -43,4 +43,4 @@ entry, or an example is a great first contribution.
 
 ## Releasing
 
-See [PUBLISHING.md](../PUBLISHING.md).
+See [docs/PUBLISHING.md](../docs/PUBLISHING.md).
