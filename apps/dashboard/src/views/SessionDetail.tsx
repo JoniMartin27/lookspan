@@ -65,15 +65,25 @@ interface Bar {
 function Timeline({ traces }: { traces: TraceListItem[] }) {
   const [, navigate] = useLocation();
 
-  const { lanes, t0, range } = useMemo(() => {
+  // Ordinal time axis: position by the *rank* of each timestamp among all event
+  // boundaries, not raw wall-clock. This compresses long idle gaps (an empty
+  // 24h stretch costs no width) while keeping cross-agent alignment — two traces
+  // that started at the same instant still line up vertically.
+  const { lanes, rankOf, maxRank, startLabel, endLabel } = useMemo(() => {
     const ts = traces.map((t) => new Date(t.startedAt).getTime());
-    const ends = traces.map((t, i) => (ts[i] ?? 0) + (t.durationMs ?? 0));
-    const min = ts.length ? Math.min(...ts) : 0;
-    const max = ends.length ? Math.max(...ends) : min + 1;
+    const boundaries = new Set<number>();
+    traces.forEach((t, i) => {
+      const s = ts[i] ?? 0;
+      boundaries.add(s);
+      boundaries.add(s + (t.durationMs ?? 0));
+    });
+    const sorted = [...boundaries].sort((a, b) => a - b);
+    const rank = new Map(sorted.map((t, i) => [t, i]));
+
     const byAgent = new Map<string, Bar[]>();
     traces.forEach((t, i) => {
       const key = t.agentId ?? '(unattributed)';
-      const start = ts[i] ?? min;
+      const start = ts[i] ?? 0;
       const bar: Bar = { trace: t, start, end: start + (t.durationMs ?? 0) };
       const arr = byAgent.get(key);
       if (arr) arr.push(bar);
@@ -81,8 +91,10 @@ function Timeline({ traces }: { traces: TraceListItem[] }) {
     });
     return {
       lanes: [...byAgent.entries()].sort((a, b) => a[0].localeCompare(b[0])),
-      t0: min,
-      range: Math.max(1, max - min),
+      rankOf: rank,
+      maxRank: Math.max(1, sorted.length - 1),
+      startLabel: sorted.length ? new Date(sorted[0] as number).toLocaleString() : '',
+      endLabel: sorted.length ? new Date(sorted[sorted.length - 1] as number).toLocaleString() : '',
     };
   }, [traces]);
 
@@ -103,8 +115,9 @@ function Timeline({ traces }: { traces: TraceListItem[] }) {
           </div>
           <div className="relative h-6 flex-1 rounded bg-neutral-900">
             {bars.map((b) => {
-              const left = ((b.start - t0) / range) * 100;
-              const width = Math.max(0.6, ((b.end - b.start) / range) * 100);
+              const left = ((rankOf.get(b.start) ?? 0) / maxRank) * 100;
+              const right = ((rankOf.get(b.end) ?? 0) / maxRank) * 100;
+              const width = Math.max(0.8, right - left);
               return (
                 <button
                   type="button"
@@ -115,9 +128,9 @@ function Timeline({ traces }: { traces: TraceListItem[] }) {
                   style={{
                     left: `${left}%`,
                     width: `${width}%`,
-                    minWidth: 3,
+                    minWidth: 4,
                     background: agentColor(agent === '(unattributed)' ? null : agent),
-                    opacity: b.trace.status === 'error' ? 1 : 0.55,
+                    opacity: b.trace.status === 'error' ? 1 : 0.6,
                     borderColor: b.trace.status === 'error' ? '#ef4444' : 'transparent',
                   }}
                 />
@@ -127,15 +140,10 @@ function Timeline({ traces }: { traces: TraceListItem[] }) {
         </div>
       ))}
       <div className="flex justify-between pl-[8.75rem] pt-1 text-[10px] text-neutral-600">
-        <span>0</span>
-        <span>{formatRange(range)}</span>
+        <span>{startLabel}</span>
+        <span>ordinal axis · idle gaps compressed</span>
+        <span>{endLabel}</span>
       </div>
     </div>
   );
-}
-
-function formatRange(ms: number): string {
-  if (ms < 1000) return `${Math.round(ms)} ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
-  return `${(ms / 60_000).toFixed(1)} min`;
 }
