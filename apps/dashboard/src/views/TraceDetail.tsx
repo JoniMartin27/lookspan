@@ -9,6 +9,7 @@ import { agentColor } from '../lib/agentColor.ts';
 export default function TraceDetail() {
   const params = useParams<{ id: string }>();
   const traceId = params.id;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['trace', traceId],
@@ -16,13 +17,17 @@ export default function TraceDetail() {
     enabled: Boolean(traceId),
   });
 
-  const { nodes, edges } = useMemo(() => buildGraph(data?.spans ?? []), [data?.spans]);
+  const { nodes, edges } = useMemo(
+    () => buildGraph(data?.spans ?? [], selectedId),
+    [data?.spans, selectedId],
+  );
 
   if (isLoading) return <div className="p-8 text-neutral-400">Loading trace…</div>;
   if (error) return <div className="p-8 text-red-400">Error: {(error as Error).message}</div>;
   if (!data) return <div className="p-8 text-neutral-400">Not found.</div>;
 
   const agentIds = [...new Set(data.spans.map((s) => s.agentId).filter(Boolean))] as string[];
+  const selected = data.spans.find((s) => s.spanId === selectedId) ?? null;
 
   return (
     <div className="flex h-full flex-col">
@@ -30,7 +35,9 @@ export default function TraceDetail() {
         <div className="mr-auto">
           <h1 className="text-lg font-semibold">{data.trace.rootName}</h1>
           <p className="text-xs text-neutral-500">
-            {data.trace.framework} · {data.trace.spanCount} spans · ${data.trace.costUsd.toFixed(4)}
+            {data.trace.framework} · {data.trace.spanCount} spans
+            {data.trace.durationMs !== null ? ` · ${formatMs(data.trace.durationMs)}` : ''} · $
+            {data.trace.costUsd.toFixed(4)}
           </p>
         </div>
         {agentIds.length > 0 && (
@@ -54,18 +61,119 @@ export default function TraceDetail() {
         )}
         <Scores traceId={traceId} scores={data.scores ?? []} />
       </div>
-      <div className="min-h-0 flex-1">
+
+      <div className="relative min-h-0 flex-1">
         <ReactFlow
           nodes={nodes}
           edges={edges}
           fitView
+          fitViewOptions={{ padding: 0.25 }}
           minZoom={0.1}
+          nodesConnectable={false}
+          onNodeClick={(_, n) => setSelectedId(n.id)}
+          onPaneClick={() => setSelectedId(null)}
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={16} size={1} color="#27272a" />
           <Controls showInteractive={false} />
         </ReactFlow>
+        {selected && <SpanDrawer span={selected} onClose={() => setSelectedId(null)} />}
       </div>
+    </div>
+  );
+}
+
+function formatMs(ms: number): string {
+  if (ms < 1000) return `${ms} ms`;
+  return `${(ms / 1000).toFixed(2)} s`;
+}
+
+const TYPE_LABEL: Record<string, string> = {
+  agent_step: 'agent',
+  llm_call: 'llm',
+  tool_call: 'tool',
+  retrieval: 'retrieval',
+  embedding: 'embedding',
+  error: 'error',
+  custom: 'custom',
+};
+
+/** Slide-over panel with the full detail of the clicked span. */
+function SpanDrawer({ span, onClose }: { span: Span; onClose: () => void }) {
+  return (
+    <aside className="absolute right-0 top-0 flex h-full w-96 max-w-[90%] flex-col overflow-auto border-l border-neutral-800 bg-neutral-950/95 backdrop-blur">
+      <div className="flex items-start justify-between gap-2 border-b border-neutral-800 p-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block size-2 rounded-full"
+              style={{ background: agentColor(span.agentId) }}
+            />
+            <h2 className="text-sm font-semibold text-neutral-100">{span.name}</h2>
+          </div>
+          <p className="mt-1 text-xs text-neutral-500">
+            {TYPE_LABEL[span.type] ?? span.type}
+            {span.agentId ? ` · ${span.agentId}` : ''}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-neutral-500 hover:text-neutral-200"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-4 p-4 text-xs">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
+          <Field label="Status" value={span.status} tone={span.status === 'error' ? 'bad' : 'ok'} />
+          <Field
+            label="Duration"
+            value={span.durationMs !== null ? formatMs(span.durationMs) : '—'}
+          />
+          {span.model && <Field label="Model" value={span.model} />}
+          {span.provider && <Field label="Provider" value={span.provider} />}
+          {span.usage && (
+            <>
+              <Field label="Tokens in" value={String(span.usage.inputTokens ?? 0)} />
+              <Field label="Tokens out" value={String(span.usage.outputTokens ?? 0)} />
+              <Field label="Cost" value={`$${(span.usage.costUsd ?? 0).toFixed(4)}`} />
+            </>
+          )}
+          <Field label="Started" value={new Date(span.startedAt).toLocaleString()} />
+          {span.endedAt && <Field label="Ended" value={new Date(span.endedAt).toLocaleString()} />}
+        </dl>
+
+        {span.error && <Json label="Error" value={span.error} />}
+        {span.input && <Json label="Input" value={span.input} />}
+        {span.output && <Json label="Output" value={span.output} />}
+        {span.attributes && <Json label="Attributes" value={span.attributes} />}
+      </div>
+    </aside>
+  );
+}
+
+function Field({ label, value, tone }: { label: string; value: string; tone?: 'ok' | 'bad' }) {
+  const color =
+    tone === 'bad' ? 'text-red-400' : tone === 'ok' ? 'text-emerald-400' : 'text-neutral-200';
+  return (
+    <div>
+      <dt className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</dt>
+      <dd className={`font-mono ${color}`}>{value}</dd>
+    </div>
+  );
+}
+
+function Json({ label, value }: { label: string; value: unknown }) {
+  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  return (
+    <div>
+      <div className="mb-1 text-[10px] uppercase tracking-wider text-neutral-500">{label}</div>
+      <pre className="max-h-60 overflow-auto rounded border border-neutral-800 bg-neutral-900 p-2 font-mono text-[11px] text-neutral-300">
+        {text}
+      </pre>
     </div>
   );
 }
@@ -152,7 +260,7 @@ function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
 }
 
 const X_GAP = 240; // horizontal: depth → x (left-to-right)
-const Y_GAP = 56; // vertical: sibling order → y (stacks down)
+const Y_GAP = 60; // vertical: sibling order → y (stacks down)
 
 /**
  * Left-to-right tidy-tree: depth maps to x, leaves stack down the y axis, and
@@ -160,7 +268,7 @@ const Y_GAP = 56; // vertical: sibling order → y (stacks down)
  * shallow and wide (one step → many tool calls); stacking children in a column
  * reads far better than a single very wide horizontal row.
  */
-function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
+function buildGraph(spans: Span[], selectedId: string | null): { nodes: Node[]; edges: Edge[] } {
   if (spans.length === 0) return { nodes: [], edges: [] };
 
   const byId = new Map(spans.map((s) => [s.spanId, s]));
@@ -199,24 +307,39 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
   };
   for (const r of roots) layout(r, 0);
 
-  const nodes: Node[] = spans.map((span) => ({
-    id: span.spanId,
-    position: pos.get(span.spanId) ?? { x: 0, y: 0 },
-    data: { label: span.name },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-    style: {
-      background: span.status === 'error' ? '#7f1d1d' : '#1f1f23',
-      color: '#f5f5f5',
-      border: '1px solid #3f3f46',
-      borderLeft: `4px solid ${agentColor(span.agentId)}`, // accent by agent
-      borderRadius: 6,
-      padding: 8,
-      fontSize: 12,
-      width: 170,
-      textAlign: 'center',
-    },
-  }));
+  const nodes: Node[] = spans.map((span) => {
+    const accent = agentColor(span.agentId);
+    const isError = span.status === 'error';
+    const isSelected = span.spanId === selectedId;
+    return {
+      id: span.spanId,
+      position: pos.get(span.spanId) ?? { x: 0, y: 0 },
+      data: {
+        label: (
+          <div className="text-left leading-tight">
+            <div className="truncate font-medium text-neutral-100">{span.name}</div>
+            <div className="mt-0.5 text-[10px] text-neutral-400">
+              {TYPE_LABEL[span.type] ?? span.type}
+              {span.durationMs !== null ? ` · ${formatMs(span.durationMs)}` : ''}
+            </div>
+          </div>
+        ),
+      },
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+      style: {
+        background: isError ? '#2a1416' : '#18181b',
+        color: '#f5f5f5',
+        border: `1px solid ${isSelected ? accent : isError ? '#7f1d1d' : '#3f3f46'}`,
+        borderLeft: `4px solid ${accent}`,
+        borderRadius: 8,
+        padding: '6px 10px',
+        fontSize: 12,
+        width: 180,
+        boxShadow: isSelected ? `0 0 0 1px ${accent}` : 'none',
+      },
+    };
+  });
 
   const edges: Edge[] = spans
     .filter((s) => s.parentSpanId !== null && byId.has(s.parentSpanId as string))
@@ -225,6 +348,7 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
       source: s.parentSpanId as string,
       target: s.spanId,
       animated: s.status === 'ok',
+      style: { stroke: '#3f3f46' },
     }));
 
   return { nodes, edges };
