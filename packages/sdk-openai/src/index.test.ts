@@ -80,6 +80,38 @@ describe('observeOpenAI', () => {
     expect(spans[0].error?.message).toBe('rate limited');
   });
 
+  it('traces a streaming call when the stream is consumed (usage from final chunk)', async () => {
+    const { spans, exporter } = captureExporter();
+    const streamClient = {
+      chat: {
+        completions: {
+          create: async (_args: unknown) => {
+            async function* gen() {
+              yield { choices: [{ delta: { content: 'hi' } }] };
+              yield {
+                choices: [{ delta: { content: '!' } }],
+                usage: { prompt_tokens: 7, completion_tokens: 3 },
+              };
+            }
+            return gen();
+          },
+        },
+      },
+    };
+    const client = observeOpenAI(streamClient, { exporter });
+    const stream = await client.chat.completions.create({ model: 'gpt-4o', stream: true });
+
+    // no span until the stream is consumed
+    expect(spans).toHaveLength(0);
+    const chunks = [];
+    for await (const c of stream as AsyncIterable<unknown>) chunks.push(c);
+
+    expect(chunks).toHaveLength(2);
+    expect(spans).toHaveLength(1);
+    expect(spans[0]).toMatchObject({ status: 'ok', model: 'gpt-4o', type: 'llm_call' });
+    expect(spans[0].usage).toMatchObject({ inputTokens: 7, outputTokens: 3 });
+  });
+
   it('leaves untraced methods working', async () => {
     const { exporter, spans } = captureExporter();
     const client = observeOpenAI(fakeClient(), { exporter });
