@@ -54,6 +54,19 @@ function buildAlertRules(values: Record<string, unknown>): AlertRule[] {
   return rules;
 }
 
+/** Read the published package version at runtime (package.json sits next to dist). */
+function readVersion(): string {
+  for (const rel of ['../package.json', '../../package.json']) {
+    try {
+      const path = fileURLToPath(new URL(rel, import.meta.url));
+      return (JSON.parse(readFileSync(path, 'utf8')) as { version?: string }).version ?? '0.0.0';
+    } catch {
+      /* try next */
+    }
+  }
+  return '0.0.0';
+}
+
 function parseFlags(argv: string[]): CliFlags {
   const { values } = parseArgs({
     args: argv,
@@ -80,7 +93,7 @@ function parseFlags(argv: string[]): CliFlags {
     process.exit(0);
   }
   if (values.version) {
-    console.log('lookspan 0.0.1');
+    console.log(`lookspan ${readVersion()}`);
     process.exit(0);
   }
 

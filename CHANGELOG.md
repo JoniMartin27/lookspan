@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 — 2026-06-03 (CLI only)
+
+- Fix: `lookspan --version` now reports the real version (was hardcoded).
+
 ## 0.1.1 — 2026-06-03
 
 ### Added
