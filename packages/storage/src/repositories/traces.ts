@@ -119,7 +119,7 @@ export class TracesRepository {
       session_id AS sessionId,
       COUNT(*) AS traceCount,
       COUNT(DISTINCT agent_id) AS agentCount,
-      COALESCE(SUM(error_count), 0) AS errorCount,
+      COALESCE(SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END), 0) AS errorCount,
       COALESCE(SUM(cost_usd), 0) AS totalCostUsd,
       MIN(started_at) AS startedAt,
       MAX(COALESCE(ended_at, started_at)) AS endedAt
