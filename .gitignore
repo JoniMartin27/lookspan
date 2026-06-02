@@ -59,3 +59,4 @@ temp/
 # npm pack artifacts
 *.tgz
 packages/cli/public/
+python/*/uv.lock

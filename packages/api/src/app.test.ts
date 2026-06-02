@@ -111,6 +111,82 @@ describe('createApp routing (no auth)', () => {
   });
 });
 
+describe('aggregation & session routes', () => {
+  beforeEach(async () => {
+    await start();
+    // two traces in one session, two agents, with cost
+    await fetch(`${base}/api/ingest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        spans: [
+          {
+            traceId: 'tr_a',
+            spanId: 'sp_a',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: 'a',
+            startedAt: '2026-06-01T10:00:00Z',
+            endedAt: '2026-06-01T10:00:01Z',
+            status: 'ok',
+            framework: 'mcp',
+            agentId: 'ag1',
+            sessionId: 'sess',
+            model: 'gpt-4o',
+            provider: 'openai',
+            usage: { inputTokens: 1000000, outputTokens: 0, costUsd: 0 },
+          },
+          {
+            traceId: 'tr_b',
+            spanId: 'sp_b',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: 'b',
+            startedAt: '2026-06-01T11:00:00Z',
+            endedAt: '2026-06-01T11:00:02Z',
+            status: 'error',
+            framework: 'mcp',
+            agentId: 'ag2',
+            sessionId: 'sess',
+          },
+        ],
+      }),
+    });
+  });
+
+  it('GET /api/stats returns totals, error rate and latency', async () => {
+    const s = await (await fetch(`${base}/api/stats`)).json();
+    expect(s.totalTraces).toBe(2);
+    expect(s.errorTraces).toBe(1);
+    expect(s.errorRate).toBe(0.5);
+    expect(s.latencyMs).not.toBeNull();
+  });
+
+  it('GET /api/costs/summary breaks cost down', async () => {
+    const c = await (await fetch(`${base}/api/costs/summary`)).json();
+    expect(c.total).toBe(2.5); // 1M input gpt-4o @ $2.5
+    expect(c.byProvider.openai).toBe(2.5);
+  });
+
+  it('GET /api/sessions lists the session with its agents', async () => {
+    const { items } = await (await fetch(`${base}/api/sessions`)).json();
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ sessionId: 'sess', traceCount: 2, agentCount: 2 });
+  });
+
+  it('GET /api/sessions/:id returns summary + traces; 404 for unknown', async () => {
+    const res = await (await fetch(`${base}/api/sessions/sess`)).json();
+    expect(res.session).toMatchObject({ sessionId: 'sess', traceCount: 2 });
+    expect(res.traces).toHaveLength(2);
+    expect((await fetch(`${base}/api/sessions/nope`)).status).toBe(404);
+  });
+
+  it('GET /api/alerts returns an items array', async () => {
+    const a = await (await fetch(`${base}/api/alerts`)).json();
+    expect(Array.isArray(a.items)).toBe(true);
+  });
+});
+
 describe('createApp auth token', () => {
   beforeEach(() => start('secret123'));
 
