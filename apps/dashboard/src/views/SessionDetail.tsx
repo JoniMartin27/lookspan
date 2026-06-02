@@ -1,6 +1,6 @@
 import type { TraceListItem } from '@lookspan/types';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { api } from '../api/client.ts';
 import { agentColor } from '../lib/agentColor.ts';
@@ -64,6 +64,7 @@ interface Bar {
 
 function Timeline({ traces }: { traces: TraceListItem[] }) {
   const [, navigate] = useLocation();
+  const [hovered, setHovered] = useState<TraceListItem | null>(null);
 
   // Ordinal time axis: position by the *rank* of each timestamp among all event
   // boundaries, not raw wall-clock. This compresses long idle gaps (an empty
@@ -123,6 +124,8 @@ function Timeline({ traces }: { traces: TraceListItem[] }) {
                   type="button"
                   key={b.trace.traceId}
                   onClick={() => navigate(`/traces/${b.trace.traceId}`)}
+                  onMouseEnter={() => setHovered(b.trace)}
+                  onFocus={() => setHovered(b.trace)}
                   title={`${b.trace.rootName} · ${b.trace.durationMs ?? 0}ms · ${b.trace.status}`}
                   className="absolute top-0.5 h-5 rounded-sm border hover:brightness-125"
                   style={{
@@ -144,6 +147,80 @@ function Timeline({ traces }: { traces: TraceListItem[] }) {
         <span>ordinal axis · idle gaps compressed</span>
         <span>{endLabel}</span>
       </div>
+
+      <TracePreview trace={hovered} onOpen={(id) => navigate(`/traces/${id}`)} />
     </div>
   );
+}
+
+/** Preview card shown below the timeline for the hovered trace. */
+function TracePreview({
+  trace,
+  onOpen,
+}: {
+  trace: TraceListItem | null;
+  onOpen: (id: string) => void;
+}) {
+  if (!trace) {
+    return (
+      <div className="mt-4 flex h-24 items-center justify-center rounded-lg border border-dashed border-neutral-800 text-xs text-neutral-600">
+        Hover a trace to preview it
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(trace.traceId)}
+      className="mt-4 block w-full rounded-lg border border-neutral-800 bg-neutral-900/50 p-4 text-left hover:border-brand-500"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block size-2 rounded-full"
+            style={{ background: agentColor(trace.agentId) }}
+          />
+          <span className="text-sm font-medium text-neutral-100">{trace.rootName}</span>
+        </div>
+        <span
+          className={`rounded px-2 py-0.5 text-xs font-medium ${
+            trace.status === 'error'
+              ? 'bg-red-500/10 text-red-400'
+              : 'bg-emerald-500/10 text-emerald-400'
+          }`}
+        >
+          {trace.status}
+        </span>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
+        <Pair label="Agent" value={trace.agentId ?? '—'} />
+        <Pair label="Framework" value={trace.framework} />
+        <Pair label="Spans" value={String(trace.spanCount)} />
+        <Pair
+          label="Duration"
+          value={trace.durationMs !== null ? formatRange(trace.durationMs) : '—'}
+        />
+        <Pair label="Cost" value={`$${trace.costUsd.toFixed(4)}`} />
+        <Pair label="Started" value={new Date(trace.startedAt).toLocaleString()} />
+      </dl>
+      <p className="mt-2 text-[10px] text-neutral-500">Click to open the full trace →</p>
+    </button>
+  );
+}
+
+function Pair({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="truncate">
+      <dt className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</dt>
+      <dd className="truncate font-mono text-neutral-200" title={value}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function formatRange(ms: number): string {
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
+  return `${(ms / 60_000).toFixed(1)} min`;
 }
