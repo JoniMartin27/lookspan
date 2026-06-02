@@ -72,6 +72,22 @@ Open `http://127.0.0.1:3100` and watch the trace appear — with its cost comput
 
 ## Integrating your agents
 
+### OpenAI SDK (drop-in)
+
+Wrap your client in one line — every model call is traced (no OTel, no proxy):
+
+```bash
+npm install @lookspan/openai
+```
+
+```typescript
+import OpenAI from 'openai';
+import { observeOpenAI } from '@lookspan/openai';
+
+const openai = observeOpenAI(new OpenAI());
+await openai.chat.completions.create({ model: 'gpt-4o', messages });
+```
+
 ### TypeScript / MCP
 
 ```bash

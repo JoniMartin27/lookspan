@@ -31,6 +31,20 @@ Traceloop.init(api_endpoint="${ORIGIN}/v1/traces", disable_batch=True)
       />
 
       <Section
+        title="OpenAI SDK (drop-in, TypeScript)"
+        subtitle="One line — wrap your client and every call is traced. No OTel, no proxy."
+        recommended
+        code={`// npm install @lookspan/openai
+import OpenAI from 'openai';
+import { observeOpenAI } from '@lookspan/openai';
+
+const openai = observeOpenAI(new OpenAI(), { endpoint: '${ORIGIN}/api/ingest' });
+
+// use openai exactly as before — every chat/embeddings call is now traced
+await openai.chat.completions.create({ model: 'gpt-4o', messages });`}
+      />
+
+      <Section
         title="Any language — HTTP"
         subtitle="The universal path. Anything that can POST JSON works."
         code={`curl -X POST ${ORIGIN}/api/ingest \\

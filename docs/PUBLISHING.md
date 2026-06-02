@@ -19,7 +19,10 @@ npm publish -w @lookspan/types        # public scoped pkg (publishConfig set)
 # 2. MCP SDK — depends on @lookspan/types@^0.1.0
 npm publish -w @lookspan/mcp
 
-# 3. CLI — self-contained bundle (no @lookspan/* runtime deps).
+# 3. OpenAI drop-in SDK — depends on @lookspan/mcp + @lookspan/types
+npm publish -w @lookspan/openai
+
+# 4. CLI — self-contained bundle (no @lookspan/* runtime deps).
 #    `prepack` runs scripts/bundle.mjs (esbuild + copies the dashboard to public/).
 npm publish -w lookspan               # unscoped → `npx lookspan`
 ```
