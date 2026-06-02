@@ -23,27 +23,35 @@ export default function TraceDetail() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-neutral-800 px-6 py-3">
-        <h1 className="text-lg font-semibold">{data.trace.rootName}</h1>
-        <p className="text-xs text-neutral-500">
-          {data.trace.framework} · {data.trace.spanCount} spans · ${data.trace.costUsd.toFixed(4)}
-        </p>
-      </div>
-      <div className="flex min-h-0 flex-1">
-        <div className="flex-1">
-          <ReactFlow nodes={nodes} edges={edges} fitView>
-            <Background gap={16} size={1} />
-            <Controls />
-          </ReactFlow>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-neutral-800 px-6 py-3">
+        <div className="mr-auto">
+          <h1 className="text-lg font-semibold">{data.trace.rootName}</h1>
+          <p className="text-xs text-neutral-500">
+            {data.trace.framework} · {data.trace.spanCount} spans · ${data.trace.costUsd.toFixed(4)}
+          </p>
         </div>
-        <ScoresPanel traceId={traceId} scores={data.scores ?? []} />
+        <Scores traceId={traceId} scores={data.scores ?? []} />
+      </div>
+      <div className="min-h-0 flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          fitView
+          minZoom={0.1}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background gap={16} size={1} color="#27272a" />
+          <Controls showInteractive={false} />
+        </ReactFlow>
       </div>
     </div>
   );
 }
 
-function ScoresPanel({ traceId, scores }: { traceId: string; scores: Score[] }) {
+/** Compact scores UI in the header: existing scores as chips + a small inline add form. */
+function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
   const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
 
@@ -52,6 +60,7 @@ function ScoresPanel({ traceId, scores }: { traceId: string; scores: Score[] }) 
     onSuccess: () => {
       setName('');
       setValue('');
+      setAdding(false);
       qc.invalidateQueries({ queryKey: ['trace', traceId] });
     },
   });
@@ -59,62 +68,117 @@ function ScoresPanel({ traceId, scores }: { traceId: string; scores: Score[] }) 
   const canSubmit = name.trim() !== '' && value.trim() !== '' && Number.isFinite(Number(value));
 
   return (
-    <aside className="w-72 shrink-0 overflow-auto border-l border-neutral-800 p-4">
-      <h2 className="mb-3 text-sm font-medium text-neutral-300">Scores</h2>
-      {scores.length === 0 ? (
-        <p className="mb-4 text-xs text-neutral-500">No scores yet.</p>
-      ) : (
-        <ul className="mb-4 space-y-2">
-          {scores.map((s) => (
-            <li key={s.id} className="rounded border border-neutral-800 bg-neutral-900/50 p-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-300">{s.name}</span>
-                <span className="font-mono text-neutral-100">{s.value}</span>
-              </div>
-              {s.comment && <p className="mt-1 text-xs text-neutral-500">{s.comment}</p>}
-              {s.source && (
-                <p className="mt-0.5 text-[10px] uppercase text-neutral-600">{s.source}</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (canSubmit) mutation.mutate();
-        }}
-        className="space-y-2"
-      >
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="metric (e.g. correctness)"
-          className="w-full rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none"
-        />
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="value (e.g. 1)"
-          inputMode="decimal"
-          className="w-full rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!canSubmit || mutation.isPending}
-          className="w-full rounded bg-brand-600 px-2 py-1 text-sm font-medium text-white disabled:opacity-40"
+    <div className="flex items-center gap-2">
+      {scores.map((s) => (
+        <span
+          key={s.id}
+          title={s.comment ?? s.source ?? ''}
+          className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300"
         >
-          {mutation.isPending ? 'Adding…' : 'Add score'}
+          {s.name} <span className="font-mono text-neutral-100">{s.value}</span>
+        </span>
+      ))}
+      {adding ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (canSubmit) mutation.mutate();
+          }}
+          className="flex items-center gap-1"
+        >
+          <input
+            // biome-ignore lint/a11y/noAutofocus: focus the field the user just opened
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="metric"
+            className="w-28 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+          />
+          <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="value"
+            inputMode="decimal"
+            className="w-16 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={!canSubmit || mutation.isPending}
+            className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => setAdding(false)}
+            className="px-1 text-xs text-neutral-500 hover:text-neutral-300"
+          >
+            ✕
+          </button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="rounded border border-neutral-800 px-2 py-0.5 text-xs text-neutral-400 hover:border-brand-500 hover:text-neutral-200"
+        >
+          + score
         </button>
-      </form>
-    </aside>
+      )}
+    </div>
   );
 }
 
+const X_GAP = 200;
+const Y_GAP = 110;
+
+/**
+ * Tidy-tree layout: leaves get sequential x positions, each parent is centered
+ * over its children, and depth maps to the y axis. Avoids the "everything on one
+ * line" problem of an index-based layout when a trace has many spans.
+ */
 function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
-  const nodes: Node[] = spans.map((span, idx) => ({
+  if (spans.length === 0) return { nodes: [], edges: [] };
+
+  const byId = new Map(spans.map((s) => [s.spanId, s]));
+  const children = new Map<string, string[]>();
+  const roots: string[] = [];
+  for (const s of spans) {
+    if (s.parentSpanId && byId.has(s.parentSpanId)) {
+      const arr = children.get(s.parentSpanId);
+      if (arr) arr.push(s.spanId);
+      else children.set(s.parentSpanId, [s.spanId]);
+    } else {
+      roots.push(s.spanId);
+    }
+  }
+
+  const pos = new Map<string, { x: number; y: number }>();
+  let nextLeafX = 0;
+  const seen = new Set<string>();
+
+  const layout = (id: string, depth: number): number => {
+    if (seen.has(id)) return pos.get(id)?.x ?? 0; // guard against cycles
+    seen.add(id);
+    const kids = children.get(id) ?? [];
+    if (kids.length === 0) {
+      const x = nextLeafX * X_GAP;
+      nextLeafX++;
+      pos.set(id, { x, y: depth * Y_GAP });
+      return x;
+    }
+    const xs = kids.map((k) => layout(k, depth + 1));
+    const first = xs[0] ?? 0;
+    const last = xs[xs.length - 1] ?? first;
+    const x = (first + last) / 2;
+    pos.set(id, { x, y: depth * Y_GAP });
+    return x;
+  };
+  for (const r of roots) layout(r, 0);
+
+  const nodes: Node[] = spans.map((span) => ({
     id: span.spanId,
-    position: { x: idx * 220, y: depthOf(span, spans) * 100 },
+    position: pos.get(span.spanId) ?? { x: 0, y: 0 },
     data: { label: span.name },
     style: {
       background: span.status === 'error' ? '#7f1d1d' : '#1f1f23',
@@ -123,11 +187,13 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
       borderRadius: 6,
       padding: 8,
       fontSize: 12,
+      width: 170,
+      textAlign: 'center',
     },
   }));
 
   const edges: Edge[] = spans
-    .filter((s) => s.parentSpanId !== null)
+    .filter((s) => s.parentSpanId !== null && byId.has(s.parentSpanId as string))
     .map((s) => ({
       id: `${s.parentSpanId}-${s.spanId}`,
       source: s.parentSpanId as string,
@@ -136,16 +202,4 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
     }));
 
   return { nodes, edges };
-}
-
-function depthOf(span: Span, all: Span[]): number {
-  let depth = 0;
-  let current: Span | undefined = span;
-  while (current?.parentSpanId) {
-    const parentId: string = current.parentSpanId;
-    current = all.find((s) => s.spanId === parentId);
-    depth++;
-    if (depth > 50) break;
-  }
-  return depth;
 }

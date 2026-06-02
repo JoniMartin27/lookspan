@@ -21,3 +21,23 @@ body {
   font-family: var(--font-display);
   font-feature-settings: "cv02", "cv03", "cv04";
 }
+
+/* React Flow controls: default icons are dark-on-white and invisible on our
+   dark canvas. Recolor for the dark theme. */
+.react-flow__controls {
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
+}
+.react-flow__controls-button {
+  background: #1f1f23;
+  border-bottom: 1px solid #3f3f46;
+}
+.react-flow__controls-button:hover {
+  background: #2a2a30;
+}
+.react-flow__controls-button svg {
+  fill: #e5e5e5;
+}
+.react-flow__attribution {
+  background: transparent;
+  color: #52525b;
+}

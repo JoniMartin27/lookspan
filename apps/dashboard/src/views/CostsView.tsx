@@ -29,6 +29,13 @@ export default function CostsView() {
         <p className="text-sm text-neutral-500">
           Total cost: <span className="font-mono text-neutral-200">${data.total.toFixed(4)}</span>
         </p>
+        {data.total === 0 && (
+          <p className="mt-1 text-xs text-neutral-600">
+            No billable cost yet — your models are priced at $0 or aren't in the pricing table. Add
+            prices with{' '}
+            <code className="rounded bg-neutral-800 px-1 py-0.5 font-mono">--pricing</code>.
+          </p>
+        )}
       </div>
 
       {stats && (
@@ -82,6 +89,9 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Chart({ data }: { data: { name: string; cost: number }[] }) {
   if (data.length === 0) {
     return <p className="text-xs text-neutral-500">No data yet.</p>;
+  }
+  if (data.every((d) => d.cost === 0)) {
+    return <p className="text-xs text-neutral-500">No cost recorded for these (priced at $0).</p>;
   }
   return (
     <ResponsiveContainer width="100%" height={220}>
