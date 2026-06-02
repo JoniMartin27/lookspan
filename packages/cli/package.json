@@ -1,26 +1,53 @@
 {
   "name": "lookspan",
-  "version": "0.0.1",
-  "private": true,
-  "description": "Lookspan CLI — start the local-first observability dashboard with one command.",
+  "version": "0.1.0",
+  "description": "Local-first observability dashboard for AI agents. MCP-native. Run it with one command.",
   "type": "module",
   "bin": {
     "lookspan": "./dist/index.js"
   },
   "files": [
     "dist",
-    "src"
+    "public",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc --build",
+    "bundle": "node scripts/bundle.mjs",
     "clean": "tsc --build --clean",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepack": "node scripts/bundle.mjs"
   },
   "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
     "@lookspan/api": "*",
     "@lookspan/events": "*",
     "@lookspan/storage": "*",
-    "@lookspan/types": "*"
+    "@lookspan/types": "*",
+    "esbuild": "^0.28.0"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "observability",
+    "tracing",
+    "mcp",
+    "opentelemetry",
+    "llm",
+    "local-first"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoniMartin27/lookspan.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
   "license": "MIT"
 }

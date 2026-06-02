@@ -55,3 +55,7 @@ data/
 tmp/
 temp/
 .cache/
+
+# npm pack artifacts
+*.tgz
+packages/cli/public/

@@ -167,7 +167,16 @@ function findDashboardDir(): string | null {
   const fromEnv = process.env.LOOKSPAN_DASHBOARD_DIR;
   if (fromEnv) return existsSync(join(fromEnv, 'index.html')) ? fromEnv : null;
 
-  let dir = dirname(fileURLToPath(import.meta.url));
+  const here = dirname(fileURLToPath(import.meta.url));
+
+  // Published layout: the dashboard is bundled next to the CLI as `public/`
+  // (dist/index.js → ../public). Checked first so installs are self-contained.
+  for (const bundled of [join(here, '..', 'public'), join(here, 'public')]) {
+    if (existsSync(join(bundled, 'index.html'))) return bundled;
+  }
+
+  // Monorepo/dev layout: walk up to apps/dashboard/dist.
+  let dir = here;
   for (let i = 0; i < 8; i++) {
     const candidate = join(dir, 'apps', 'dashboard', 'dist');
     if (existsSync(join(candidate, 'index.html'))) return candidate;

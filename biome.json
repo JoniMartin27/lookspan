@@ -5,12 +5,14 @@
       "**",
       "!**/node_modules",
       "!**/dist",
+      "!**/public",
       "!**/build",
       "!**/coverage",
       "!**/*.tsbuildinfo",
       "!**/*.db",
       "!**/*.css",
-      "!**/python"
+      "!**/python",
+      "!website"
     ]
   },
   "formatter": {

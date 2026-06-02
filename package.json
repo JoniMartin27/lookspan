@@ -17,6 +17,7 @@
     "fix": "biome check --write .",
     "ci": "npm run typecheck && npm run lint && npm test && npm run build",
     "migrate": "npm --workspace @lookspan/storage run migrate",
+    "release:cli": "npm run build && npm pack -w lookspan",
     "dev": "concurrently -n api,dashboard -c blue,magenta \"npm run dev:api\" \"npm run dev:dashboard\"",
     "dev:api": "npm --workspace @lookspan/api run dev",
     "dev:dashboard": "npm --workspace @lookspan/dashboard run dev",
