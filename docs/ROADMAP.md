@@ -17,6 +17,12 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 
 - [x] **OpenTelemetry backend** — OTLP/HTTP receiver at `/v1/traces`; any OTel SDK
       works with no Lookspan-specific code. Example in `examples/02-otel.mjs`.
+- [x] **OpenAI drop-in** — `@lookspan/openai`: `observeOpenAI(new OpenAI())` traces
+      every call (incl. streaming) in one line.
+- [x] **Sessions** — multi-agent timeline (`/sessions`), per-agent `agentId` color.
+- [ ] **Agent causality** — link cross-agent handoffs (A delegates to B) so a
+      session renders as one tree, not parallel sibling traces. (Needs agents to
+      propagate a parent trace/span id; the biggest differentiator left.)
 - [ ] **TS-stack adapters** — Vercel AI SDK, Mastra, LangGraph.js.
 - [ ] **MCP-first story** — one-liner to wrap any MCP server/client; an
       "MCP Inspector"-style view of tool calls, args, latencies, errors.
@@ -31,8 +37,15 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
       post scores externally.)
 - [ ] **Replay / diff** — re-run a trace's prompt against another model and
       compare cost/latency/output.
-- [ ] **Scale options** — optional Postgres driver for teams, sampling, payload
-      size limits. (Stay honest about SQLite's local-first ceiling.)
+- [ ] **Scale options** — optional Postgres driver for teams, sampling. (SQLite's
+      local-first ceiling is intentional; a per-batch span cap already guards
+      against floods.)
+
+## Review hardening (done in 0.1.1)
+
+Cost no longer double-charges cached tokens · per-batch span cap · secret-value
+redaction (not just keys) · streaming traced correctly · OTLP protobuf · trace
+pagination · API + Python tests · unified versions.
 
 ## Non-goals (for now)
 
