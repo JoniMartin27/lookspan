@@ -1,4 +1,4 @@
-import type { Trace, TraceListItem } from '@lookspan/types';
+import type { SessionSummary, Trace, TraceListItem } from '@lookspan/types';
 import type { LookspanDatabase } from '../database.js';
 import type { TraceRow } from '../schema.js';
 import { rowToTrace, rowToTraceListItem } from './mappers.js';
@@ -112,5 +112,38 @@ export class TracesRepository {
       .prepare('SELECT COUNT(*) as n FROM traces WHERE started_at >= ?')
       .get(isoTimestamp) as { n: number };
     return row.n;
+  }
+
+  private static readonly SESSION_SELECT = `
+    SELECT
+      session_id AS sessionId,
+      COUNT(*) AS traceCount,
+      COUNT(DISTINCT agent_id) AS agentCount,
+      COALESCE(SUM(error_count), 0) AS errorCount,
+      COALESCE(SUM(cost_usd), 0) AS totalCostUsd,
+      MIN(started_at) AS startedAt,
+      MAX(COALESCE(ended_at, started_at)) AS endedAt
+    FROM traces
+    WHERE session_id IS NOT NULL`;
+
+  /** Sessions ordered by most recent activity. */
+  listSessions(limit = 100): SessionSummary[] {
+    const max = Math.min(limit, 500);
+    return this.db
+      .prepare(
+        `${TracesRepository.SESSION_SELECT}
+         GROUP BY session_id
+         ORDER BY MAX(started_at) DESC
+         LIMIT ?`,
+      )
+      .all(max) as SessionSummary[];
+  }
+
+  /** Aggregate summary for a single session, or null if it has no traces. */
+  sessionSummary(sessionId: string): SessionSummary | null {
+    const row = this.db
+      .prepare(`${TracesRepository.SESSION_SELECT} AND session_id = @sessionId GROUP BY session_id`)
+      .get({ sessionId }) as SessionSummary | undefined;
+    return row ?? null;
   }
 }

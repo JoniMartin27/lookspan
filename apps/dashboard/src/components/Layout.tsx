@@ -42,6 +42,9 @@ export default function Layout({ children }: LayoutProps) {
             <NavLink href="/" active={location === '/'}>
               Traces
             </NavLink>
+            <NavLink href="/sessions" active={location.startsWith('/sessions')}>
+              Sessions
+            </NavLink>
             <NavLink href="/costs" active={location === '/costs'}>
               Costs
             </NavLink>

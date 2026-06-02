@@ -128,6 +128,8 @@ More runnable examples in [`examples/`](examples/).
 | `GET` | `/api/traces` | List traces (paginated; filter by `framework`, `status`, `sessionId`) |
 | `GET` | `/api/traces/:id` | Trace detail with all its spans and scores |
 | `POST` | `/api/traces/:id/scores` | Attach an evaluation score (`{name, value, comment?, source?}`) |
+| `GET` | `/api/sessions` | List sessions (agents, traces, cost, errors, time range) |
+| `GET` | `/api/sessions/:id` | Session summary + its traces (multi-agent timeline) |
 | `GET` | `/api/costs/summary` | Cost breakdown (total, by model, provider, agent) |
 | `GET` | `/api/stats` | Stats summary (totals, error rate, latency p50/p95/p99, cost per day) |
 | `GET` | `/api/alerts` | History of triggered alerts |

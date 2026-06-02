@@ -3,6 +3,7 @@ import type {
   CostBreakdown,
   Score,
   ScoreInput,
+  SessionSummary,
   Span,
   StatsSummary,
   Trace,
@@ -56,5 +57,8 @@ export const api = {
   costsSummary: () => request<CostBreakdown>('/costs/summary'),
   stats: () => request<StatsSummary>('/stats'),
   listAlerts: () => request<{ items: Alert[] }>('/alerts'),
+  listSessions: () => request<{ items: SessionSummary[] }>('/sessions'),
+  getSession: (id: string) =>
+    request<{ session: SessionSummary; traces: TraceListItem[] }>(`/sessions/${id}`),
   health: () => request<{ ok: boolean; service: string; timestamp: string }>('/health'),
 };

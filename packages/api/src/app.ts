@@ -7,6 +7,7 @@ import { createCostsRouter } from './routes/costs.js';
 import { createHealthRouter } from './routes/health.js';
 import { createIngestRouter } from './routes/ingest.js';
 import { createOtlpRouter } from './routes/otlp.js';
+import { createSessionsRouter } from './routes/sessions.js';
 import { createStatsRouter } from './routes/stats.js';
 import { createStreamRouter } from './routes/stream.js';
 import { createTracesRouter } from './routes/traces.js';
@@ -62,6 +63,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/costs', createCostsRouter(options.context));
   app.use('/api/stats', createStatsRouter(options.context));
   app.use('/api/alerts', createAlertsRouter(options.context));
+  app.use('/api/sessions', createSessionsRouter(options.context));
   app.use('/api/ingest', createIngestRouter(options.context));
   app.use('/api/stream', createStreamRouter());
 

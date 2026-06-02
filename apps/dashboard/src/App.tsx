@@ -9,6 +9,8 @@ import TraceList from './views/TraceList.tsx';
 const TraceDetail = lazy(() => import('./views/TraceDetail.tsx'));
 const CostsView = lazy(() => import('./views/CostsView.tsx'));
 const AlertsView = lazy(() => import('./views/AlertsView.tsx'));
+const SessionsView = lazy(() => import('./views/SessionsView.tsx'));
+const SessionDetail = lazy(() => import('./views/SessionDetail.tsx'));
 
 function Loading() {
   return <div className="p-8 text-neutral-400">Loading…</div>;
@@ -21,6 +23,8 @@ export default function App() {
         <Switch>
           <Route path="/" component={TraceList} />
           <Route path="/traces/:id" component={TraceDetail} />
+          <Route path="/sessions" component={SessionsView} />
+          <Route path="/sessions/:id" component={SessionDetail} />
           <Route path="/costs" component={CostsView} />
           <Route path="/alerts" component={AlertsView} />
           <Route>

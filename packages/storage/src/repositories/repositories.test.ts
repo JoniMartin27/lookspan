@@ -128,6 +128,61 @@ describe('TracesRepository.list', () => {
   });
 });
 
+describe('TracesRepository.listSessions / sessionSummary', () => {
+  beforeEach(() => {
+    const repo = new TracesRepository(db);
+    repo.upsert(
+      trace({
+        traceId: 's1a',
+        sessionId: 'sess1',
+        agentId: 'a1',
+        costUsd: 1,
+        startedAt: '2026-06-01T10:00:00Z',
+      }),
+    );
+    repo.upsert(
+      trace({
+        traceId: 's1b',
+        sessionId: 'sess1',
+        agentId: 'a2',
+        costUsd: 2,
+        status: 'error',
+        errorCount: 1,
+        startedAt: '2026-06-01T10:05:00Z',
+      }),
+    );
+    repo.upsert(
+      trace({
+        traceId: 's2a',
+        sessionId: 'sess2',
+        agentId: 'a1',
+        costUsd: 5,
+        startedAt: '2026-06-01T09:00:00Z',
+      }),
+    );
+    repo.upsert(trace({ traceId: 'nosess', sessionId: null }));
+  });
+
+  it('lists sessions with aggregates, newest first, excluding null sessions', () => {
+    const sessions = new TracesRepository(db).listSessions();
+    expect(sessions.map((s) => s.sessionId)).toEqual(['sess1', 'sess2']);
+    const s1 = sessions[0];
+    expect(s1).toMatchObject({
+      sessionId: 'sess1',
+      traceCount: 2,
+      agentCount: 2,
+      errorCount: 1,
+      totalCostUsd: 3,
+    });
+  });
+
+  it('summarizes a single session', () => {
+    const s = new TracesRepository(db).sessionSummary('sess2');
+    expect(s).toMatchObject({ sessionId: 'sess2', traceCount: 1, agentCount: 1, totalCostUsd: 5 });
+    expect(new TracesRepository(db).sessionSummary('nope')).toBeNull();
+  });
+});
+
 describe('TracesRepository delete / countSince', () => {
   it('deletes a trace by id', () => {
     const repo = new TracesRepository(db);

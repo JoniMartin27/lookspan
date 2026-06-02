@@ -2,7 +2,7 @@ import type { Score, Span } from '@lookspan/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Background, Controls, type Edge, type Node, Position, ReactFlow } from '@xyflow/react';
 import { useMemo, useState } from 'react';
-import { useParams } from 'wouter';
+import { Link, useParams } from 'wouter';
 import { api } from '../api/client.ts';
 import { agentColor } from '../lib/agentColor.ts';
 
@@ -38,6 +38,17 @@ export default function TraceDetail() {
             {data.trace.framework} · {data.trace.spanCount} spans
             {data.trace.durationMs !== null ? ` · ${formatMs(data.trace.durationMs)}` : ''} · $
             {data.trace.costUsd.toFixed(4)}
+            {data.trace.sessionId && (
+              <>
+                {' · '}
+                <Link
+                  href={`/sessions/${data.trace.sessionId}`}
+                  className="text-brand-500 hover:underline"
+                >
+                  view session
+                </Link>
+              </>
+            )}
           </p>
         </div>
         {agentIds.length > 0 && (
