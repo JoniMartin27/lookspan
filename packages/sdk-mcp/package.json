@@ -1,7 +1,6 @@
 {
   "name": "@lookspan/mcp",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
   "description": "Lookspan SDK for MCP — wraps any MCP client to emit spans for each tool call.",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,7 +20,7 @@
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@lookspan/types": "*"
+    "@lookspan/types": "^0.1.0"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": ">=1.0.0"
@@ -31,5 +30,14 @@
       "optional": true
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoniMartin27/lookspan.git",
+    "directory": "packages/sdk-mcp"
+  },
+  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
   "license": "MIT"
 }

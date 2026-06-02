@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lookspan-crewai"
-version = "0.0.1"
+version = "0.1.0"
 description = "Lookspan adapter for CrewAI — emits spans for crew kickoffs, agent execution, tasks, tools, and LLM calls."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,13 +21,13 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-  "lookspan>=0.0.1",
+  "lookspan>=0.1.0",
   "crewai>=0.80.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/lookspan/lookspan"
-Issues = "https://github.com/lookspan/lookspan/issues"
+Homepage = "https://github.com/JoniMartin27/lookspan"
+Issues = "https://github.com/JoniMartin27/lookspan/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lookspan_crewai"]

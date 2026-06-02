@@ -1,7 +1,6 @@
 {
   "name": "@lookspan/types",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
   "description": "Shared TypeScript types for Lookspan: Span, Trace, Run, IngestPayload.",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,5 +20,14 @@
     "build": "tsc --build",
     "clean": "tsc --build --clean"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoniMartin27/lookspan.git",
+    "directory": "packages/types"
+  },
+  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
   "license": "MIT"
 }
