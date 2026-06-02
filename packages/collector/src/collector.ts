@@ -22,7 +22,11 @@ export interface CollectorOptions {
   redact?: boolean | RedactOptions;
   /** Alert rules evaluated on every trace update. Empty = alerting off. */
   alertRules?: AlertRule[];
+  /** Reject batches with more than this many spans (default 2000). */
+  maxSpansPerBatch?: number;
 }
+
+const DEFAULT_MAX_SPANS = 2000;
 
 export class Collector {
   private readonly spans: SpansRepository;
@@ -31,6 +35,7 @@ export class Collector {
   private readonly alerts: AlertEngine;
   private readonly db: LookspanDatabase;
   private readonly redactOptions: RedactOptions | null;
+  private readonly maxSpansPerBatch: number;
 
   constructor(options: CollectorOptions) {
     this.db = options.db;
@@ -40,6 +45,7 @@ export class Collector {
     this.alerts = new AlertEngine(options.alertRules ?? []);
     const redact = options.redact ?? true;
     this.redactOptions = redact === false ? null : redact === true ? {} : redact;
+    this.maxSpansPerBatch = options.maxSpansPerBatch ?? DEFAULT_MAX_SPANS;
   }
 
   private prepareSpan(span: unknown, index: number): SpanInput {
@@ -49,6 +55,20 @@ export class Collector {
 
   ingest(rawPayload: unknown): IngestResponse {
     const payload = validatePayload(rawPayload);
+
+    if (payload.spans.length > this.maxSpansPerBatch) {
+      return {
+        accepted: 0,
+        rejected: payload.spans.length,
+        errors: [
+          {
+            index: -1,
+            reason: `batch of ${payload.spans.length} spans exceeds the limit of ${this.maxSpansPerBatch}; send smaller batches`,
+          },
+        ],
+      };
+    }
+
     const errors: { index: number; reason: string }[] = [];
     const validSpans: SpanInput[] = [];
 

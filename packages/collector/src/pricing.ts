@@ -151,9 +151,13 @@ export function findPricing(model: string | null | undefined): ModelPricing | nu
 
 /**
  * Estimate the USD cost of a span from its token usage and the pricing table.
- * Returns null when the model is unknown. Token buckets are billed additively
- * (input + cached + output); `reasoningTokens` are assumed already counted in
- * `outputTokens` and are not billed again.
+ * Returns null when the model is unknown.
+ *
+ * `cachedInputTokens` is treated as a **subset of `inputTokens`** (OpenAI
+ * semantics, where `prompt_tokens` already includes cached tokens): the cached
+ * portion is billed at the cached rate and the rest at the full input rate, so
+ * cached tokens are never double-charged. `reasoningTokens` are assumed already
+ * counted in `outputTokens` and are not billed again.
  */
 export function computeCostUsd(
   model: string | null | undefined,
@@ -165,11 +169,15 @@ export function computeCostUsd(
 
   const input = usage.inputTokens ?? 0;
   const cached = usage.cachedInputTokens ?? 0;
+  // Cached tokens may be reported inside inputTokens (OpenAI) or separately
+  // (Anthropic); subtracting clamps both to "uncached input" without ever
+  // double-charging the cached portion.
+  const uncached = Math.max(0, input - cached);
   const output = usage.outputTokens ?? 0;
   const cachedRate = pricing.cachedInputPer1M ?? pricing.inputPer1M;
 
   return (
-    (input * pricing.inputPer1M + cached * cachedRate + output * pricing.outputPer1M) / 1_000_000
+    (uncached * pricing.inputPer1M + cached * cachedRate + output * pricing.outputPer1M) / 1_000_000
   );
 }
 

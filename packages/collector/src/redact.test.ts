@@ -29,6 +29,26 @@ describe('redactObject', () => {
     expect(redactObject(input)).toEqual(input);
   });
 
+  it('scrubs secret-looking values even under innocent keys', () => {
+    const out = redactObject({
+      prompt: 'use key sk-proj-ABCDEFGHIJKLMNOP1234 please',
+      header: 'Authorization: Bearer abcdef12345678ghijkl',
+      note: 'all good',
+    }) as Record<string, string>;
+    expect(out.prompt).toContain(REDACTED);
+    expect(out.prompt).not.toContain('sk-proj-ABCDEFGHIJKLMNOP1234');
+    expect(out.header).toContain(REDACTED);
+    expect(out.note).toBe('all good');
+  });
+
+  it('can disable value scrubbing', () => {
+    const out = redactObject(
+      { prompt: 'sk-proj-ABCDEFGHIJKLMNOP1234' },
+      { scrubValues: false },
+    ) as Record<string, string>;
+    expect(out.prompt).toBe('sk-proj-ABCDEFGHIJKLMNOP1234');
+  });
+
   it('honors a custom pattern list', () => {
     const out = redactObject({ ssn: '1', api_key: '2' }, { patterns: ['ssn'] });
     expect(out).toEqual({ ssn: REDACTED, api_key: '2' });

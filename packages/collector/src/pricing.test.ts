@@ -79,6 +79,19 @@ describe('computeCostUsd', () => {
     ).toBe(3);
   });
 
+  it('does not double-charge cached tokens reported inside inputTokens (OpenAI)', () => {
+    // claude-opus-4: $15 in / $1.5 cached. 1000 input incl. 200 cached →
+    // 800*15/1M + 200*1.5/1M = 0.012 + 0.0003
+    expect(
+      computeCostUsd('claude-opus-4-8', {
+        inputTokens: 1000,
+        cachedInputTokens: 200,
+        outputTokens: 0,
+        costUsd: 0,
+      }),
+    ).toBeCloseTo(0.0123, 6);
+  });
+
   it('returns null when the model is unknown', () => {
     expect(
       computeCostUsd('mystery-model', { inputTokens: 100, outputTokens: 100, costUsd: 0 }),

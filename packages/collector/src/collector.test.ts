@@ -116,4 +116,14 @@ describe('Collector.ingest', () => {
     expect(trace?.spanCount).toBe(1);
     expect(trace?.durationMs).toBe(2000);
   });
+
+  it('rejects a batch that exceeds the span limit', () => {
+    const small = new Collector({ db, maxSpansPerBatch: 3 });
+    const spans = Array.from({ length: 5 }, (_, i) => span({ spanId: `sp_${i}` }));
+    const res = small.ingest({ spans });
+    expect(res.accepted).toBe(0);
+    expect(res.rejected).toBe(5);
+    expect(res.errors?.[0].reason).toMatch(/exceeds the limit/);
+    expect(new TracesRepository(db).getById('tr_1')).toBeNull(); // nothing persisted
+  });
 });
