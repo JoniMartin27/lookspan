@@ -47,6 +47,7 @@ export function rowToTraceListItem(row: TraceRow): TraceListItem {
     traceId: row.trace_id,
     rootName: row.root_name,
     framework: row.framework as FrameworkName,
+    agentId: row.agent_id,
     startedAt: row.started_at,
     durationMs: row.duration_ms,
     status: row.status as SpanStatus,

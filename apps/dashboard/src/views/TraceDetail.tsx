@@ -4,6 +4,7 @@ import { Background, Controls, type Edge, type Node, Position, ReactFlow } from 
 import { useMemo, useState } from 'react';
 import { useParams } from 'wouter';
 import { api } from '../api/client.ts';
+import { agentColor } from '../lib/agentColor.ts';
 
 export default function TraceDetail() {
   const params = useParams<{ id: string }>();
@@ -21,6 +22,8 @@ export default function TraceDetail() {
   if (error) return <div className="p-8 text-red-400">Error: {(error as Error).message}</div>;
   if (!data) return <div className="p-8 text-neutral-400">Not found.</div>;
 
+  const agentIds = [...new Set(data.spans.map((s) => s.agentId).filter(Boolean))] as string[];
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-neutral-800 px-6 py-3">
@@ -30,6 +33,25 @@ export default function TraceDetail() {
             {data.trace.framework} · {data.trace.spanCount} spans · ${data.trace.costUsd.toFixed(4)}
           </p>
         </div>
+        {agentIds.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {agentIds.length > 1 && (
+              <span className="text-xs text-amber-400">{agentIds.length} agents</span>
+            )}
+            {agentIds.map((id) => (
+              <span
+                key={id}
+                className="inline-flex items-center gap-1.5 rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300"
+              >
+                <span
+                  className="inline-block size-2 rounded-full"
+                  style={{ background: agentColor(id) }}
+                />
+                {id}
+              </span>
+            ))}
+          </div>
+        )}
         <Scores traceId={traceId} scores={data.scores ?? []} />
       </div>
       <div className="min-h-0 flex-1">
@@ -187,6 +209,7 @@ function buildGraph(spans: Span[]): { nodes: Node[]; edges: Edge[] } {
       background: span.status === 'error' ? '#7f1d1d' : '#1f1f23',
       color: '#f5f5f5',
       border: '1px solid #3f3f46',
+      borderLeft: `4px solid ${agentColor(span.agentId)}`, // accent by agent
       borderRadius: 6,
       padding: 8,
       fontSize: 12,

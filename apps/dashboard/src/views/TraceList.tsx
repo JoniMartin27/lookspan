@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
+import { agentColor } from '../lib/agentColor.ts';
 
 const FRAMEWORKS = ['mcp', 'langgraph', 'crewai', 'agent-os', 'openai-agents', 'otlp', 'custom'];
 const STATUSES = ['ok', 'error', 'cancelled'];
@@ -56,6 +57,7 @@ export default function TraceList() {
             <tr>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Framework</th>
+              <th className="px-3 py-2">Agent</th>
               <th className="px-3 py-2">Started</th>
               <th className="px-3 py-2">Duration</th>
               <th className="px-3 py-2">Spans</th>
@@ -72,6 +74,19 @@ export default function TraceList() {
                   </Link>
                 </td>
                 <td className="px-3 py-2 text-neutral-400">{t.framework}</td>
+                <td className="px-3 py-2 text-neutral-400">
+                  {t.agentId ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block size-2 rounded-full"
+                        style={{ background: agentColor(t.agentId) }}
+                      />
+                      {t.agentId}
+                    </span>
+                  ) : (
+                    <span className="text-neutral-600">—</span>
+                  )}
+                </td>
                 <td className="px-3 py-2 text-neutral-400">
                   {new Date(t.startedAt).toLocaleTimeString()}
                 </td>

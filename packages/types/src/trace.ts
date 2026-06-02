@@ -23,6 +23,7 @@ export interface TraceListItem {
   traceId: string;
   rootName: string;
   framework: FrameworkName;
+  agentId: string | null;
   startedAt: string;
   durationMs: number | null;
   status: SpanStatus;
