@@ -62,6 +62,53 @@ describe('createApp routing (no auth)', () => {
     expect(res.status).toBe(404);
     expect((await res.json()).error).toBe('not_found');
   });
+
+  it('attaches and returns scores on a trace', async () => {
+    await fetch(`${base}/api/ingest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        spans: [
+          {
+            traceId: 'tr_s',
+            spanId: 'sp_s',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: 'x',
+            startedAt: '2026-06-01T10:00:00Z',
+            endedAt: '2026-06-01T10:00:01Z',
+            status: 'ok',
+            framework: 'custom',
+          },
+        ],
+      }),
+    });
+
+    const add = await fetch(`${base}/api/traces/tr_s/scores`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'correctness', value: 1, source: 'llm-judge' }),
+    });
+    expect(add.status).toBe(201);
+
+    const bad = await fetch(`${base}/api/traces/tr_s/scores`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'x' }),
+    });
+    expect(bad.status).toBe(400);
+
+    const missing = await fetch(`${base}/api/traces/nope/scores`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'x', value: 1 }),
+    });
+    expect(missing.status).toBe(404);
+
+    const detail = await (await fetch(`${base}/api/traces/tr_s`)).json();
+    expect(detail.scores).toHaveLength(1);
+    expect(detail.scores[0]).toMatchObject({ name: 'correctness', value: 1 });
+  });
 });
 
 describe('createApp auth token', () => {

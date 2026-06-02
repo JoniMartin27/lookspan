@@ -26,7 +26,37 @@ export function createTracesRouter(ctx: ApiContext): Router {
       return;
     }
     const spans = ctx.spans.listByTrace(id);
-    res.json({ trace, spans });
+    const scores = ctx.scores.listByTrace(id);
+    res.json({ trace, spans, scores });
+  });
+
+  // Attach an evaluation score to a trace (LLM-as-judge, assertion, human…).
+  router.post('/:id/scores', (req, res) => {
+    const id = req.params.id;
+    if (!id || !ctx.traces.getById(id)) {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (typeof body.name !== 'string' || !body.name) {
+      res.status(400).json({ error: 'invalid', detail: 'name must be a non-empty string' });
+      return;
+    }
+    if (typeof body.value !== 'number' || !Number.isFinite(body.value)) {
+      res.status(400).json({ error: 'invalid', detail: 'value must be a number' });
+      return;
+    }
+    const score = ctx.scores.insert(
+      {
+        traceId: id,
+        name: body.name,
+        value: body.value,
+        comment: typeof body.comment === 'string' ? body.comment : null,
+        source: typeof body.source === 'string' ? body.source : null,
+      },
+      new Date().toISOString(),
+    );
+    res.status(201).json({ score });
   });
 
   return router;

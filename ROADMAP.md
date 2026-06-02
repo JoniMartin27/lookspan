@@ -6,31 +6,30 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 
 ## P0 — Make it installable (unblocks everything)
 
-- [ ] **`npx lookspan` works for real** — bundle the built dashboard into the CLI
-      package and inline the internal `@lookspan/*` deps so the published package
-      is self-contained. Verify from a clean `npm pack` install.
-- [ ] **Publish the SDKs** — `@lookspan/mcp` (npm) and `lookspan` (PyPI) so agents
-      can actually be instrumented.
-- [ ] **Discovery** — README with a 30-second demo GIF up top, badges, a real
-      quickstart, and an honest comparison section.
+- [x] **`npx lookspan` works for real** — CLI bundles the dashboard + inlines the
+      internal `@lookspan/*` deps; verified from a clean `npm pack` install.
+- [x] **SDKs ready to publish** — `@lookspan/mcp` + `@lookspan/types` (npm) and the
+      Python SDKs are un-private'd and versioned; see [PUBLISHING.md](PUBLISHING.md).
+      *(The actual `npm publish` / PyPI upload is maintainer-gated.)*
+- [x] **Discovery** — README with badges, a real quickstart, comparison section,
+      and `examples/`. *(GIF still to record.)*
 
 ## P1 — Win the niche
 
-- [ ] **Be an OpenTelemetry backend** — any OTel SDK (OpenLLMetry, Traceloop,
-      Langtrace) can point `OTEL_EXPORTER_OTLP_ENDPOINT` at Lookspan with zero
-      Lookspan-specific code.
+- [x] **OpenTelemetry backend** — OTLP/HTTP receiver at `/v1/traces`; any OTel SDK
+      works with no Lookspan-specific code. Example in `examples/02-otel.mjs`.
 - [ ] **TS-stack adapters** — Vercel AI SDK, Mastra, LangGraph.js.
 - [ ] **MCP-first story** — one-liner to wrap any MCP server/client; an
       "MCP Inspector"-style view of tool calls, args, latencies, errors.
-- [ ] **Maintainable pricing** — pricing table as versioned JSON + `--pricing`
-      override; documented update process.
-- [ ] **Community assets** — `examples/`, `.github/` (CI, CONTRIBUTING, templates),
-      docs site, comparison page.
+- [x] **Maintainable pricing** — `--pricing <file>` JSON override.
+- [x] **Community assets** — `examples/`, `.github/` (CI, CONTRIBUTING, templates).
+      *(Dedicated docs site still pending.)*
 
 ## P2 — Depth & parity
 
-- [ ] **Lightweight evals** — attach scores to a trace, LLM-as-judge hook,
-      assertion checks.
+- [x] **Lightweight evals** — attach scores to a trace (`POST /api/traces/:id/scores`),
+      shown in the trace detail + addable from the UI. (LLM-as-judge/assertions
+      post scores externally.)
 - [ ] **Replay / diff** — re-run a trace's prompt against another model and
       compare cost/latency/output.
 - [ ] **Scale options** — optional Postgres driver for teams, sampling, payload

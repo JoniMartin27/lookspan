@@ -1,6 +1,8 @@
 import type {
   Alert,
   CostBreakdown,
+  Score,
+  ScoreInput,
   Span,
   StatsSummary,
   Trace,
@@ -11,6 +13,18 @@ const API_BASE = '/api';
 
 async function request<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status} ${res.statusText}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status} ${res.statusText}`);
   }
@@ -35,7 +49,10 @@ function toQuery(filters: TraceFilters): string {
 export const api = {
   listTraces: (filters: TraceFilters = {}) =>
     request<{ items: TraceListItem[] }>(`/traces${toQuery(filters)}`),
-  getTrace: (id: string) => request<{ trace: Trace; spans: Span[] }>(`/traces/${id}`),
+  getTrace: (id: string) =>
+    request<{ trace: Trace; spans: Span[]; scores: Score[] }>(`/traces/${id}`),
+  addScore: (id: string, score: Omit<ScoreInput, 'traceId'>) =>
+    post<{ score: Score }>(`/traces/${id}/scores`, score),
   costsSummary: () => request<CostBreakdown>('/costs/summary'),
   stats: () => request<StatsSummary>('/stats'),
   listAlerts: () => request<{ items: Alert[] }>('/alerts'),

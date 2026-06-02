@@ -1,7 +1,7 @@
-import type { Span } from '@lookspan/types';
-import { useQuery } from '@tanstack/react-query';
+import type { Score, Span } from '@lookspan/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Background, Controls, type Edge, type Node, ReactFlow } from '@xyflow/react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'wouter';
 import { api } from '../api/client.ts';
 
@@ -29,13 +29,85 @@ export default function TraceDetail() {
           {data.trace.framework} · {data.trace.spanCount} spans · ${data.trace.costUsd.toFixed(4)}
         </p>
       </div>
-      <div className="flex-1">
-        <ReactFlow nodes={nodes} edges={edges} fitView>
-          <Background gap={16} size={1} />
-          <Controls />
-        </ReactFlow>
+      <div className="flex min-h-0 flex-1">
+        <div className="flex-1">
+          <ReactFlow nodes={nodes} edges={edges} fitView>
+            <Background gap={16} size={1} />
+            <Controls />
+          </ReactFlow>
+        </div>
+        <ScoresPanel traceId={traceId} scores={data.scores ?? []} />
       </div>
     </div>
+  );
+}
+
+function ScoresPanel({ traceId, scores }: { traceId: string; scores: Score[] }) {
+  const qc = useQueryClient();
+  const [name, setName] = useState('');
+  const [value, setValue] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: () => api.addScore(traceId, { name, value: Number(value), source: 'human' }),
+    onSuccess: () => {
+      setName('');
+      setValue('');
+      qc.invalidateQueries({ queryKey: ['trace', traceId] });
+    },
+  });
+
+  const canSubmit = name.trim() !== '' && value.trim() !== '' && Number.isFinite(Number(value));
+
+  return (
+    <aside className="w-72 shrink-0 overflow-auto border-l border-neutral-800 p-4">
+      <h2 className="mb-3 text-sm font-medium text-neutral-300">Scores</h2>
+      {scores.length === 0 ? (
+        <p className="mb-4 text-xs text-neutral-500">No scores yet.</p>
+      ) : (
+        <ul className="mb-4 space-y-2">
+          {scores.map((s) => (
+            <li key={s.id} className="rounded border border-neutral-800 bg-neutral-900/50 p-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-neutral-300">{s.name}</span>
+                <span className="font-mono text-neutral-100">{s.value}</span>
+              </div>
+              {s.comment && <p className="mt-1 text-xs text-neutral-500">{s.comment}</p>}
+              {s.source && (
+                <p className="mt-0.5 text-[10px] uppercase text-neutral-600">{s.source}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (canSubmit) mutation.mutate();
+        }}
+        className="space-y-2"
+      >
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="metric (e.g. correctness)"
+          className="w-full rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none"
+        />
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="value (e.g. 1)"
+          inputMode="decimal"
+          className="w-full rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm focus:border-brand-500 focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={!canSubmit || mutation.isPending}
+          className="w-full rounded bg-brand-600 px-2 py-1 text-sm font-medium text-white disabled:opacity-40"
+        >
+          {mutation.isPending ? 'Adding…' : 'Add score'}
+        </button>
+      </form>
+    </aside>
   );
 }
 

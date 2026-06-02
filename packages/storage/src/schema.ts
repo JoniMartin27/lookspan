@@ -57,3 +57,13 @@ export interface AlertRow {
   threshold: number | null;
   created_at: string;
 }
+
+export interface ScoreRow {
+  id: number;
+  trace_id: string;
+  name: string;
+  value: number;
+  comment: string | null;
+  source: string | null;
+  created_at: string;
+}

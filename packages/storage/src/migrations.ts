@@ -92,6 +92,24 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_alerts_trace ON alerts(trace_id);
     `,
   },
+  {
+    version: 3,
+    name: 'scores',
+    up: `
+      CREATE TABLE IF NOT EXISTS scores (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trace_id TEXT NOT NULL REFERENCES traces(trace_id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        value REAL NOT NULL,
+        comment TEXT,
+        source TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_scores_trace ON scores(trace_id);
+      CREATE INDEX IF NOT EXISTS idx_scores_name ON scores(name);
+    `,
+  },
 ];
 
 export function getCurrentSchemaVersion(db: LookspanDatabase): number {

@@ -377,6 +377,7 @@ El adaptador `AgentOsAdapter` (en `@lookspan/collector`) se suscribe al bus SSE 
 | `GET` | `/api/stream` | Stream SSE de eventos en tiempo real |
 | `GET` | `/api/stats` | Resumen de stats (totales, tasa de error, latencia p50/p95/p99, coste por día) |
 | `GET` | `/api/alerts` | Historial de alertas disparadas |
+| `POST` | `/api/traces/:id/scores` | Adjunta un score de evaluación a una traza (`{name, value, comment?, source?}`) |
 | `POST` | `/v1/traces` | Receptor OTLP/HTTP de OpenTelemetry (JSON `ExportTraceServiceRequest`) |
 
 ### OpenTelemetry (OTLP)
@@ -412,6 +413,21 @@ npx lookspan \
 Equivalentes por entorno: `LOOKSPAN_ALERT_ERROR`, `LOOKSPAN_ALERT_COST`,
 `LOOKSPAN_ALERT_TOKENS`, `LOOKSPAN_ALERT_DURATION`. Cada regla dispara una vez
 por traza. Historial vía `GET /api/alerts`.
+
+## Evaluación (scores)
+
+Adjunta métricas a una traza desde un juez LLM, un assert o a mano — la primitiva
+para construir evals encima de la observabilidad:
+
+```bash
+curl -X POST http://127.0.0.1:3100/api/traces/tr_abc/scores \
+  -H "Content-Type: application/json" \
+  -d '{"name":"correctness","value":1,"comment":"respuesta correcta","source":"llm-judge"}'
+```
+
+Los scores se ven en el detalle de la traza (y se pueden añadir desde la UI).
+El *replay* (re-ejecutar el prompt contra otro modelo y comparar) está en el
+roadmap.
 
 ## Seguridad
 

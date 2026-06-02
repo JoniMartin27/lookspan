@@ -3,6 +3,7 @@ import {
   AlertsRepository,
   CostsRepository,
   type LookspanDatabase,
+  ScoresRepository,
   SpansRepository,
   StatsRepository,
   TracesRepository,
@@ -17,6 +18,7 @@ export interface ApiContext {
   costs: CostsRepository;
   stats: StatsRepository;
   alerts: AlertsRepository;
+  scores: ScoresRepository;
 }
 
 export interface CreateContextOptions {
@@ -35,5 +37,6 @@ export function createContext(
     costs: new CostsRepository(db),
     stats: new StatsRepository(db),
     alerts: new AlertsRepository(db),
+    scores: new ScoresRepository(db),
   };
 }
