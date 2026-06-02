@@ -112,7 +112,7 @@ Apunta cualquier exporter OTel al endpoint estándar:
 
 ```bash
 export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:3100/v1/traces
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+# se aceptan protobuf (el default de OTel) y JSON
 ```
 
 Más ejemplos ejecutables en [`examples/`](examples/).

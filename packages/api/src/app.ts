@@ -40,6 +40,8 @@ export function createApp(options: CreateAppOptions): Express {
     }),
   );
   app.use(express.json({ limit: '10mb' }));
+  // OTLP/HTTP exporters default to protobuf — accept it as a raw Buffer.
+  app.use(express.raw({ type: 'application/x-protobuf', limit: '10mb' }));
 
   if (options.authToken) {
     const token = options.authToken;

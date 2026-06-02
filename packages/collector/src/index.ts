@@ -1,4 +1,5 @@
 export { otlpToIngest } from './adapters/otlp.js';
+export { decodeOtlpProtobuf } from './adapters/otlp-proto.js';
 export type { CollectorAdapter } from './adapters/types.js';
 export * from './aggregator.js';
 export * from './alerts.js';

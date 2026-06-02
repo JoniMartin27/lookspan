@@ -27,7 +27,8 @@
   "dependencies": {
     "@lookspan/events": "*",
     "@lookspan/storage": "*",
-    "@lookspan/types": "*"
+    "@lookspan/types": "*",
+    "protobufjs": "^8.5.0"
   },
   "license": "MIT"
 }

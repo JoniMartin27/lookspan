@@ -91,7 +91,7 @@ await client.callTool({ name: 'read_file', arguments: { path: '/tmp/foo.txt' } }
         title="OpenTelemetry (raw)"
         subtitle="Already using OTel? Point your exporter here — no Lookspan SDK."
         code={`export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${ORIGIN}/v1/traces
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/json`}
+# protobuf (the OTel default) and JSON are both accepted`}
       />
 
       <div className="mt-6 rounded-lg border border-neutral-800 bg-neutral-900/40 p-4 text-xs text-neutral-400">
