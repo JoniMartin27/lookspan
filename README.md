@@ -2,8 +2,20 @@
 
 **Dashboard de observabilidad local-first para agentes de IA. Nativo para MCP. Mira cada span que emiten tus agentes.**
 
+[![CI](https://github.com/JoniMartin27/lookspan/actions/workflows/ci.yml/badge.svg)](https://github.com/JoniMartin27/lookspan/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/lookspan)](https://www.npmjs.com/package/lookspan)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
+
+```bash
+npx lookspan          # → http://127.0.0.1:3100
 ```
-POST /api/ingest  →  SQLite  →  Dashboard en tiempo real
+
+<!-- TODO: grabar y enlazar un GIF de 30s aquí (npx lookspan → correr un agente → ver spans en vivo). Ver ROADMAP.md. -->
+<!-- ![Lookspan demo](docs/demo.gif) -->
+
+```
+Agente (MCP · LangGraph · CrewAI · OpenTelemetry · HTTP)  →  POST /api/ingest  →  SQLite  →  Dashboard en tiempo real
 ```
 
 ---
@@ -417,6 +429,41 @@ Además, el collector **redacta** valores de claves sensibles
 (`authorization`, `api_key`, `token`, `secret`, `password`, `cookie`…) en
 `input`/`attributes` antes de persistir, para que la telemetría no arrastre
 credenciales a la BD. Desactivable vía la opción `redact: false` del collector.
+
+## Precios personalizables
+
+El coste se calcula en el servidor con una tabla de precios por modelo. Para
+mantenerla al día sin tocar código, pásala como JSON:
+
+```bash
+npx lookspan --pricing ./mi-tabla-de-precios.json
+```
+
+Formato en [`examples/pricing.example.json`](examples/pricing.example.json).
+
+## Ejemplos
+
+Ejemplos ejecutables en [`examples/`](examples/): HTTP directo, OpenTelemetry sin
+SDK, instrumentación MCP y tabla de precios personalizada.
+
+## Comparación
+
+| | **Lookspan** | Langfuse | Phoenix (Arize) |
+|---|---|---|---|
+| Arranque | `npx lookspan` (cero infra) | Docker + Postgres + ClickHouse | `pip install` (Python) |
+| Almacenamiento | SQLite local | Postgres + ClickHouse | local / en memoria |
+| Foco | stack **TS/JS + MCP** | plataforma completa (evals, prompts) | evals / RAG (Python) |
+| Datos | nunca salen de tu máquina | self-host o nube | local o nube |
+| OpenTelemetry | receptor OTLP nativo | sí | sí (OTel-native) |
+
+Lookspan no intenta ser una plataforma completa: apuesta por ser **la capa de
+observabilidad sin setup para agentes TypeScript/MCP**, con la mejor experiencia
+en los primeros 5 minutos. Roadmap en [ROADMAP.md](ROADMAP.md).
+
+## Contribuir
+
+PRs bienvenidos — lee [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md). Para
+publicar releases, [PUBLISHING.md](PUBLISHING.md).
 
 ## Licencia
 

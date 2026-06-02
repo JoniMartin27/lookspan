@@ -1,0 +1,24 @@
+[
+  {
+    "provider": "anthropic",
+    "model": "claude-opus-4",
+    "inputPer1M": 15,
+    "outputPer1M": 75,
+    "cachedInputPer1M": 1.5
+  },
+  {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4",
+    "inputPer1M": 3,
+    "outputPer1M": 15,
+    "cachedInputPer1M": 0.3
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "inputPer1M": 2.5,
+    "outputPer1M": 10,
+    "cachedInputPer1M": 1.25
+  },
+  { "provider": "your-provider", "model": "your-model", "inputPer1M": 0.5, "outputPer1M": 1.5 }
+]
