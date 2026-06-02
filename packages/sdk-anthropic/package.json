@@ -1,0 +1,52 @@
+{
+  "name": "@lookspan/anthropic",
+  "version": "0.1.0",
+  "description": "Drop-in tracing for the Anthropic SDK — wrap your client in one line and every message call becomes a Lookspan span.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "dependencies": {
+    "@lookspan/mcp": "^0.1.0",
+    "@lookspan/types": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/sdk": ">=0.20.0"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoniMartin27/lookspan.git",
+    "directory": "packages/sdk-anthropic"
+  },
+  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
+  "keywords": [
+    "anthropic",
+    "claude",
+    "lookspan",
+    "observability",
+    "tracing",
+    "llm"
+  ],
+  "license": "MIT"
+}

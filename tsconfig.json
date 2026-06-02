@@ -7,6 +7,7 @@
     { "path": "./packages/collector" },
     { "path": "./packages/sdk-mcp" },
     { "path": "./packages/sdk-openai" },
+    { "path": "./packages/sdk-anthropic" },
     { "path": "./packages/api" },
     { "path": "./packages/cli" },
     { "path": "./apps/dashboard" }

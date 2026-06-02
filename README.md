@@ -88,6 +88,20 @@ const openai = observeOpenAI(new OpenAI());
 await openai.chat.completions.create({ model: 'gpt-4o', messages });
 ```
 
+### Anthropic SDK (drop-in)
+
+```bash
+npm install @lookspan/anthropic
+```
+
+```typescript
+import Anthropic from '@anthropic-ai/sdk';
+import { observeAnthropic } from '@lookspan/anthropic';
+
+const anthropic = observeAnthropic(new Anthropic());
+await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages });
+```
+
 ### TypeScript / MCP
 
 ```bash

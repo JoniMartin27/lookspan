@@ -45,6 +45,19 @@ await openai.chat.completions.create({ model: 'gpt-4o', messages });`}
       />
 
       <Section
+        title="Anthropic SDK (drop-in, TypeScript)"
+        subtitle="Same one-liner for Claude — wrap the client, every message call is traced."
+        recommended
+        code={`// npm install @lookspan/anthropic
+import Anthropic from '@anthropic-ai/sdk';
+import { observeAnthropic } from '@lookspan/anthropic';
+
+const anthropic = observeAnthropic(new Anthropic(), { endpoint: '${ORIGIN}/api/ingest' });
+
+await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages });`}
+      />
+
+      <Section
         title="Any language — HTTP"
         subtitle="The universal path. Anything that can POST JSON works."
         code={`curl -X POST ${ORIGIN}/api/ingest \\
