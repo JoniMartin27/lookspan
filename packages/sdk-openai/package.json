@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/openai",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Drop-in tracing for the OpenAI SDK — wrap your client in one line and every model call becomes a Lookspan span.",
   "type": "module",
   "main": "./dist/index.js",

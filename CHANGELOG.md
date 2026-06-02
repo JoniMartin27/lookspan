@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.1 — 2026-06-03
+
+### Added
+- **`@lookspan/openai`** — drop-in tracing: `observeOpenAI(new OpenAI())` traces
+  every model call in one line (no OTel, no proxy).
+- **Sessions** — `/sessions` list + per-session multi-agent timeline (ordinal
+  axis, hover preview); `GET /api/sessions` and `/api/sessions/:id`.
+- **Connect page** (`/connect`) — copy-paste onboarding with the live endpoint.
+- **Evaluation scores** — `POST /api/traces/:id/scores`, shown in the trace view.
+- **Agent visualization** — `agentId` column + per-agent color in the span graph;
+  span detail drawer on click; left-to-right graph layout.
+- **OTLP protobuf** — `/v1/traces` now accepts `application/x-protobuf` (the OTel
+  default) as well as JSON.
+
+### Changed
+- Trace list is paginated (cursor + "Load more").
+- All packages unified at 0.1.1.
+
 ## 0.1.0 — 2026-06-02
 
 First public release. Published to **npm** (`lookspan`, `@lookspan/mcp`,

@@ -1,6 +1,6 @@
 {
   "name": "lookspan",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "private": true,
   "description": "Local-first observability dashboard for AI agents. MCP-native. Look at every span your agents emit.",
   "type": "module",

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lookspan-langgraph"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lookspan adapter for LangChain / LangGraph — emits spans for chains, LLM calls, and tools."
 readme = "README.md"
 requires-python = ">=3.10"
