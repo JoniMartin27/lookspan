@@ -8,6 +8,11 @@ export default function CostsView() {
     queryFn: api.costsSummary,
     refetchInterval: 10_000,
   });
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn: api.stats,
+    refetchInterval: 10_000,
+  });
 
   if (isLoading) return <div className="p-8 text-neutral-400">Loading costs…</div>;
   if (error) return <div className="p-8 text-red-400">Error: {(error as Error).message}</div>;
@@ -15,22 +20,52 @@ export default function CostsView() {
 
   const byModel = Object.entries(data.byModel).map(([name, cost]) => ({ name, cost }));
   const byProvider = Object.entries(data.byProvider).map(([name, cost]) => ({ name, cost }));
+  const byDay = (stats?.byDay ?? []).map((d) => ({ name: d.day.slice(5), cost: d.costUsd }));
 
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="mb-1 text-xl font-semibold">Costs</h1>
+        <h1 className="mb-1 text-xl font-semibold">Overview</h1>
         <p className="text-sm text-neutral-500">
-          Total: <span className="font-mono text-neutral-200">${data.total.toFixed(4)}</span>
+          Total cost: <span className="font-mono text-neutral-200">${data.total.toFixed(4)}</span>
         </p>
       </div>
 
+      {stats && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Traces" value={stats.totalTraces.toLocaleString()} />
+          <Stat
+            label="Error rate"
+            value={`${(stats.errorRate * 100).toFixed(1)}%`}
+            tone={stats.errorRate > 0 ? 'bad' : 'good'}
+          />
+          <Stat label="Latency p50" value={stats.latencyMs ? `${stats.latencyMs.p50} ms` : '—'} />
+          <Stat label="Latency p95" value={stats.latencyMs ? `${stats.latencyMs.p95} ms` : '—'} />
+        </div>
+      )}
+
+      {byDay.length > 0 && (
+        <Card title="Cost per day">
+          <Chart data={byDay} />
+        </Card>
+      )}
       <Card title="By model">
         <Chart data={byModel} />
       </Card>
       <Card title="By provider">
         <Chart data={byProvider} />
       </Card>
+    </div>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'bad' }) {
+  const valueColor =
+    tone === 'bad' ? 'text-red-400' : tone === 'good' ? 'text-emerald-400' : 'text-neutral-100';
+  return (
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
+      <div className="text-xs uppercase tracking-wider text-neutral-500">{label}</div>
+      <div className={`mt-1 font-mono text-2xl ${valueColor}`}>{value}</div>
     </div>
   );
 }

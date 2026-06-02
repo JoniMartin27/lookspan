@@ -3,6 +3,7 @@ import {
   CostsRepository,
   type LookspanDatabase,
   SpansRepository,
+  StatsRepository,
   TracesRepository,
 } from '@lookspan/storage';
 
@@ -12,6 +13,7 @@ export interface ApiContext {
   traces: TracesRepository;
   spans: SpansRepository;
   costs: CostsRepository;
+  stats: StatsRepository;
 }
 
 export function createContext(db: LookspanDatabase): ApiContext {
@@ -21,5 +23,6 @@ export function createContext(db: LookspanDatabase): ApiContext {
     traces: new TracesRepository(db),
     spans: new SpansRepository(db),
     costs: new CostsRepository(db),
+    stats: new StatsRepository(db),
   };
 }

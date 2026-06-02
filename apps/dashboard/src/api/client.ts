@@ -1,4 +1,4 @@
-import type { CostBreakdown, Span, Trace, TraceListItem } from '@lookspan/types';
+import type { CostBreakdown, Span, StatsSummary, Trace, TraceListItem } from '@lookspan/types';
 
 const API_BASE = '/api';
 
@@ -30,5 +30,6 @@ export const api = {
     request<{ items: TraceListItem[] }>(`/traces${toQuery(filters)}`),
   getTrace: (id: string) => request<{ trace: Trace; spans: Span[] }>(`/traces/${id}`),
   costsSummary: () => request<CostBreakdown>('/costs/summary'),
+  stats: () => request<StatsSummary>('/stats'),
   health: () => request<{ ok: boolean; service: string; timestamp: string }>('/health'),
 };
