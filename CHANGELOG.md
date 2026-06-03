@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.0 — 2026-06-03
+
+The multi-agent release. Lookspan now shows **how your agents collaborate**, not
+just individual calls.
+
+### Added
+- **`@lookspan/anthropic`** — drop-in tracing for Claude:
+  `observeAnthropic(new Anthropic())` traces every call (including streaming) in
+  one line, no OTel or proxy setup.
+- **Agent causality** — spans can carry a `parentTraceId` (OTLP attribute
+  `lookspan.parent_trace_id`). The session view renders an **agent delegation
+  graph** showing which agent handed off to which.
+- **Tools view** (`/tools`) — a cross-trace inspector of `tool_call` spans (MCP &
+  framework tools): tool, framework, agent, duration, status, link to the trace.
+  Backed by `GET /api/tools`.
+- **Eval score aggregates** — average per metric on the Overview
+  (`GET /api/scores/summary`).
+- **Framework recipes** — copy-paste OpenTelemetry setup for Vercel AI SDK,
+  Mastra, and LangChain on the Connect page (no custom adapter needed).
+
+### Changed
+- SQLite schema migration **v4** adds `parent_trace_id` to `traces` and `spans`.
+- All packages unified at 0.2.0.
+
 ## 0.1.2 — 2026-06-03 (CLI only)
 
 - Fix: `lookspan --version` now reports the real version (was hardcoded).

@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/collector",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Ingest pipeline for Lookspan: validates, normalizes, aggregates and persists spans.",
   "type": "module",
