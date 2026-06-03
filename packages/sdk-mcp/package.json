@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/mcp",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Lookspan SDK for MCP — wraps any MCP client to emit spans for each tool call.",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,7 +20,7 @@
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@lookspan/types": "^0.4.0"
+    "@lookspan/types": "^0.4.1"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": ">=1.0.0"

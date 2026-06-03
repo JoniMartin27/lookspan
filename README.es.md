@@ -60,7 +60,7 @@ Abre `http://127.0.0.1:3100` y verás la traza aparecer — con su coste calcula
 - **SDKs Python** — `lookspan` (cliente genérico) + adaptadores para LangGraph/LangChain (`lookspan-langgraph`) y CrewAI (`lookspan-crewai`).
 - **OpenTelemetry** — receptor OTLP/HTTP en `POST /v1/traces`; apunta cualquier exporter OTel sin SDK propio. Los atributos `gen_ai.*` se mapean a provider/model/tokens.
 - **Tiempo real** — SSE en `GET /api/stream` empuja `span.ingested`, `trace.updated` y `alert.triggered` al dashboard, sin polling.
-- **Dashboard React** — trazas recientes con filtros/búsqueda; detalle con grafo de spans (React Flow); costes y overview (tasa de error, latencia p50/p95/p99, coste por día); historial de alertas.
+- **Dashboard React** — lista de trazas con franja de salud + mini-barras de latencia/coste; detalle con **timeline (waterfall)** o árbol y **transcript de conversación** del prompt/respuesta; diffs de replay y comparación de runs A/B; costes y overview (tasa de error, latencia p50/p95/p99, coste por día); historial de alertas.
 - **Seguimiento de costes** — agrega tokens (entrada/salida/caché/razonamiento) y calcula `cost_usd` por span y traza desde una tabla de precios, sobrescribible con `--pricing`.
 - **Alertas** — avisos cuando una traza falla o supera un umbral de coste/tokens/duración (toast + notificación de escritorio + CLI + historial persistido).
 - **Scores de evaluación** — adjunta métricas a una traza (`POST /api/traces/:id/scores`) desde un juez LLM, un assert o a mano.

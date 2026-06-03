@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.1 — 2026-06-03
+
+Representation upgrades — the dashboard now shows understanding, not just records.
+
+### Added
+- **Trace timeline (waterfall)** — a new Timeline/Tree toggle in the trace view.
+  The timeline lays each span out as a bar positioned by start time, width
+  proportional to duration, indented by depth, colored by agent (red on error) —
+  so you see *where the time went* at a glance.
+- **Conversation transcript** — an LLM span's captured prompt/response now render
+  as a chat (system/user/assistant/tool bubbles, tool-calls included) with a
+  `raw` toggle, instead of raw JSON.
+- **Trace list with signal** — a health strip (traces · error rate · p95 latency ·
+  total cost) plus per-row mini-bars for latency (amber when above p95) and cost,
+  and a status accent per row.
+- **Replay diff** — the Replay panel can show a line-level diff of the replay
+  output against the original answer (green added / red removed), alongside the
+  cost/latency deltas.
+- **Compare dataset runs** — pick run A vs B and see Δ score / cost / ok summary
+  tiles and a per-item table with the score delta, to judge "is the cheaper model
+  good enough?".
+
 ## 0.4.0 — 2026-06-03
 
 Datasets & experiments — the eval loop, end to end.
