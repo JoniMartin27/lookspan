@@ -146,6 +146,58 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_replays_trace ON replays(trace_id, created_at DESC);
     `,
   },
+  {
+    version: 6,
+    name: 'datasets',
+    up: `
+      CREATE TABLE IF NOT EXISTS datasets (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS dataset_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dataset_id TEXT NOT NULL REFERENCES datasets(id) ON DELETE CASCADE,
+        input TEXT NOT NULL,
+        expected TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_dataset_items_ds ON dataset_items(dataset_id, id);
+
+      CREATE TABLE IF NOT EXISTS runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dataset_id TEXT NOT NULL REFERENCES datasets(id) ON DELETE CASCADE,
+        model TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        status TEXT NOT NULL,
+        item_count INTEGER NOT NULL DEFAULT 0,
+        ok_count INTEGER NOT NULL DEFAULT 0,
+        error_count INTEGER NOT NULL DEFAULT 0,
+        total_cost_usd REAL,
+        avg_score REAL,
+        judge_metric TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_runs_ds ON runs(dataset_id, created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS run_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        run_id INTEGER NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        item_id INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        output TEXT,
+        error TEXT,
+        cost_usd REAL,
+        duration_ms INTEGER,
+        score REAL,
+        rationale TEXT,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_run_items_run ON run_items(run_id, id);
+    `,
+  },
 ];
 
 export function getCurrentSchemaVersion(db: LookspanDatabase): number {

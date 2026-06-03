@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/events",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "In-process event bus for Lookspan span events.",
   "type": "module",

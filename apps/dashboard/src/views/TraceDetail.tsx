@@ -363,11 +363,24 @@ function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void 
   const qc = useQueryClient();
   const [model, setModel] = useState('');
   const [metric, setMetric] = useState('quality');
+  const [datasetId, setDatasetId] = useState('');
+  const [added, setAdded] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const replays = useQuery({
     queryKey: ['replays', traceId],
     queryFn: () => api.listReplays(traceId),
+  });
+  const datasets = useQuery({ queryKey: ['datasets'], queryFn: api.listDatasets });
+
+  const addToDatasetM = useMutation({
+    mutationFn: () => api.addDatasetItemFromTrace(datasetId, traceId),
+    onSuccess: () => {
+      setErr(null);
+      setAdded(true);
+      qc.invalidateQueries({ queryKey: ['dataset', datasetId] });
+    },
+    onError: (e) => setErr((e as Error).message),
   });
 
   const replayM = useMutation({
@@ -458,6 +471,44 @@ function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void 
           </div>
           <p className="mt-1 text-[10px] text-neutral-600">
             Scores the response 0–1; appears as a score chip above.
+          </p>
+        </section>
+
+        <section>
+          <div className="mb-1.5 text-[10px] uppercase tracking-wider text-neutral-500">
+            Add prompt to a dataset
+          </div>
+          <div className="flex items-center gap-1.5">
+            <select
+              value={datasetId}
+              onChange={(e) => {
+                setDatasetId(e.target.value);
+                setAdded(false);
+              }}
+              className="min-w-0 flex-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+            >
+              <option value="">choose dataset…</option>
+              {(datasets.data?.items ?? []).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => addToDatasetM.mutate()}
+              disabled={!datasetId || addToDatasetM.isPending}
+              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+            >
+              {added ? 'Added ✓' : 'Add'}
+            </button>
+          </div>
+          <p className="mt-1 text-[10px] text-neutral-600">
+            Captures this trace's prompt (and output as the reference) into a{' '}
+            <Link href="/datasets" className="text-brand-500 hover:underline">
+              dataset
+            </Link>
+            .
           </p>
         </section>
 

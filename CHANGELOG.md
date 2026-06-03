@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 — 2026-06-03
+
+Datasets & experiments — the eval loop, end to end.
+
+### Added
+- **Datasets** — collect prompts into a named test set (SQLite migration **v6**).
+  Seed items straight from a trace's captured prompt (`POST /api/datasets/:id/items/from-trace`)
+  or add them by hand, all from the new **Datasets** views in the dashboard.
+- **Experiment runs** — `POST /api/datasets/:id/run` runs every item against a
+  model (batch replay), optionally scoring each output with the LLM judge, and
+  stores a run with aggregate cost / latency / average score. `GET /api/runs/:id`
+  returns the per-item breakdown. Runs need a provider key (in-memory only).
+- **Add-to-dataset** from a trace's **Replay & judge** panel.
+
+### Changed
+- All packages unified at 0.4.0.
+
 ## 0.3.0 — 2026-06-03
 
 The evaluation release: close the loop from *observe* to *improve*.

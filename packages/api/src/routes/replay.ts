@@ -3,6 +3,12 @@ import type { Span } from '@lookspan/types';
 import { Router } from 'express';
 import type { ApiContext } from '../context.js';
 import {
+  buildJudgeUser,
+  defaultJudgeModel,
+  JUDGE_SYSTEM,
+  parseVerdict,
+} from '../inference/judge.js';
+import {
   keyFor,
   MissingKeyError,
   type Provider,
@@ -21,32 +27,6 @@ function pickLlmSpan(spans: Span[], spanId?: string): Span | null {
     withInput[0] ??
     null
   );
-}
-
-function defaultModelFor(provider: Provider): string {
-  return provider === 'openai' ? 'gpt-4o-mini' : 'claude-3-5-haiku-latest';
-}
-
-/** Parse a JSON verdict from a judge reply, tolerating ```json fences and prose. */
-function parseVerdict(raw: string): { score: number; rationale: string } | null {
-  const fenced = raw.replace(/```(?:json)?/gi, '').trim();
-  const start = fenced.indexOf('{');
-  const end = fenced.lastIndexOf('}');
-  if (start === -1 || end === -1 || end < start) return null;
-  try {
-    const obj = JSON.parse(fenced.slice(start, end + 1)) as Record<string, unknown>;
-    const score = Number(obj.score);
-    if (!Number.isFinite(score)) return null;
-    const rationale =
-      typeof obj.rationale === 'string'
-        ? obj.rationale
-        : typeof obj.reason === 'string'
-          ? obj.reason
-          : '';
-    return { score: Math.max(0, Math.min(1, score)), rationale };
-  } catch {
-    return null;
-  }
 }
 
 export function createReplayRouter(ctx: ApiContext): Router {
@@ -199,7 +179,7 @@ export function createReplayRouter(ctx: ApiContext): Router {
       return;
     }
     const model =
-      typeof body.model === 'string' && body.model ? body.model : defaultModelFor(provider);
+      typeof body.model === 'string' && body.model ? body.model : defaultJudgeModel(provider);
 
     let apiKey: string;
     try {
@@ -215,19 +195,8 @@ export function createReplayRouter(ctx: ApiContext): Router {
       throw err;
     }
 
-    const system =
-      'You are a strict evaluation judge. Read the user request and the assistant response, ' +
-      'then return ONLY a JSON object: {"score": <number between 0 and 1>, "rationale": "<one or two sentences>"}. ' +
-      'Higher is better. Do not include any text outside the JSON.';
-    const user = [
-      `Rubric: ${rubric}`,
-      '',
-      '=== USER REQUEST (captured prompt) ===',
-      JSON.stringify(span.input).slice(0, 12_000),
-      '',
-      '=== ASSISTANT RESPONSE ===',
-      span.output.slice(0, 12_000),
-    ].join('\n');
+    const system = JUDGE_SYSTEM;
+    const user = buildJudgeUser({ rubric, input: span.input, output: span.output });
 
     try {
       const verdict = await runJudge({ provider, model, apiKey, system, user });

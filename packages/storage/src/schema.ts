@@ -70,6 +70,50 @@ export interface ScoreRow {
   created_at: string;
 }
 
+export interface DatasetRow {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface DatasetItemRow {
+  id: number;
+  dataset_id: string;
+  input: string;
+  expected: string | null;
+  created_at: string;
+}
+
+export interface RunRow {
+  id: number;
+  dataset_id: string;
+  model: string;
+  provider: string;
+  status: string;
+  item_count: number;
+  ok_count: number;
+  error_count: number;
+  total_cost_usd: number | null;
+  avg_score: number | null;
+  judge_metric: string | null;
+  created_at: string;
+}
+
+export interface RunItemRow {
+  id: number;
+  run_id: number;
+  item_id: number;
+  status: string;
+  output: string | null;
+  error: string | null;
+  cost_usd: number | null;
+  duration_ms: number | null;
+  score: number | null;
+  rationale: string | null;
+  created_at: string;
+}
+
 export interface ReplayRow {
   id: number;
   trace_id: string;

@@ -13,6 +13,9 @@ const SessionsView = lazy(() => import('./views/SessionsView.tsx'));
 const SessionDetail = lazy(() => import('./views/SessionDetail.tsx'));
 const ConnectView = lazy(() => import('./views/ConnectView.tsx'));
 const ToolsView = lazy(() => import('./views/ToolsView.tsx'));
+const DatasetsView = lazy(() => import('./views/DatasetsView.tsx'));
+const DatasetDetail = lazy(() => import('./views/DatasetDetail.tsx'));
+const RunDetail = lazy(() => import('./views/RunDetail.tsx'));
 
 function Loading() {
   return <div className="p-8 text-neutral-400">Loading…</div>;
@@ -28,6 +31,9 @@ export default function App() {
           <Route path="/sessions" component={SessionsView} />
           <Route path="/sessions/:id" component={SessionDetail} />
           <Route path="/tools" component={ToolsView} />
+          <Route path="/datasets" component={DatasetsView} />
+          <Route path="/datasets/:id" component={DatasetDetail} />
+          <Route path="/runs/:id" component={RunDetail} />
           <Route path="/costs" component={CostsView} />
           <Route path="/alerts" component={AlertsView} />
           <Route path="/connect" component={ConnectView} />

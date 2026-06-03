@@ -65,6 +65,7 @@ Abre `http://127.0.0.1:3100` y verás la traza aparecer — con su coste calcula
 - **Alertas** — avisos cuando una traza falla o supera un umbral de coste/tokens/duración (toast + notificación de escritorio + CLI + historial persistido).
 - **Scores de evaluación** — adjunta métricas a una traza (`POST /api/traces/:id/scores`) desde un juez LLM, un assert o a mano.
 - **Replay y juez LLM** — reejecuta el prompt capturado de una traza contra el mismo modelo u otro y compara coste/latencia/salida, o deja que un modelo juez puntúe la respuesta de 0 a 1. Requiere una clave de proveedor (por entorno, solo en memoria).
+- **Datasets y experimentos** — junta prompts en un conjunto de pruebas (desde una traza o a mano), ejecuta todo el set contra un modelo en batch y puntúa cada salida con el juez — coste/latencia/score agregados por run.
 - **SQLite local** — migraciones versionadas. BD en `~/.lookspan/lookspan.db` por defecto; configurable. Retención opcional con `--retention`.
 - **Seguridad** — bind a `127.0.0.1` por defecto; auth opcional `--token`; redacción de credenciales antes de persistir.
 - **CLI en una línea** — `npx lookspan` arranca servidor + dashboard sin instalación global.
@@ -144,6 +145,23 @@ curl -X POST localhost:3100/api/traces/<id>/judge -H 'content-type: application/
 Para mantener prompts/salidas fuera de Lookspan, pasa `{ captureContent: false }`
 a `observeOpenAI` / `observeAnthropic` — replay y juez quedan entonces deshabilitados.
 
+### Datasets y experimentos
+
+Escala la evaluación de una traza a un conjunto de pruebas. Crea un **dataset**
+(con items sembrados desde trazas reales o a mano) y **ejecútalo** contra un modelo
+— cada item se reejecuta y, opcionalmente, lo puntúa el juez, con coste/latencia/score
+agregados por run. Gestiónalo desde **Datasets** en el dashboard, o:
+
+```bash
+# Crea un dataset y añade como item el prompt capturado de una traza
+DS=$(curl -s -X POST localhost:3100/api/datasets -d '{"name":"regresiones"}' -H 'content-type: application/json' | jq -r .dataset.id)
+curl -X POST localhost:3100/api/datasets/$DS/items/from-trace -H 'content-type: application/json' -d '{"traceId":"<id>"}'
+
+# Ejecuta todo el set contra un modelo, puntuando cada salida
+curl -X POST localhost:3100/api/datasets/$DS/run -H 'content-type: application/json' \
+  -d '{"model":"gpt-4o-mini","judge":true,"metric":"correctness"}'
+```
+
 ---
 
 ## API HTTP
@@ -158,6 +176,12 @@ a `observeOpenAI` / `observeAnthropic` — replay y juez quedan entonces deshabi
 | `POST` | `/api/traces/:id/replay` | Reejecuta el prompt capturado (`{model?, provider?, spanId?}`); requiere clave de proveedor |
 | `GET` | `/api/traces/:id/replays` | Lista los replays previos de la traza |
 | `POST` | `/api/traces/:id/judge` | Juez LLM: puntúa prompt/respuesta (`{metric?, model?, provider?, rubric?}`) |
+| `GET` `POST` | `/api/datasets` | Lista / crea datasets |
+| `GET` | `/api/datasets/:id` | Detalle del dataset (items + runs) |
+| `POST` | `/api/datasets/:id/items` | Añade item(s) (`{input, expected?}` o `{items:[…]}`) |
+| `POST` | `/api/datasets/:id/items/from-trace` | Siembra un item desde el prompt capturado de una traza |
+| `POST` | `/api/datasets/:id/run` | Ejecuta el set contra un modelo (`{model, judge?, metric?}`); requiere clave de proveedor |
+| `GET` | `/api/runs/:id` | Resumen del run + resultados por item |
 | `GET` | `/api/sessions` | Lista de sesiones (agentes, trazas, coste, errores, rango temporal) |
 | `GET` | `/api/sessions/:id` | Resumen de la sesión + sus trazas (timeline multi-agente) |
 | `GET` | `/api/costs/summary` | Desglose de costes (total, por modelo, proveedor, agente) |

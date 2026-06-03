@@ -2,8 +2,10 @@ import { Collector } from '@lookspan/collector';
 import {
   AlertsRepository,
   CostsRepository,
+  DatasetsRepository,
   type LookspanDatabase,
   ReplaysRepository,
+  RunsRepository,
   ScoresRepository,
   SpansRepository,
   StatsRepository,
@@ -22,7 +24,9 @@ export interface ApiContext {
   alerts: AlertsRepository;
   scores: ScoresRepository;
   replays: ReplaysRepository;
-  /** Provider API keys for replay / LLM-as-judge. In-memory only. */
+  datasets: DatasetsRepository;
+  runs: RunsRepository;
+  /** Provider API keys for replay / LLM-as-judge / dataset runs. In-memory only. */
   inferenceKeys: InferenceKeys;
 }
 
@@ -45,6 +49,8 @@ export function createContext(
     alerts: new AlertsRepository(db),
     scores: new ScoresRepository(db),
     replays: new ReplaysRepository(db),
+    datasets: new DatasetsRepository(db),
+    runs: new RunsRepository(db),
     inferenceKeys: options.inferenceKeys ?? {},
   };
 }

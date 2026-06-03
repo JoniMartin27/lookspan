@@ -41,6 +41,10 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
       prompt against the same or another model and shows a cost/latency/output diff
       in the trace's **Replay & judge** panel. (Capturing prompts requires the SDK's
       `captureContent`, on by default; secrets are scrubbed server-side.)
+- [x] **Datasets & experiments** — collect prompts into a test set (seed from a
+      trace or by hand), run the whole set against a model in batch, and score each
+      output with the judge — aggregate cost/latency/score per run. `/datasets` +
+      `/runs/:id` in the dashboard; SQLite migration v6.
 - [ ] **Scale options** — optional Postgres driver for teams, sampling. (SQLite's
       local-first ceiling is intentional; a per-batch span cap already guards
       against floods.)

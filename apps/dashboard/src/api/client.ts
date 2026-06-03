@@ -1,7 +1,11 @@
 import type {
   Alert,
   CostBreakdown,
+  Dataset,
+  DatasetItem,
   Replay,
+  Run,
+  RunItem,
   Score,
   ScoreInput,
   SessionSummary,
@@ -72,6 +76,18 @@ export const api = {
   scoresSummary: () =>
     request<{ items: { name: string; avg: number; count: number }[] }>('/scores/summary'),
   listTools: () => request<{ items: Span[] }>('/tools'),
+  listDatasets: () => request<{ items: Dataset[] }>('/datasets'),
+  createDataset: (body: { name: string; description?: string }) =>
+    post<{ dataset: Dataset }>('/datasets', body),
+  getDataset: (id: string) =>
+    request<{ dataset: Dataset; items: DatasetItem[]; runs: Run[] }>(`/datasets/${id}`),
+  addDatasetItemFromTrace: (id: string, traceId: string) =>
+    post<{ item: DatasetItem }>(`/datasets/${id}/items/from-trace`, { traceId }),
+  runDataset: (
+    id: string,
+    body: { model: string; provider?: string; judge?: boolean; metric?: string },
+  ) => post<{ run: Run; items: RunItem[]; truncated: number }>(`/datasets/${id}/run`, body),
+  getRun: (runId: number) => request<{ run: Run; items: RunItem[] }>(`/runs/${runId}`),
   listSessions: () => request<{ items: SessionSummary[] }>('/sessions'),
   getSession: (id: string) =>
     request<{ session: SessionSummary; traces: TraceListItem[] }>(`/sessions/${id}`),

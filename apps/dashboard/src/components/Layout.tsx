@@ -48,6 +48,12 @@ export default function Layout({ children }: LayoutProps) {
             <NavLink href="/tools" active={location === '/tools'}>
               Tools
             </NavLink>
+            <NavLink
+              href="/datasets"
+              active={location.startsWith('/datasets') || location.startsWith('/runs')}
+            >
+              Datasets
+            </NavLink>
             <NavLink href="/costs" active={location === '/costs'}>
               Costs
             </NavLink>

@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/openai",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Drop-in tracing for the OpenAI SDK — wrap your client in one line and every model call becomes a Lookspan span.",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,8 +20,8 @@
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@lookspan/mcp": "^0.3.0",
-    "@lookspan/types": "^0.3.0"
+    "@lookspan/mcp": "^0.4.0",
+    "@lookspan/types": "^0.4.0"
   },
   "peerDependencies": {
     "openai": ">=4.0.0"
