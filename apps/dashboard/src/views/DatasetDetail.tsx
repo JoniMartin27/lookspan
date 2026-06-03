@@ -1,5 +1,5 @@
-import type { Run } from '@lookspan/types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Run, RunItem } from '@lookspan/types';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'wouter';
 import { api } from '../api/client.ts';
@@ -100,6 +100,8 @@ export default function DatasetDetail() {
         )}
       </section>
 
+      {runs.length >= 2 && <RunCompare runs={runs} />}
+
       <section>
         <h2 className="mb-2 text-sm font-semibold text-neutral-300">Items ({items.length})</h2>
         {items.length === 0 ? (
@@ -127,6 +129,177 @@ export default function DatasetDetail() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function deltaPct(a: number | null, b: number | null): string | null {
+  if (a === null || b === null || a === 0) return null;
+  const pct = ((b - a) / Math.abs(a)) * 100;
+  if (!Number.isFinite(pct) || Math.abs(pct) < 0.5) return null;
+  return `${pct > 0 ? '+' : ''}${pct.toFixed(0)}%`;
+}
+
+function num(v: number | null, suffix = '', digits = 2): string {
+  return v === null ? '—' : `${v.toFixed(digits)}${suffix}`;
+}
+
+/** Pick two runs and diff them: model A vs B, Δ score / cost / latency per item. */
+function RunCompare({ runs }: { runs: Run[] }) {
+  const [aId, setAId] = useState<number>(runs[1]?.id ?? 0);
+  const [bId, setBId] = useState<number>(runs[0]?.id ?? 0);
+
+  const [a, b] = useQueries({
+    queries: [aId, bId].map((id) => ({
+      queryKey: ['run', id],
+      queryFn: () => api.getRun(id),
+      enabled: id > 0,
+    })),
+  });
+
+  const runA = a?.data?.run;
+  const runB = b?.data?.run;
+  const itemsA = a?.data?.items ?? [];
+  const itemsB = b?.data?.items ?? [];
+
+  // align by dataset item id
+  const byItem = new Map<number, { a?: RunItem; b?: RunItem }>();
+  for (const it of itemsA) byItem.set(it.itemId, { ...byItem.get(it.itemId), a: it });
+  for (const it of itemsB) byItem.set(it.itemId, { ...byItem.get(it.itemId), b: it });
+  const rows = [...byItem.entries()].sort((x, y) => x[0] - y[0]);
+
+  const sel =
+    'rounded border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none';
+
+  return (
+    <section className="mb-6">
+      <h2 className="mb-2 text-sm font-semibold text-neutral-300">Compare runs</h2>
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-neutral-500">A</span>
+        <select value={aId} onChange={(e) => setAId(Number(e.target.value))} className={sel}>
+          {runs.map((r) => (
+            <option key={r.id} value={r.id}>
+              #{r.id} · {r.model}
+            </option>
+          ))}
+        </select>
+        <span className="text-neutral-500">vs B</span>
+        <select value={bId} onChange={(e) => setBId(Number(e.target.value))} className={sel}>
+          {runs.map((r) => (
+            <option key={r.id} value={r.id}>
+              #{r.id} · {r.model}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {runA && runB && (
+        <>
+          <div className="mb-2 grid grid-cols-3 gap-2 text-xs">
+            <CompareTile
+              label={runA.judgeMetric ?? runB.judgeMetric ?? 'avg score'}
+              a={num(runA.avgScore, '', 2)}
+              b={num(runB.avgScore, '', 2)}
+              delta={deltaPct(runA.avgScore, runB.avgScore)}
+              betterUp
+            />
+            <CompareTile
+              label="total cost"
+              a={num(runA.totalCostUsd, '', 4)}
+              b={num(runB.totalCostUsd, '', 4)}
+              delta={deltaPct(runA.totalCostUsd, runB.totalCostUsd)}
+            />
+            <CompareTile
+              label="ok / total"
+              a={`${runA.okCount}/${runA.itemCount}`}
+              b={`${runB.okCount}/${runB.itemCount}`}
+              delta={null}
+            />
+          </div>
+
+          <div className="overflow-auto rounded border border-neutral-800">
+            <table className="w-full text-xs">
+              <thead className="text-left text-[10px] uppercase tracking-wider text-neutral-500">
+                <tr>
+                  <th className="px-2 py-1.5">#</th>
+                  <th className="px-2 py-1.5">A score</th>
+                  <th className="px-2 py-1.5">B score</th>
+                  <th className="px-2 py-1.5">Δ score</th>
+                  <th className="px-2 py-1.5">A cost</th>
+                  <th className="px-2 py-1.5">B cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(([itemId, { a: ia, b: ib }]) => {
+                  const ds = ia?.score != null && ib?.score != null ? ib.score - ia.score : null;
+                  return (
+                    <tr key={itemId} className="border-t border-neutral-800">
+                      <td className="px-2 py-1.5 text-neutral-500">{itemId}</td>
+                      <td className="px-2 py-1.5 font-mono text-neutral-300">
+                        {num(ia?.score ?? null)}
+                      </td>
+                      <td className="px-2 py-1.5 font-mono text-neutral-300">
+                        {num(ib?.score ?? null)}
+                      </td>
+                      <td
+                        className={`px-2 py-1.5 font-mono ${
+                          ds === null
+                            ? 'text-neutral-600'
+                            : ds > 0
+                              ? 'text-emerald-400'
+                              : ds < 0
+                                ? 'text-red-400'
+                                : 'text-neutral-500'
+                        }`}
+                      >
+                        {ds === null ? '—' : `${ds > 0 ? '+' : ''}${ds.toFixed(2)}`}
+                      </td>
+                      <td className="px-2 py-1.5 font-mono text-neutral-500">
+                        {num(ia?.costUsd ?? null, '', 4)}
+                      </td>
+                      <td className="px-2 py-1.5 font-mono text-neutral-500">
+                        {num(ib?.costUsd ?? null, '', 4)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function CompareTile({
+  label,
+  a,
+  b,
+  delta,
+  betterUp,
+}: {
+  label: string;
+  a: string;
+  b: string;
+  delta: string | null;
+  betterUp?: boolean;
+}) {
+  const up = delta?.startsWith('+');
+  const good = betterUp ? up : up === false;
+  return (
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="font-mono text-neutral-400">{a}</span>
+        <span className="text-neutral-600">→</span>
+        <span className="font-mono text-neutral-100">{b}</span>
+        {delta && (
+          <span className={`text-[10px] ${good ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {delta}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

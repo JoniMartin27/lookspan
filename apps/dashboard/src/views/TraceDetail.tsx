@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'wouter';
 import { api } from '../api/client.ts';
 import { agentColor } from '../lib/agentColor.ts';
+import { diffLines } from '../lib/diff.ts';
 
 export default function TraceDetail() {
   const params = useParams<{ id: string }>();
@@ -638,10 +639,65 @@ function ReplayCard({ replay }: { replay: Replay }) {
               <Delta original={replay.originalDurationMs} next={replay.durationMs} />
             </div>
           </div>
-          <pre className="mt-1.5 max-h-32 overflow-auto rounded bg-neutral-950 p-1.5 font-mono text-[10px] text-neutral-300">
-            {replay.output ?? ''}
-          </pre>
+          <ReplayOutput original={replay.originalOutput} output={replay.output ?? ''} />
         </>
+      )}
+    </div>
+  );
+}
+
+/** Replay output with an optional line-diff against the original answer. */
+function ReplayOutput({ original, output }: { original: string | null; output: string }) {
+  const canDiff = Boolean(original) && original !== output;
+  const [mode, setMode] = useState<'output' | 'diff'>(canDiff ? 'diff' : 'output');
+  const lines = useMemo(
+    () => (mode === 'diff' && original !== null ? diffLines(original, output) : null),
+    [mode, original, output],
+  );
+
+  return (
+    <div className="mt-1.5">
+      {canDiff && (
+        <div className="mb-1 flex gap-2 text-[9px] uppercase tracking-wider">
+          {(['diff', 'output'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={
+                mode === m ? 'text-neutral-200' : 'text-neutral-600 hover:text-neutral-400'
+              }
+            >
+              {m === 'diff' ? 'diff vs original' : 'output'}
+            </button>
+          ))}
+        </div>
+      )}
+      {lines ? (
+        <div className="max-h-40 overflow-auto rounded bg-neutral-950 p-1.5 font-mono text-[10px] leading-relaxed">
+          {lines.map((l, i) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: diff lines are a static ordered list
+              key={i}
+              className={
+                l.type === 'add'
+                  ? 'bg-emerald-500/10 text-emerald-300'
+                  : l.type === 'del'
+                    ? 'bg-red-500/10 text-red-300'
+                    : 'text-neutral-400'
+              }
+            >
+              <span className="select-none opacity-50">
+                {l.type === 'add' ? '+ ' : l.type === 'del' ? '- ' : '  '}
+              </span>
+              {l.text || ' '}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <pre className="max-h-32 overflow-auto rounded bg-neutral-950 p-1.5 font-mono text-[10px] text-neutral-300">
+          {output}
+        </pre>
       )}
     </div>
   );
