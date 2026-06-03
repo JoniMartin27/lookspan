@@ -11,6 +11,7 @@ export default function TraceDetail() {
   const traceId = params.id;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showLab, setShowLab] = useState(false);
+  const [view, setView] = useState<'timeline' | 'tree'>('timeline');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['trace', traceId],
@@ -83,6 +84,22 @@ export default function TraceDetail() {
           </div>
         )}
         <Scores traceId={traceId} scores={data.scores ?? []} />
+        <div className="flex overflow-hidden rounded border border-neutral-800 text-xs">
+          {(['timeline', 'tree'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={`px-2 py-0.5 ${
+                view === v
+                  ? 'bg-neutral-800 text-neutral-100'
+                  : 'text-neutral-500 hover:text-neutral-300'
+              }`}
+            >
+              {v === 'timeline' ? 'Timeline' : 'Tree'}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -100,20 +117,28 @@ export default function TraceDetail() {
       </div>
 
       <div className="relative min-h-0 flex-1">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          fitView
-          fitViewOptions={{ padding: 0.25 }}
-          minZoom={0.1}
-          nodesConnectable={false}
-          onNodeClick={(_, n) => setSelectedId(n.id)}
-          onPaneClick={() => setSelectedId(null)}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background gap={16} size={1} color="#27272a" />
-          <Controls showInteractive={false} />
-        </ReactFlow>
+        {view === 'timeline' ? (
+          <Timeline
+            spans={data.spans}
+            selectedId={selectedId}
+            onSelect={(id) => setSelectedId(id)}
+          />
+        ) : (
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            fitView
+            fitViewOptions={{ padding: 0.25 }}
+            minZoom={0.1}
+            nodesConnectable={false}
+            onNodeClick={(_, n) => setSelectedId(n.id)}
+            onPaneClick={() => setSelectedId(null)}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background gap={16} size={1} color="#27272a" />
+            <Controls showInteractive={false} />
+          </ReactFlow>
+        )}
         {selected && <SpanDrawer span={selected} onClose={() => setSelectedId(null)} />}
         {showLab && <LabDrawer traceId={traceId} onClose={() => setShowLab(false)} />}
       </div>
@@ -124,6 +149,131 @@ export default function TraceDetail() {
 function formatMs(ms: number): string {
   if (ms < 1000) return `${ms} ms`;
   return `${(ms / 1000).toFixed(2)} s`;
+}
+
+interface TimelineRow {
+  span: Span;
+  depth: number;
+  startMs: number;
+  durMs: number;
+}
+
+/**
+ * Waterfall view: every span is a bar positioned by its start time (relative to
+ * the trace) with width proportional to its duration, indented by tree depth.
+ * Answers "where did the time go?" — the question a tree can't.
+ */
+function Timeline({
+  spans,
+  selectedId,
+  onSelect,
+}: {
+  spans: Span[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const rows = useMemo<TimelineRow[]>(() => {
+    if (spans.length === 0) return [];
+    const t0 = Math.min(...spans.map((s) => new Date(s.startedAt).getTime()));
+    const t1 = Math.max(...spans.map((s) => new Date(s.endedAt ?? s.startedAt).getTime()));
+    const total = Math.max(1, t1 - t0);
+
+    // depth from parent chain
+    const byId = new Map(spans.map((s) => [s.spanId, s]));
+    const depthOf = (s: Span): number => {
+      let d = 0;
+      let cur: Span | undefined = s;
+      const seen = new Set<string>();
+      while (cur?.parentSpanId && byId.has(cur.parentSpanId) && !seen.has(cur.spanId)) {
+        seen.add(cur.spanId);
+        cur = byId.get(cur.parentSpanId);
+        d++;
+        if (d > 20) break;
+      }
+      return d;
+    };
+
+    return [...spans]
+      .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
+      .map((span) => {
+        const start = new Date(span.startedAt).getTime();
+        const end = new Date(span.endedAt ?? span.startedAt).getTime();
+        return {
+          span,
+          depth: depthOf(span),
+          startMs: ((start - t0) / total) * 100,
+          durMs: Math.max(0.5, ((end - start) / total) * 100),
+        };
+      });
+  }, [spans]);
+
+  const totalMs = useMemo(() => {
+    if (spans.length === 0) return 0;
+    const t0 = Math.min(...spans.map((s) => new Date(s.startedAt).getTime()));
+    const t1 = Math.max(...spans.map((s) => new Date(s.endedAt ?? s.startedAt).getTime()));
+    return t1 - t0;
+  }, [spans]);
+
+  if (rows.length === 0) {
+    return <div className="p-8 text-sm text-neutral-500">No spans.</div>;
+  }
+
+  return (
+    <div className="h-full overflow-auto p-4">
+      <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-neutral-600">
+        <span>span</span>
+        <span>{formatMs(totalMs)} total</span>
+      </div>
+      <div className="space-y-1">
+        {rows.map(({ span, depth, startMs, durMs }) => {
+          const accent = agentColor(span.agentId);
+          const isError = span.status === 'error';
+          const isSel = span.spanId === selectedId;
+          return (
+            <button
+              key={span.spanId}
+              type="button"
+              onClick={() => onSelect(span.spanId)}
+              className={`flex w-full items-center gap-3 rounded px-2 py-1 text-left hover:bg-neutral-900 ${
+                isSel ? 'bg-neutral-900' : ''
+              }`}
+              style={isSel ? { boxShadow: `inset 0 0 0 1px ${accent}` } : undefined}
+            >
+              <div
+                className="flex min-w-0 shrink-0 items-center gap-1.5"
+                style={{ width: 220, paddingLeft: depth * 12 }}
+              >
+                <span
+                  className="inline-block size-2 shrink-0 rounded-full"
+                  style={{ background: accent }}
+                />
+                <span className="truncate text-xs text-neutral-200">{span.name}</span>
+                <span className="shrink-0 text-[10px] text-neutral-600">
+                  {TYPE_LABEL[span.type] ?? span.type}
+                </span>
+              </div>
+              <div className="relative h-4 flex-1">
+                <div
+                  className="absolute top-0.5 flex h-3 items-center rounded-sm"
+                  style={{
+                    left: `${startMs}%`,
+                    width: `${durMs}%`,
+                    minWidth: 3,
+                    background: isError ? '#b91c1c' : accent,
+                    opacity: isError ? 0.9 : 0.75,
+                  }}
+                  title={span.durationMs !== null ? formatMs(span.durationMs) : ''}
+                />
+              </div>
+              <span className="w-16 shrink-0 text-right font-mono text-[10px] text-neutral-500">
+                {span.durationMs !== null ? formatMs(span.durationMs) : '—'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -185,11 +335,150 @@ function SpanDrawer({ span, onClose }: { span: Span; onClose: () => void }) {
         </dl>
 
         {span.error && <Json label="Error" value={span.error} />}
-        {span.input && <Json label="Input" value={span.input} />}
-        {span.output && <Json label="Output" value={span.output} />}
+        <Conversation input={span.input} output={span.output} />
         {span.attributes && <Json label="Attributes" value={span.attributes} />}
       </div>
     </aside>
+  );
+}
+
+interface ChatMessage {
+  role: string;
+  text: string;
+}
+
+function partsToText(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((p) => {
+        if (typeof p === 'string') return p;
+        if (p && typeof p === 'object') {
+          const o = p as { text?: unknown; type?: unknown };
+          if (typeof o.text === 'string') return o.text;
+          if (typeof o.type === 'string') return `「${o.type}」`;
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+  return '';
+}
+
+/** Pull a readable list of chat turns out of a stored request `input`. */
+function toMessages(input: Record<string, unknown> | null | undefined): ChatMessage[] | null {
+  if (!input || typeof input !== 'object') return null;
+  const out: ChatMessage[] = [];
+  if (typeof input.system === 'string' && input.system) {
+    out.push({ role: 'system', text: input.system });
+  }
+  const msgs = input.messages;
+  if (!Array.isArray(msgs)) return out.length > 0 ? out : null;
+  for (const m of msgs) {
+    if (!m || typeof m !== 'object') continue;
+    const mm = m as { role?: unknown; content?: unknown; tool_calls?: unknown };
+    const role = typeof mm.role === 'string' ? mm.role : 'user';
+    let text = partsToText(mm.content);
+    if (Array.isArray(mm.tool_calls)) {
+      const calls = mm.tool_calls
+        .map((c) => {
+          const fn = (c as { function?: { name?: unknown; arguments?: unknown } }).function;
+          return fn?.name ? `🔧 ${String(fn.name)}(${String(fn.arguments ?? '')})` : '';
+        })
+        .filter(Boolean)
+        .join('\n');
+      text = [text, calls].filter(Boolean).join('\n');
+    }
+    out.push({ role, text });
+  }
+  return out;
+}
+
+const ROLE_STYLE: Record<string, string> = {
+  system: 'border-neutral-700 bg-neutral-800/40 text-neutral-400',
+  user: 'border-sky-500/30 bg-sky-500/5 text-neutral-200',
+  assistant: 'border-emerald-500/30 bg-emerald-500/5 text-neutral-200',
+  tool: 'border-amber-500/30 bg-amber-500/5 text-amber-200/90',
+};
+
+/** Render a span's prompt + reply as a chat transcript; falls back to raw JSON. */
+function Conversation({
+  input,
+  output,
+}: {
+  input: Record<string, unknown> | null | undefined;
+  output: string | null | undefined;
+}) {
+  const [raw, setRaw] = useState(false);
+  const messages = toMessages(input);
+  const hasChat = (messages && messages.length > 0) || Boolean(output);
+
+  if (!hasChat) {
+    return (
+      <>
+        {input && <Json label="Input" value={input} />}
+        {output && <Json label="Output" value={output} />}
+      </>
+    );
+  }
+
+  if (raw) {
+    return (
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider text-neutral-500">
+            Conversation
+          </span>
+          <button
+            type="button"
+            onClick={() => setRaw(false)}
+            className="text-[10px] text-brand-500 hover:underline"
+          >
+            chat view
+          </button>
+        </div>
+        {input && <Json label="Input" value={input} />}
+        {output && <Json label="Output" value={output} />}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-wider text-neutral-500">Conversation</span>
+        <button
+          type="button"
+          onClick={() => setRaw(true)}
+          className="text-[10px] text-brand-500 hover:underline"
+        >
+          raw
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {(messages ?? []).map((m, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: chat turns are a static, ordered list
+          <Bubble key={`${m.role}-${i}`} who={m.role} text={m.text} />
+        ))}
+        {output && <Bubble who="assistant" text={output} reply />}
+      </div>
+    </div>
+  );
+}
+
+function Bubble({ who, text, reply }: { who: string; text: string; reply?: boolean }) {
+  const style = ROLE_STYLE[who] ?? ROLE_STYLE.tool;
+  return (
+    <div className={`rounded-lg border px-2.5 py-1.5 ${style}`}>
+      <div className="mb-0.5 flex items-center gap-1 text-[10px] uppercase tracking-wider opacity-70">
+        {who}
+        {reply && <span className="text-emerald-400">· reply</span>}
+      </div>
+      <div className="whitespace-pre-wrap break-words text-[11px] leading-relaxed">
+        {text || <span className="italic opacity-50">(empty)</span>}
+      </div>
+    </div>
   );
 }
 
