@@ -17,15 +17,15 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 
 - [x] **OpenTelemetry backend** — OTLP/HTTP receiver at `/v1/traces`; any OTel SDK
       works with no Lookspan-specific code. Example in `examples/02-otel.mjs`.
-- [x] **OpenAI drop-in** — `@lookspan/openai`: `observeOpenAI(new OpenAI())` traces
-      every call (incl. streaming) in one line.
+- [x] **OpenAI / Anthropic drop-in** — `@lookspan/openai` & `@lookspan/anthropic`:
+      `observe*(client)` traces every call (incl. streaming) in one line.
 - [x] **Sessions** — multi-agent timeline (`/sessions`), per-agent `agentId` color.
-- [ ] **Agent causality** — link cross-agent handoffs (A delegates to B) so a
-      session renders as one tree, not parallel sibling traces. (Needs agents to
-      propagate a parent trace/span id; the biggest differentiator left.)
-- [ ] **TS-stack adapters** — Vercel AI SDK, Mastra, LangGraph.js.
-- [ ] **MCP-first story** — one-liner to wrap any MCP server/client; an
-      "MCP Inspector"-style view of tool calls, args, latencies, errors.
+- [x] **Agent causality** — `parentTraceId` links cross-agent handoffs; the session
+      renders an **Agent delegation** graph (who delegated to whom).
+- [x] **TS-stack via OpenTelemetry** — Vercel AI SDK / Mastra / LangChain route their
+      OTel to `/v1/traces` (recipes on the Connect page); no custom adapter needed.
+- [x] **Tools view** — cross-trace tool-call inspector (MCP & frameworks).
+- [x] **Eval score aggregates** — average per metric on the Overview.
 - [x] **Maintainable pricing** — `--pricing <file>` JSON override.
 - [x] **Community assets** — `examples/`, `.github/` (CI, CONTRIBUTING, templates).
       *(Dedicated docs site still pending.)*
