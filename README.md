@@ -11,8 +11,9 @@
 npx lookspan          # → http://127.0.0.1:3100
 ```
 
-<!-- TODO: record and link a 30s GIF here (npx lookspan → run an agent → watch spans live). See docs/ROADMAP.md. -->
-<!-- ![Lookspan demo](docs/demo.gif) -->
+![Lookspan demo](docs/demo.gif)
+
+> ▶ [Watch the full 75-second presentation](https://github.com/JoniMartin27/lookspan/releases/download/v0.4.1/lookspan-PRESENTATION.mp4)
 
 ```
 Agent (MCP · LangGraph · CrewAI · OpenTelemetry · HTTP)  →  POST /api/ingest  →  SQLite  →  real-time dashboard
