@@ -95,4 +95,19 @@ export class SpansRepository {
       | undefined;
     return row ? rowToSpan(row) : null;
   }
+
+  /** Recent tool_call spans across all traces (for the Tools / MCP inspector). */
+  listRecentToolCalls(limit = 100, framework?: string): Span[] {
+    const max = Math.min(limit, 500);
+    const rows = framework
+      ? (this.db
+          .prepare(
+            "SELECT * FROM spans WHERE type = 'tool_call' AND framework = ? ORDER BY started_at DESC LIMIT ?",
+          )
+          .all(framework, max) as SpanRow[])
+      : (this.db
+          .prepare("SELECT * FROM spans WHERE type = 'tool_call' ORDER BY started_at DESC LIMIT ?")
+          .all(max) as SpanRow[]);
+    return rows.map(rowToSpan);
+  }
 }

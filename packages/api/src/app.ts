@@ -11,6 +11,7 @@ import { createScoresRouter } from './routes/scores.js';
 import { createSessionsRouter } from './routes/sessions.js';
 import { createStatsRouter } from './routes/stats.js';
 import { createStreamRouter } from './routes/stream.js';
+import { createToolsRouter } from './routes/tools.js';
 import { createTracesRouter } from './routes/traces.js';
 
 export interface CreateAppOptions {
@@ -68,6 +69,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/alerts', createAlertsRouter(options.context));
   app.use('/api/sessions', createSessionsRouter(options.context));
   app.use('/api/scores', createScoresRouter(options.context));
+  app.use('/api/tools', createToolsRouter(options.context));
   app.use('/api/ingest', createIngestRouter(options.context));
   app.use('/api/stream', createStreamRouter());
 

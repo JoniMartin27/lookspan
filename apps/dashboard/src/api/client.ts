@@ -63,6 +63,7 @@ export const api = {
   listAlerts: () => request<{ items: Alert[] }>('/alerts'),
   scoresSummary: () =>
     request<{ items: { name: string; avg: number; count: number }[] }>('/scores/summary'),
+  listTools: () => request<{ items: Span[] }>('/tools'),
   listSessions: () => request<{ items: SessionSummary[] }>('/sessions'),
   getSession: (id: string) =>
     request<{ session: SessionSummary; traces: TraceListItem[] }>(`/sessions/${id}`),
