@@ -1,4 +1,4 @@
-import type { Score, Span } from '@lookspan/types';
+import type { Replay, Score, Span } from '@lookspan/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Background, Controls, type Edge, type Node, Position, ReactFlow } from '@xyflow/react';
 import { useMemo, useState } from 'react';
@@ -10,6 +10,7 @@ export default function TraceDetail() {
   const params = useParams<{ id: string }>();
   const traceId = params.id;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showLab, setShowLab] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['trace', traceId],
@@ -82,6 +83,20 @@ export default function TraceDetail() {
           </div>
         )}
         <Scores traceId={traceId} scores={data.scores ?? []} />
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedId(null);
+            setShowLab((v) => !v);
+          }}
+          className={`rounded border px-2 py-0.5 text-xs ${
+            showLab
+              ? 'border-brand-500 text-neutral-100'
+              : 'border-neutral-800 text-neutral-400 hover:border-brand-500 hover:text-neutral-200'
+          }`}
+        >
+          🧪 Replay &amp; judge
+        </button>
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -100,6 +115,7 @@ export default function TraceDetail() {
           <Controls showInteractive={false} />
         </ReactFlow>
         {selected && <SpanDrawer span={selected} onClose={() => setSelectedId(null)} />}
+        {showLab && <LabDrawer traceId={traceId} onClose={() => setShowLab(false)} />}
       </div>
     </div>
   );
@@ -278,6 +294,187 @@ function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
         </button>
       )}
     </div>
+  );
+}
+
+function fmtCost(v: number | null): string {
+  return v === null ? '—' : `$${v.toFixed(4)}`;
+}
+
+function Delta({ original, next }: { original: number | null; next: number | null }) {
+  if (original === null || next === null || original === 0) return null;
+  const pct = ((next - original) / original) * 100;
+  if (!Number.isFinite(pct) || Math.abs(pct) < 0.5)
+    return <span className="text-neutral-500"> ·</span>;
+  const cheaper = pct < 0;
+  return (
+    <span className={cheaper ? 'text-emerald-400' : 'text-amber-400'}>
+      {' '}
+      {cheaper ? '▼' : '▲'}
+      {Math.abs(pct).toFixed(0)}%
+    </span>
+  );
+}
+
+/** A single past replay rendered as an original-vs-replay diff card. */
+function ReplayCard({ replay }: { replay: Replay }) {
+  return (
+    <div className="rounded border border-neutral-800 bg-neutral-900 p-2">
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[11px] text-neutral-200">{replay.replayModel}</span>
+        <span
+          className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+            replay.status === 'error'
+              ? 'bg-red-500/10 text-red-400'
+              : 'bg-emerald-500/10 text-emerald-400'
+          }`}
+        >
+          {replay.status}
+        </span>
+      </div>
+      {replay.status === 'error' ? (
+        <p className="mt-1 text-[11px] text-red-400">{replay.error}</p>
+      ) : (
+        <>
+          <div className="mt-1 grid grid-cols-2 gap-x-3 text-[10px] text-neutral-400">
+            <div>
+              cost: <span className="font-mono text-neutral-200">{fmtCost(replay.costUsd)}</span>
+              <Delta original={replay.originalCostUsd} next={replay.costUsd} />
+            </div>
+            <div>
+              latency:{' '}
+              <span className="font-mono text-neutral-200">
+                {replay.durationMs !== null ? `${replay.durationMs} ms` : '—'}
+              </span>
+              <Delta original={replay.originalDurationMs} next={replay.durationMs} />
+            </div>
+          </div>
+          <pre className="mt-1.5 max-h-32 overflow-auto rounded bg-neutral-950 p-1.5 font-mono text-[10px] text-neutral-300">
+            {replay.output ?? ''}
+          </pre>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Right-side panel: re-run the prompt against a model, or score it with an LLM judge. */
+function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [model, setModel] = useState('');
+  const [metric, setMetric] = useState('quality');
+  const [err, setErr] = useState<string | null>(null);
+
+  const replays = useQuery({
+    queryKey: ['replays', traceId],
+    queryFn: () => api.listReplays(traceId),
+  });
+
+  const replayM = useMutation({
+    mutationFn: () => api.replay(traceId, model.trim() ? { model: model.trim() } : {}),
+    onSuccess: () => {
+      setErr(null);
+      qc.invalidateQueries({ queryKey: ['replays', traceId] });
+    },
+    onError: (e) => setErr((e as Error).message),
+  });
+
+  const judgeM = useMutation({
+    mutationFn: () => api.judge(traceId, { metric: metric.trim() || 'quality' }),
+    onSuccess: () => {
+      setErr(null);
+      qc.invalidateQueries({ queryKey: ['trace', traceId] });
+    },
+    onError: (e) => setErr((e as Error).message),
+  });
+
+  const items = replays.data?.items ?? [];
+
+  return (
+    <aside className="absolute right-0 top-0 flex h-full w-96 max-w-[90%] flex-col overflow-auto border-l border-neutral-800 bg-neutral-950/95 backdrop-blur">
+      <div className="flex items-center justify-between border-b border-neutral-800 p-4">
+        <h2 className="text-sm font-semibold text-neutral-100">Replay &amp; judge</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-neutral-500 hover:text-neutral-200"
+          aria-label="Close"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-5 p-4 text-xs">
+        {err && (
+          <div className="rounded border border-red-500/40 bg-red-500/5 p-2 text-[11px] text-red-300">
+            {err}
+          </div>
+        )}
+
+        <section>
+          <div className="mb-1.5 text-[10px] uppercase tracking-wider text-neutral-500">
+            Replay the prompt
+          </div>
+          <div className="flex items-center gap-1.5">
+            <input
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="model (blank = same)"
+              className="min-w-0 flex-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => replayM.mutate()}
+              disabled={replayM.isPending}
+              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+            >
+              {replayM.isPending ? 'Running…' : 'Run'}
+            </button>
+          </div>
+          <p className="mt-1 text-[10px] text-neutral-600">
+            Re-runs the captured prompt. Needs a provider key on the server.
+          </p>
+        </section>
+
+        <section>
+          <div className="mb-1.5 text-[10px] uppercase tracking-wider text-neutral-500">
+            LLM-as-judge
+          </div>
+          <div className="flex items-center gap-1.5">
+            <input
+              value={metric}
+              onChange={(e) => setMetric(e.target.value)}
+              placeholder="metric"
+              className="min-w-0 flex-1 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => judgeM.mutate()}
+              disabled={judgeM.isPending}
+              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+            >
+              {judgeM.isPending ? 'Judging…' : 'Score'}
+            </button>
+          </div>
+          <p className="mt-1 text-[10px] text-neutral-600">
+            Scores the response 0–1; appears as a score chip above.
+          </p>
+        </section>
+
+        {items.length > 0 && (
+          <section>
+            <div className="mb-1.5 text-[10px] uppercase tracking-wider text-neutral-500">
+              Replays ({items.length})
+            </div>
+            <div className="space-y-2">
+              {items.map((r) => (
+                <ReplayCard key={r.id} replay={r} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </aside>
   );
 }
 

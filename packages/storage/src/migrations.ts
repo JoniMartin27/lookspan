@@ -119,6 +119,33 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_traces_parent_trace ON traces(parent_trace_id);
     `,
   },
+  {
+    version: 5,
+    name: 'replays',
+    up: `
+      CREATE TABLE IF NOT EXISTS replays (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trace_id TEXT NOT NULL REFERENCES traces(trace_id) ON DELETE CASCADE,
+        span_id TEXT,
+        provider TEXT NOT NULL,
+        original_model TEXT,
+        replay_model TEXT NOT NULL,
+        status TEXT NOT NULL,
+        output TEXT,
+        error TEXT,
+        input_tokens INTEGER,
+        output_tokens INTEGER,
+        cost_usd REAL,
+        duration_ms INTEGER,
+        original_output TEXT,
+        original_cost_usd REAL,
+        original_duration_ms INTEGER,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_replays_trace ON replays(trace_id, created_at DESC);
+    `,
+  },
 ];
 
 export function getCurrentSchemaVersion(db: LookspanDatabase): number {

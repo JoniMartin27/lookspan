@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/api",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Lookspan HTTP API and SSE stream — Express server.",
   "type": "module",
@@ -23,12 +23,14 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.0",
     "@lookspan/collector": "*",
     "@lookspan/events": "*",
     "@lookspan/storage": "*",
     "@lookspan/types": "*",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "openai": "^6.41.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

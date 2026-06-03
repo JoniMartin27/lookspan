@@ -3,12 +3,14 @@ import {
   AlertsRepository,
   CostsRepository,
   type LookspanDatabase,
+  ReplaysRepository,
   ScoresRepository,
   SpansRepository,
   StatsRepository,
   TracesRepository,
 } from '@lookspan/storage';
 import type { AlertRule } from '@lookspan/types';
+import type { InferenceKeys } from './inference/provider.js';
 
 export interface ApiContext {
   db: LookspanDatabase;
@@ -19,10 +21,14 @@ export interface ApiContext {
   stats: StatsRepository;
   alerts: AlertsRepository;
   scores: ScoresRepository;
+  replays: ReplaysRepository;
+  /** Provider API keys for replay / LLM-as-judge. In-memory only. */
+  inferenceKeys: InferenceKeys;
 }
 
 export interface CreateContextOptions {
   alertRules?: AlertRule[];
+  inferenceKeys?: InferenceKeys;
 }
 
 export function createContext(
@@ -38,5 +44,7 @@ export function createContext(
     stats: new StatsRepository(db),
     alerts: new AlertsRepository(db),
     scores: new ScoresRepository(db),
+    replays: new ReplaysRepository(db),
+    inferenceKeys: options.inferenceKeys ?? {},
   };
 }

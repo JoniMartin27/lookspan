@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3.0 — 2026-06-03
+
+The evaluation release: close the loop from *observe* to *improve*.
+
+### Added
+- **Replay / diff** — `POST /api/traces/:id/replay` re-runs a trace's captured
+  prompt against the same or a different model and stores the result next to a
+  snapshot of the original. The trace's **Replay & judge** panel shows the
+  cost / latency / output diff. Past replays persist (SQLite migration **v5**).
+- **LLM-as-judge** — `POST /api/traces/:id/judge` asks a judge model to score a
+  trace's prompt/response 0–1 against a rubric and stores it as an `llm-judge`
+  score (reusing the existing scores UI).
+- **Prompt & output capture** — `@lookspan/openai` and `@lookspan/anthropic` now
+  record the request and reply text on the span (toggle with `captureContent`,
+  on by default). This is what makes replay & judge possible. Secrets are
+  scrubbed server-side before storage.
+- **Provider keys** — `LOOKSPAN_OPENAI_API_KEY` / `LOOKSPAN_ANTHROPIC_API_KEY`
+  (or `--openai-key` / `--anthropic-key`) enable replay & judge. Keys are held
+  in memory only — never written to the database or logged.
+
+### Changed
+- All packages unified at 0.3.0.
+
 ## 0.2.0 — 2026-06-03
 
 The multi-agent release. Lookspan now shows **how your agents collaborate**, not

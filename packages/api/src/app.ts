@@ -7,6 +7,7 @@ import { createCostsRouter } from './routes/costs.js';
 import { createHealthRouter } from './routes/health.js';
 import { createIngestRouter } from './routes/ingest.js';
 import { createOtlpRouter } from './routes/otlp.js';
+import { createReplayRouter } from './routes/replay.js';
 import { createScoresRouter } from './routes/scores.js';
 import { createSessionsRouter } from './routes/sessions.js';
 import { createStatsRouter } from './routes/stats.js';
@@ -64,6 +65,8 @@ export function createApp(options: CreateAppOptions): Express {
 
   app.use('/api/health', createHealthRouter());
   app.use('/api/traces', createTracesRouter(options.context));
+  // Replay & LLM-as-judge live under /api/traces/:id/{replay,replays,judge}.
+  app.use('/api/traces', createReplayRouter(options.context));
   app.use('/api/costs', createCostsRouter(options.context));
   app.use('/api/stats', createStatsRouter(options.context));
   app.use('/api/alerts', createAlertsRouter(options.context));

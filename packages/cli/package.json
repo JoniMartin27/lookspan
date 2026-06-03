@@ -1,6 +1,6 @@
 {
   "name": "lookspan",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local-first observability dashboard for AI agents. MCP-native. Run it with one command.",
   "type": "module",
   "bin": {
@@ -19,9 +19,11 @@
     "prepack": "node scripts/bundle.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.0",
     "better-sqlite3": "^12.9.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "openai": "^6.41.0"
   },
   "devDependencies": {
     "@lookspan/api": "*",

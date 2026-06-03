@@ -89,6 +89,46 @@ describe('observeAnthropic', () => {
     expect(spans[0].error?.message).toBe('overloaded');
   });
 
+  it('captures request input and joins text blocks into output by default', async () => {
+    const { spans, exporter } = captureExporter();
+    const client = observeAnthropic(fakeClient(), { exporter });
+    const messages = [{ role: 'user', content: 'hello' }];
+    await client.messages.create({ model: 'claude-sonnet-4-6', messages, max_tokens: 64 });
+    expect(spans[0].input).toMatchObject({ model: 'claude-sonnet-4-6', messages });
+    expect(spans[0].output).toBe('hi');
+  });
+
+  it('accumulates streamed delta text into the span output', async () => {
+    const { spans, exporter } = captureExporter();
+    const streamClient = {
+      messages: {
+        create: async () => {
+          async function* gen() {
+            yield { type: 'message_start', message: { usage: { input_tokens: 50 } } };
+            yield { type: 'content_block_delta', delta: { text: 'he' } };
+            yield { type: 'content_block_delta', delta: { text: 'llo' } };
+            yield { type: 'message_delta', usage: { output_tokens: 25 } };
+          }
+          return gen();
+        },
+      },
+    };
+    const client = observeAnthropic(streamClient, { exporter });
+    const stream = await client.messages.create({ model: 'claude-sonnet-4-6', stream: true });
+    for await (const _ of stream as AsyncIterable<unknown>) {
+      /* consume */
+    }
+    expect(spans[0].output).toBe('hello');
+  });
+
+  it('omits content when captureContent is false', async () => {
+    const { spans, exporter } = captureExporter();
+    const client = observeAnthropic(fakeClient(), { exporter, captureContent: false });
+    await client.messages.create({ model: 'claude-sonnet-4-6', messages: [] });
+    expect(spans[0].input).toBeNull();
+    expect(spans[0].output).toBeNull();
+  });
+
   it('leaves untraced methods working', async () => {
     const { exporter, spans } = captureExporter();
     const client = observeAnthropic(fakeClient(), { exporter });

@@ -33,10 +33,14 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 ## P2 — Depth & parity
 
 - [x] **Lightweight evals** — attach scores to a trace (`POST /api/traces/:id/scores`),
-      shown in the trace detail + addable from the UI. (LLM-as-judge/assertions
-      post scores externally.)
-- [ ] **Replay / diff** — re-run a trace's prompt against another model and
-      compare cost/latency/output.
+      shown in the trace detail + addable from the UI.
+- [x] **LLM-as-judge** — `POST /api/traces/:id/judge` scores a trace's prompt/response
+      0–1 with a judge model and stores it as an `llm-judge` score. Needs a provider
+      key (`LOOKSPAN_OPENAI_API_KEY` / `LOOKSPAN_ANTHROPIC_API_KEY`), held in memory only.
+- [x] **Replay / diff** — `POST /api/traces/:id/replay` re-runs a trace's captured
+      prompt against the same or another model and shows a cost/latency/output diff
+      in the trace's **Replay & judge** panel. (Capturing prompts requires the SDK's
+      `captureContent`, on by default; secrets are scrubbed server-side.)
 - [ ] **Scale options** — optional Postgres driver for teams, sampling. (SQLite's
       local-first ceiling is intentional; a per-batch span cap already guards
       against floods.)

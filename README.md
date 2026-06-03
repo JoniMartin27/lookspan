@@ -64,6 +64,7 @@ Open `http://127.0.0.1:3100` and watch the trace appear — with its cost comput
 - **Cost tracking** — aggregates input/output/cached/reasoning tokens and computes `cost_usd` per span and per trace from a model pricing table, overridable with `--pricing`.
 - **Alerts** — get notified when a trace fails or exceeds a cost/token/duration threshold (toast + desktop notification + CLI + persisted history).
 - **Evaluation scores** — attach metrics to a trace (`POST /api/traces/:id/scores`) from an LLM judge, an assertion, or by hand.
+- **Replay & LLM-as-judge** — re-run a trace's captured prompt against the same or a different model and diff cost/latency/output, or have a judge model score the response 0–1. Needs a provider key (env, in-memory only).
 - **Local SQLite** — versioned migrations. Database at `~/.lookspan/lookspan.db` by default; configurable via flag or env var. Optional retention with `--retention`.
 - **Security** — binds to `127.0.0.1` by default; optional `--token` auth; server-side redaction of credential-looking attributes before storage.
 - **One-line CLI** — `npx lookspan` starts the server and the dashboard with no global install.
@@ -149,6 +150,32 @@ More runnable examples in [`examples/`](examples/).
 
 ---
 
+## Evaluate & replay
+
+The drop-in SDKs capture each call's prompt and reply (`captureContent`, on by
+default; secrets are scrubbed server-side). With that, Lookspan can close the
+loop from *observe* to *improve* — open a trace and use the **Replay & judge**
+panel, or call the API directly:
+
+```bash
+# Provider keys live in memory only — never written to the DB or logged.
+LOOKSPAN_OPENAI_API_KEY=sk-... npx lookspan
+#   ...or LOOKSPAN_ANTHROPIC_API_KEY / --openai-key / --anthropic-key
+
+# Replay the captured prompt against another model and diff cost/latency/output
+curl -X POST localhost:3100/api/traces/<id>/replay -H 'content-type: application/json' \
+  -d '{"model":"gpt-4o-mini"}'   # omit "model" to re-run the original
+
+# Score the response 0–1 with an LLM judge (stored as an "llm-judge" score)
+curl -X POST localhost:3100/api/traces/<id>/judge -H 'content-type: application/json' \
+  -d '{"metric":"correctness"}'
+```
+
+To keep prompts/outputs out of Lookspan entirely, pass `{ captureContent: false }`
+to `observeOpenAI` / `observeAnthropic` — replay & judge then stay disabled.
+
+---
+
 ## HTTP API
 
 | Method | Path | Description |
@@ -158,6 +185,9 @@ More runnable examples in [`examples/`](examples/).
 | `GET` | `/api/traces` | List traces (paginated; filter by `framework`, `status`, `sessionId`) |
 | `GET` | `/api/traces/:id` | Trace detail with all its spans and scores |
 | `POST` | `/api/traces/:id/scores` | Attach an evaluation score (`{name, value, comment?, source?}`) |
+| `POST` | `/api/traces/:id/replay` | Re-run the captured prompt (`{model?, provider?, spanId?}`); needs a provider key |
+| `GET` | `/api/traces/:id/replays` | List past replays for the trace |
+| `POST` | `/api/traces/:id/judge` | LLM-as-judge: score the prompt/response (`{metric?, model?, provider?, rubric?}`) |
 | `GET` | `/api/sessions` | List sessions (agents, traces, cost, errors, time range) |
 | `GET` | `/api/sessions/:id` | Session summary + its traces (multi-agent timeline) |
 | `GET` | `/api/costs/summary` | Cost breakdown (total, by model, provider, agent) |
@@ -187,7 +217,7 @@ npx lookspan [options]
   -v, --version            Show version
 ```
 
-Every flag has a `LOOKSPAN_*` environment-variable equivalent (`LOOKSPAN_PORT`, `LOOKSPAN_TOKEN`, `LOOKSPAN_PRICING`, `LOOKSPAN_ALERT_*`, …).
+Every flag has a `LOOKSPAN_*` environment-variable equivalent (`LOOKSPAN_PORT`, `LOOKSPAN_TOKEN`, `LOOKSPAN_PRICING`, `LOOKSPAN_ALERT_*`, …). Replay & LLM-as-judge read `LOOKSPAN_OPENAI_API_KEY` / `LOOKSPAN_ANTHROPIC_API_KEY` (or `--openai-key` / `--anthropic-key`); these stay in memory and are never persisted.
 
 ---
 

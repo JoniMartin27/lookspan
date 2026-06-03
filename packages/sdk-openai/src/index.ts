@@ -13,6 +13,13 @@ export interface ObserveOptions {
   parentTraceId?: string;
   /** Provider label stored on the span. Default: "openai". */
   provider?: string;
+  /**
+   * Capture the request params (messages/model) in the span's `input` and the
+   * model's reply text in `output`. Enables Replay & LLM-as-judge in the
+   * dashboard. Secrets are scrubbed server-side before storage. Default: true.
+   * Set false to keep prompts/outputs out of Lookspan entirely.
+   */
+  captureContent?: boolean;
 }
 
 // method path → span type. Covers the common OpenAI SDK surface.
@@ -59,6 +66,25 @@ function extractUsage(result: unknown): Usage | null {
   };
 }
 
+/** Pull the assistant's reply text out of a (non-streaming) completion result. */
+function extractOutputText(result: unknown): string | null {
+  const r = result as {
+    choices?: { message?: { content?: unknown } }[];
+    output_text?: unknown;
+  } | null;
+  const content = r?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return content;
+  if (typeof r?.output_text === 'string') return r.output_text; // responses API
+  return null;
+}
+
+/** Text fragment from a single streaming chunk (chat.completions delta). */
+function chunkText(chunk: unknown): string {
+  const delta = (chunk as { choices?: { delta?: { content?: unknown } }[] } | undefined)
+    ?.choices?.[0]?.delta?.content;
+  return typeof delta === 'string' ? delta : '';
+}
+
 /**
  * Wrap an OpenAI client so every model call emits a Lookspan span — no other
  * code changes. Returns the same client type; calls behave identically.
@@ -75,6 +101,7 @@ export function observeOpenAI<T extends object>(client: T, options: ObserveOptio
       source: '@lookspan/openai',
     });
   const provider = options.provider ?? 'openai';
+  const captureContent = options.captureContent !== false;
 
   const emitSpan = (
     path: string,
@@ -85,6 +112,7 @@ export function observeOpenAI<T extends object>(client: T, options: ObserveOptio
     error: SpanInput['error'],
     result: unknown,
     usage: SpanInput['usage'],
+    output: string | null,
   ) => {
     const span: SpanInput = {
       traceId: newTraceId(),
@@ -101,6 +129,8 @@ export function observeOpenAI<T extends object>(client: T, options: ObserveOptio
       parentTraceId: options.parentTraceId ?? null,
       model: extractModel(args, result),
       provider,
+      input: captureContent ? ((args[0] as Record<string, unknown> | undefined) ?? null) : null,
+      output: captureContent ? output : null,
       error,
       usage,
     };
@@ -113,13 +143,24 @@ export function observeOpenAI<T extends object>(client: T, options: ObserveOptio
     try {
       result = await fn();
     } catch (err) {
-      emitSpan(path, type, args, startedAt, 'error', { message: errMsg(err) }, undefined, null);
+      emitSpan(
+        path,
+        type,
+        args,
+        startedAt,
+        'error',
+        { message: errMsg(err) },
+        undefined,
+        null,
+        null,
+      );
       throw err;
     }
 
     // Streaming: the call returns immediately with an async iterable. Wrap its
     // iterator so the span is emitted when the stream finishes (real duration)
-    // with usage from the final chunk (OpenAI sends it with include_usage).
+    // with usage from the final chunk (OpenAI sends it with include_usage) and
+    // the assistant text accumulated across deltas.
     const streaming = (args[0] as { stream?: unknown } | undefined)?.stream === true;
     const iterable = result as { [Symbol.asyncIterator]?: () => AsyncIterator<unknown> } | null;
     const origMethod = iterable?.[Symbol.asyncIterator];
@@ -128,24 +169,46 @@ export function observeOpenAI<T extends object>(client: T, options: ObserveOptio
       iterable[Symbol.asyncIterator] = async function* wrapped(): AsyncGenerator<unknown> {
         const it = getIter();
         let usage: SpanInput['usage'] = null;
+        let text = '';
         try {
           while (true) {
             const next = await it.next();
             if (next.done) break;
             const u = extractUsage(next.value);
             if (u && (u.inputTokens > 0 || u.outputTokens > 0)) usage = u;
+            if (captureContent) text += chunkText(next.value);
             yield next.value;
           }
-          emitSpan(path, type, args, startedAt, 'ok', null, result, usage);
+          emitSpan(path, type, args, startedAt, 'ok', null, result, usage, text || null);
         } catch (err) {
-          emitSpan(path, type, args, startedAt, 'error', { message: errMsg(err) }, result, usage);
+          emitSpan(
+            path,
+            type,
+            args,
+            startedAt,
+            'error',
+            { message: errMsg(err) },
+            result,
+            usage,
+            text || null,
+          );
           throw err;
         }
       };
       return result;
     }
 
-    emitSpan(path, type, args, startedAt, 'ok', null, result, extractUsage(result));
+    emitSpan(
+      path,
+      type,
+      args,
+      startedAt,
+      'ok',
+      null,
+      result,
+      extractUsage(result),
+      extractOutputText(result),
+    );
     return result;
   };
 

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { createApp, createContext } from '@lookspan/api';
+import { createApp, createContext, type InferenceKeys } from '@lookspan/api';
 import { parsePricingTable, setPricingTable } from '@lookspan/collector';
 import { LookspanEventType, subscribe } from '@lookspan/events';
 import {
@@ -27,6 +27,7 @@ interface CliFlags {
   token: string | undefined;
   alertRules: AlertRule[];
   pricingFile: string | undefined;
+  inferenceKeys: InferenceKeys;
 }
 
 function buildAlertRules(values: Record<string, unknown>): AlertRule[] {
@@ -78,6 +79,8 @@ function parseFlags(argv: string[]): CliFlags {
       retention: { type: 'string' },
       token: { type: 'string' },
       pricing: { type: 'string' },
+      'openai-key': { type: 'string' },
+      'anthropic-key': { type: 'string' },
       'alert-error': { type: 'boolean', default: false },
       'alert-cost': { type: 'string' },
       'alert-tokens': { type: 'string' },
@@ -117,6 +120,11 @@ function parseFlags(argv: string[]): CliFlags {
     token: (values.token as string) ?? process.env.LOOKSPAN_TOKEN ?? undefined,
     alertRules: buildAlertRules(values),
     pricingFile: (values.pricing as string) ?? process.env.LOOKSPAN_PRICING ?? undefined,
+    inferenceKeys: {
+      openai: (values['openai-key'] as string) ?? process.env.LOOKSPAN_OPENAI_API_KEY ?? undefined,
+      anthropic:
+        (values['anthropic-key'] as string) ?? process.env.LOOKSPAN_ANTHROPIC_API_KEY ?? undefined,
+    },
   };
 }
 
@@ -167,6 +175,8 @@ Options:
       --retention <dur> Prune traces older than <dur> (e.g. 7d, 24h, 30m)
       --token <token>   Require Authorization: Bearer <token> on the API
       --pricing <file>  Load a custom model pricing table (JSON) to keep costs current
+      --openai-key <k>      OpenAI key for Replay & LLM-as-judge (in-memory only)
+      --anthropic-key <k>   Anthropic key for Replay & LLM-as-judge (in-memory only)
       --alert-error     Alert when a trace fails
       --alert-cost <usd>      Alert when a trace costs more than <usd>
       --alert-tokens <n>      Alert when a trace exceeds <n> tokens
@@ -182,6 +192,7 @@ Environment:
   LOOKSPAN_RETENTION    Same as --retention
   LOOKSPAN_TOKEN        Same as --token
   LOOKSPAN_PRICING      Same as --pricing
+  LOOKSPAN_OPENAI_API_KEY / LOOKSPAN_ANTHROPIC_API_KEY   Enable Replay & LLM-as-judge
   LOOKSPAN_ALERT_ERROR / _COST / _TOKENS / _DURATION   Same as --alert-*
 
 Quick start:
@@ -230,7 +241,10 @@ function main(): void {
 
   if (flags.pricingFile) applyPricingFile(flags.pricingFile);
 
-  const ctx = createContext(db, { alertRules: flags.alertRules });
+  const ctx = createContext(db, {
+    alertRules: flags.alertRules,
+    inferenceKeys: flags.inferenceKeys,
+  });
   const dashboardDir = findDashboardDir();
   const app = createApp({
     context: ctx,
@@ -260,6 +274,13 @@ function main(): void {
     }
     if (flags.alertRules.length > 0) {
       console.log(`  Alerts: ${flags.alertRules.map((r) => r.id).join(', ')}`);
+    }
+    const replayProviders = [
+      flags.inferenceKeys.openai ? 'openai' : null,
+      flags.inferenceKeys.anthropic ? 'anthropic' : null,
+    ].filter(Boolean);
+    if (replayProviders.length > 0) {
+      console.log(`  Replay/judge: ${replayProviders.join(', ')}`);
     }
     const loopback =
       flags.host === '127.0.0.1' || flags.host === 'localhost' || flags.host === '::1';

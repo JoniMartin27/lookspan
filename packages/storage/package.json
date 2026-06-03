@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/storage",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "SQLite storage layer for Lookspan: schema, migrations, repositories.",
   "type": "module",

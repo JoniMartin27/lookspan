@@ -112,6 +112,49 @@ describe('observeOpenAI', () => {
     expect(spans[0].usage).toMatchObject({ inputTokens: 7, outputTokens: 3 });
   });
 
+  it('captures request input and reply output by default (for replay/judge)', async () => {
+    const { spans, exporter } = captureExporter();
+    const client = observeOpenAI(fakeClient(), { exporter });
+    const messages = [{ role: 'user', content: 'hello' }];
+    await client.chat.completions.create({ model: 'gpt-4o', messages });
+    expect(spans[0].input).toMatchObject({ model: 'gpt-4o', messages });
+    expect(spans[0].output).toBe('hi');
+  });
+
+  it('accumulates streamed output text into the span', async () => {
+    const { spans, exporter } = captureExporter();
+    const streamClient = {
+      chat: {
+        completions: {
+          create: async () => {
+            async function* gen() {
+              yield { choices: [{ delta: { content: 'hi' } }] };
+              yield {
+                choices: [{ delta: { content: '!' } }],
+                usage: { prompt_tokens: 7, completion_tokens: 3 },
+              };
+            }
+            return gen();
+          },
+        },
+      },
+    };
+    const client = observeOpenAI(streamClient, { exporter });
+    const stream = await client.chat.completions.create({ model: 'gpt-4o', stream: true });
+    for await (const _ of stream as AsyncIterable<unknown>) {
+      /* consume */
+    }
+    expect(spans[0].output).toBe('hi!');
+  });
+
+  it('omits content when captureContent is false', async () => {
+    const { spans, exporter } = captureExporter();
+    const client = observeOpenAI(fakeClient(), { exporter, captureContent: false });
+    await client.chat.completions.create({ model: 'gpt-4o', messages: [{ role: 'user' }] });
+    expect(spans[0].input).toBeNull();
+    expect(spans[0].output).toBeNull();
+  });
+
   it('leaves untraced methods working', async () => {
     const { exporter, spans } = captureExporter();
     const client = observeOpenAI(fakeClient(), { exporter });

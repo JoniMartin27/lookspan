@@ -1,6 +1,7 @@
 import type {
   Alert,
   CostBreakdown,
+  Replay,
   Score,
   ScoreInput,
   SessionSummary,
@@ -12,11 +13,15 @@ import type {
 
 const API_BASE = '/api';
 
+async function errorFrom(res: Response): Promise<Error> {
+  const body = (await res.json().catch(() => null)) as { error?: string; detail?: string } | null;
+  const msg = body?.detail || body?.error || `request failed: ${res.status} ${res.statusText}`;
+  return new Error(msg);
+}
+
 async function request<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status} ${res.statusText}`);
-  }
+  if (!res.ok) throw await errorFrom(res);
   return res.json() as Promise<T>;
 }
 
@@ -26,9 +31,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status} ${res.statusText}`);
-  }
+  if (!res.ok) throw await errorFrom(res);
   return res.json() as Promise<T>;
 }
 
@@ -58,6 +61,11 @@ export const api = {
     request<{ trace: Trace; spans: Span[]; scores: Score[] }>(`/traces/${id}`),
   addScore: (id: string, score: Omit<ScoreInput, 'traceId'>) =>
     post<{ score: Score }>(`/traces/${id}/scores`, score),
+  listReplays: (id: string) => request<{ items: Replay[] }>(`/traces/${id}/replays`),
+  replay: (id: string, body: { model?: string; provider?: string; spanId?: string } = {}) =>
+    post<{ replay: Replay }>(`/traces/${id}/replay`, body),
+  judge: (id: string, body: { metric?: string; model?: string; provider?: string } = {}) =>
+    post<{ score: Score; judge: { provider: string; model: string } }>(`/traces/${id}/judge`, body),
   costsSummary: () => request<CostBreakdown>('/costs/summary'),
   stats: () => request<StatsSummary>('/stats'),
   listAlerts: () => request<{ items: Alert[] }>('/alerts'),

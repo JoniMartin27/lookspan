@@ -36,7 +36,10 @@ await build({
   // shebang, which esbuild preserves — no banner needed (a banner would add a
   // second shebang on line 2 and break Node's ESM loader).
   // Native or heavy runtime deps stay external — declared as real npm deps.
-  external: ['better-sqlite3', 'express', 'cors'],
+  // The provider SDKs are lazy-imported by the replay/judge feature; keeping
+  // them external means they're installed alongside the CLI but never loaded
+  // unless those endpoints are used.
+  external: ['better-sqlite3', 'express', 'cors', 'openai', '@anthropic-ai/sdk'],
   logLevel: 'info',
 });
 

@@ -69,3 +69,23 @@ export interface ScoreRow {
   source: string | null;
   created_at: string;
 }
+
+export interface ReplayRow {
+  id: number;
+  trace_id: string;
+  span_id: string | null;
+  provider: string;
+  original_model: string | null;
+  replay_model: string;
+  status: string;
+  output: string | null;
+  error: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  duration_ms: number | null;
+  original_output: string | null;
+  original_cost_usd: number | null;
+  original_duration_ms: number | null;
+  created_at: string;
+}
