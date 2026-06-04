@@ -255,6 +255,7 @@ Every flag has a `LOOKSPAN_*` environment-variable equivalent (`LOOKSPAN_PORT`, 
 | Focus | **TS/JS + MCP** stack | full platform (evals, prompts) | evals / RAG (Python) |
 | Your data | never leaves your machine | self-host or cloud | local or cloud |
 | OpenTelemetry | native OTLP receiver | yes | yes (OTel-native) |
+| Eval loop | replay-vs-model diff, LLM-as-judge & datasets built in | evals + datasets | evals / experiments |
 
 Lookspan isn't trying to be a full platform. It bets on being **the zero-setup
 observability layer for the TypeScript/MCP agent stack**, with the best
