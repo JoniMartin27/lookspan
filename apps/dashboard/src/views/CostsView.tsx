@@ -25,6 +25,11 @@ export default function CostsView() {
 
   const byModel = Object.entries(data.byModel).map(([name, cost]) => ({ name, cost }));
   const byProvider = Object.entries(data.byProvider).map(([name, cost]) => ({ name, cost }));
+  const byAgent = Object.entries(data.byAgent)
+    .filter(([name]) => name)
+    .map(([name, cost]) => ({ name, cost }))
+    .sort((a, b) => b.cost - a.cost)
+    .slice(0, 12);
   const byDay = (stats?.byDay ?? []).map((d) => ({ name: d.day.slice(5), cost: d.costUsd }));
 
   return (
@@ -44,7 +49,7 @@ export default function CostsView() {
       </div>
 
       {stats && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Stat label="Traces" value={stats.totalTraces.toLocaleString()} />
           <Stat
             label="Error rate"
@@ -53,6 +58,7 @@ export default function CostsView() {
           />
           <Stat label="Latency p50" value={stats.latencyMs ? `${stats.latencyMs.p50} ms` : '—'} />
           <Stat label="Latency p95" value={stats.latencyMs ? `${stats.latencyMs.p95} ms` : '—'} />
+          <Stat label="Latency p99" value={stats.latencyMs ? `${stats.latencyMs.p99} ms` : '—'} />
         </div>
       )}
 
@@ -84,6 +90,9 @@ export default function CostsView() {
       </Card>
       <Card title="By provider">
         <Chart data={byProvider} />
+      </Card>
+      <Card title="By agent (top 12)">
+        <Chart data={byAgent} />
       </Card>
     </div>
   );

@@ -83,6 +83,10 @@ export const api = {
     request<{ dataset: Dataset; items: DatasetItem[]; runs: Run[] }>(`/datasets/${id}`),
   addDatasetItemFromTrace: (id: string, traceId: string) =>
     post<{ item: DatasetItem }>(`/datasets/${id}/items/from-trace`, { traceId }),
+  addDatasetItem: (
+    id: string,
+    body: { input: Record<string, unknown>; expected?: string | null },
+  ) => post<{ items: DatasetItem[] }>(`/datasets/${id}/items`, body),
   runDataset: (
     id: string,
     body: { model: string; provider?: string; judge?: boolean; metric?: string },

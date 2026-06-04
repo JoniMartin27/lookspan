@@ -41,6 +41,9 @@ export default function TraceDetail() {
             {data.trace.framework} · {data.trace.spanCount} spans
             {data.trace.durationMs !== null ? ` · ${formatMs(data.trace.durationMs)}` : ''} · $
             {data.trace.costUsd.toFixed(4)}
+            {fmtTokens(data.trace.totalUsage) && (
+              <span className="text-neutral-500"> · {fmtTokens(data.trace.totalUsage)}</span>
+            )}
             {data.trace.sessionId && (
               <>
                 {' · '}
@@ -506,12 +509,29 @@ function Json({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-/** Compact scores UI in the header: existing scores as chips + a small inline add form. */
+/** Maps a score source to a compact glyph + label so the judge's verdicts are
+ *  distinguishable from human/assertion scores at a glance. */
+function sourceBadge(source?: string | null): { icon: string; label: string } | null {
+  switch (source) {
+    case 'llm-judge':
+      return { icon: '⚖', label: 'LLM judge' };
+    case 'human':
+      return { icon: '✎', label: 'human' };
+    case 'assertion':
+      return { icon: '✓', label: 'assertion' };
+    default:
+      return source ? { icon: '•', label: source } : null;
+  }
+}
+
+/** Compact scores UI in the header: existing scores as chips (with source +
+ *  expandable rationale) + a small inline add form. */
 function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
+  const [openId, setOpenId] = useState<number | null>(null);
 
   const mutation = useMutation({
     mutationFn: () => api.addScore(traceId, { name, value: Number(value), source: 'human' }),
@@ -524,64 +544,88 @@ function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
   });
 
   const canSubmit = name.trim() !== '' && value.trim() !== '' && Number.isFinite(Number(value));
+  const open = scores.find((s) => s.id === openId) ?? null;
 
   return (
-    <div className="flex items-center gap-2">
-      {scores.map((s) => (
-        <span
-          key={s.id}
-          title={s.comment ?? s.source ?? ''}
-          className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-300"
-        >
-          {s.name} <span className="font-mono text-neutral-100">{s.value}</span>
-        </span>
-      ))}
-      {adding ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (canSubmit) mutation.mutate();
-          }}
-          className="flex items-center gap-1"
-        >
-          <input
-            // biome-ignore lint/a11y/noAutofocus: focus the field the user just opened
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="metric"
-            className="w-28 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
-          />
-          <input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="value"
-            inputMode="decimal"
-            className="w-16 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={!canSubmit || mutation.isPending}
-            className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        {scores.map((s) => {
+          const badge = sourceBadge(s.source);
+          const hasComment = Boolean(s.comment);
+          const isOpen = s.id === openId;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => hasComment && setOpenId(isOpen ? null : (s.id ?? null))}
+              title={badge?.label ?? ''}
+              className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs text-neutral-300 ${
+                isOpen ? 'bg-neutral-700' : 'bg-neutral-800'
+              } ${hasComment ? 'cursor-pointer hover:bg-neutral-700' : 'cursor-default'}`}
+            >
+              {badge && (
+                <span className={s.source === 'llm-judge' ? 'text-brand-400' : 'text-neutral-500'}>
+                  {badge.icon}
+                </span>
+              )}
+              {s.name} <span className="font-mono text-neutral-100">{s.value}</span>
+              {hasComment && <span className="text-neutral-500">{isOpen ? '▾' : '▸'}</span>}
+            </button>
+          );
+        })}
+        {adding ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canSubmit) mutation.mutate();
+            }}
+            className="flex items-center gap-1"
           >
-            Add
-          </button>
+            <input
+              // biome-ignore lint/a11y/noAutofocus: focus the field the user just opened
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="metric"
+              className="w-28 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+            />
+            <input
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="value"
+              inputMode="decimal"
+              className="w-16 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={!canSubmit || mutation.isPending}
+              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdding(false)}
+              className="px-1 text-xs text-neutral-500 hover:text-neutral-300"
+            >
+              ✕
+            </button>
+          </form>
+        ) : (
           <button
             type="button"
-            onClick={() => setAdding(false)}
-            className="px-1 text-xs text-neutral-500 hover:text-neutral-300"
+            onClick={() => setAdding(true)}
+            className="rounded border border-neutral-800 px-2 py-0.5 text-xs text-neutral-400 hover:border-brand-500 hover:text-neutral-200"
           >
-            ✕
+            + score
           </button>
-        </form>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="rounded border border-neutral-800 px-2 py-0.5 text-xs text-neutral-400 hover:border-brand-500 hover:text-neutral-200"
-        >
-          + score
-        </button>
+        )}
+      </div>
+      {open?.comment && (
+        <div className="max-w-md rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-[11px] text-neutral-400">
+          <span className="text-neutral-500">{sourceBadge(open.source)?.label ?? 'note'}:</span>{' '}
+          {open.comment}
+        </div>
       )}
     </div>
   );
@@ -589,6 +633,17 @@ function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
 
 function fmtCost(v: number | null): string {
   return v === null ? '—' : `$${v.toFixed(4)}`;
+}
+
+/** Compact "1.2k → 300 tok" summary of a trace's aggregate token usage, or '' if none. */
+function fmtTokens(
+  usage: { inputTokens: number; outputTokens: number } | null | undefined,
+): string {
+  const input = usage?.inputTokens ?? 0;
+  const output = usage?.outputTokens ?? 0;
+  if (input + output === 0) return '';
+  const compact = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+  return `${compact(input)} → ${compact(output)} tok`;
 }
 
 function Delta({ original, next }: { original: number | null; next: number | null }) {

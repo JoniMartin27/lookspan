@@ -104,6 +104,7 @@ export default function DatasetDetail() {
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-neutral-300">Items ({items.length})</h2>
+        <AddItemForm datasetId={id} />
         {items.length === 0 ? (
           <p className="text-sm text-neutral-500">
             No items. Add prompts from a trace's{' '}
@@ -130,6 +131,98 @@ export default function DatasetDetail() {
         )}
       </section>
     </div>
+  );
+}
+
+/** Manually add a dataset item: paste a chat-completions/messages JSON `input`
+ *  plus an optional reference answer. Complements seeding items from a trace. */
+function AddItemForm({ datasetId }: { datasetId: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [expected, setExpected] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+
+  const addM = useMutation({
+    mutationFn: () => {
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(input);
+      } catch {
+        throw new Error('input must be valid JSON');
+      }
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error('input must be a JSON object, e.g. { "messages": [...] }');
+      }
+      return api.addDatasetItem(datasetId, {
+        input: parsed,
+        expected: expected.trim() || null,
+      });
+    },
+    onSuccess: () => {
+      setInput('');
+      setExpected('');
+      setErr(null);
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ['dataset', datasetId] });
+    },
+    onError: (e) => setErr((e as Error).message),
+  });
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mb-2 rounded border border-neutral-800 px-2 py-1 text-xs text-neutral-400 hover:border-brand-500 hover:text-neutral-200"
+      >
+        + Add item manually
+      </button>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (input.trim()) addM.mutate();
+      }}
+      className="mb-3 space-y-2 rounded-lg border border-neutral-800 bg-neutral-900 p-3"
+    >
+      <textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder={'{ "messages": [{ "role": "user", "content": "…" }] }'}
+        rows={3}
+        className="w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1 font-mono text-[11px] focus:border-brand-500 focus:outline-none"
+      />
+      <input
+        value={expected}
+        onChange={(e) => setExpected(e.target.value)}
+        placeholder="expected answer (optional)"
+        className="w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
+      />
+      {err && <p className="text-xs text-red-400">{err}</p>}
+      <div className="flex items-center gap-2">
+        <button
+          type="submit"
+          disabled={!input.trim() || addM.isPending}
+          className="rounded bg-brand-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+        >
+          {addM.isPending ? 'Adding…' : 'Add item'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setErr(null);
+          }}
+          className="text-xs text-neutral-500 hover:text-neutral-300"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 
