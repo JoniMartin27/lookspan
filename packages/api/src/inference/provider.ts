@@ -55,6 +55,30 @@ export function hasAnyKey(keys: InferenceKeys): boolean {
   return Boolean(keys.openai || keys.anthropic);
 }
 
+const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_MAX_RETRIES = 1;
+
+function envInt(name: string, fallback: number): number {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
+/**
+ * Per-request options handed to the provider SDKs. Without a timeout, a slow or
+ * hung upstream API would keep the replay/judge HTTP request open indefinitely
+ * and tie up server resources. Both the OpenAI and Anthropic SDKs accept these
+ * as the second argument to `create()` and abort the underlying request on
+ * timeout. Tunable via env:
+ *   LOOKSPAN_INFERENCE_TIMEOUT_MS  (default 60000)
+ *   LOOKSPAN_INFERENCE_MAX_RETRIES (default 1)
+ */
+export function inferenceRequestOptions(): { timeout: number; maxRetries: number } {
+  return {
+    timeout: envInt('LOOKSPAN_INFERENCE_TIMEOUT_MS', DEFAULT_TIMEOUT_MS),
+    maxRetries: envInt('LOOKSPAN_INFERENCE_MAX_RETRIES', DEFAULT_MAX_RETRIES),
+  };
+}
+
 export interface ChatResult {
   text: string;
   model: string;
@@ -112,7 +136,10 @@ export async function runChat(opts: {
 
   if (provider === 'openai') {
     const client = await openaiClient(apiKey);
-    const res = await client.chat.completions.create({ ...rest, model, stream: false });
+    const res = await client.chat.completions.create(
+      { ...rest, model, stream: false },
+      inferenceRequestOptions(),
+    );
     const u = res?.usage ?? {};
     return {
       text: asText(res?.choices?.[0]?.message?.content),
@@ -127,12 +154,15 @@ export async function runChat(opts: {
 
   const client = await anthropicClient(apiKey);
   const maxTokens = typeof rest.max_tokens === 'number' ? rest.max_tokens : 1024;
-  const res = await client.messages.create({
-    ...rest,
-    model,
-    max_tokens: maxTokens,
-    stream: false,
-  });
+  const res = await client.messages.create(
+    {
+      ...rest,
+      model,
+      max_tokens: maxTokens,
+      stream: false,
+    },
+    inferenceRequestOptions(),
+  );
   const u = res?.usage ?? {};
   return {
     text: asText(res?.content),
@@ -156,15 +186,18 @@ export async function runJudge(opts: {
 
   if (provider === 'openai') {
     const client = await openaiClient(apiKey);
-    const res = await client.chat.completions.create({
-      model,
-      temperature: 0,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-    });
+    const res = await client.chat.completions.create(
+      {
+        model,
+        temperature: 0,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+      },
+      inferenceRequestOptions(),
+    );
     const u = res?.usage ?? {};
     return {
       raw: asText(res?.choices?.[0]?.message?.content),
@@ -178,12 +211,15 @@ export async function runJudge(opts: {
   }
 
   const client = await anthropicClient(apiKey);
-  const res = await client.messages.create({
-    model,
-    max_tokens: 1024,
-    system,
-    messages: [{ role: 'user', content: user }],
-  });
+  const res = await client.messages.create(
+    {
+      model,
+      max_tokens: 1024,
+      system,
+      messages: [{ role: 'user', content: user }],
+    },
+    inferenceRequestOptions(),
+  );
   const u = res?.usage ?? {};
   return {
     raw: asText(res?.content),
