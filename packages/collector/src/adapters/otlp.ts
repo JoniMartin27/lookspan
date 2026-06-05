@@ -90,11 +90,18 @@ interface OtlpExportRequest {
   resource_spans?: OtlpResourceSpans[];
 }
 
+// Max time the ECMAScript Date can represent (±100M days from the epoch, in ms).
+const MAX_DATE_MS = 8.64e15;
+
 function nanosToIso(nanos: string | number | undefined): string | null {
   if (nanos === undefined || nanos === null) return null;
   const n = typeof nanos === 'string' ? Number(nanos) : nanos;
   if (!Number.isFinite(n) || n <= 0) return null;
-  return new Date(n / 1_000_000).toISOString();
+  const ms = n / 1_000_000;
+  // A malformed exporter can send an absurd value; `new Date(x).toISOString()`
+  // throws RangeError on an out-of-range date, which would 500 the ingest.
+  if (ms > MAX_DATE_MS) return null;
+  return new Date(ms).toISOString();
 }
 
 function spanType(attrs: Record<string, unknown>): SpanType {
