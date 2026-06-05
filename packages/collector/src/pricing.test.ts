@@ -48,6 +48,11 @@ describe('findPricing', () => {
     expect(findPricing('Claude-Sonnet-4-6')?.model).toBe('claude-sonnet-4');
   });
 
+  it('matches a custom pricing table with mixed-case model ids', () => {
+    setPricingTable([{ provider: 'openai', model: 'GPT-4o', inputPer1M: 1, outputPer1M: 2 }]);
+    expect(findPricing('gpt-4o-2026')?.model).toBe('GPT-4o');
+  });
+
   it('returns null for unknown or empty models', () => {
     expect(findPricing('llama-3-70b')).toBeNull();
     expect(findPricing(null)).toBeNull();

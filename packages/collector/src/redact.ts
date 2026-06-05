@@ -60,7 +60,14 @@ function normalizeKey(key: string): string {
   return key.toLowerCase().replace(/[-_\s]/g, '');
 }
 
+// The default patterns never change, so normalize them once at module load
+// instead of on every span. redactObject runs on the hot ingest path.
+const COMPILED_DEFAULT_PATTERNS = DEFAULT_PATTERNS.map(normalizeKey);
+
 function compilePatterns(options: RedactOptions): string[] {
+  if (!options.patterns && !options.extraPatterns?.length) {
+    return COMPILED_DEFAULT_PATTERNS;
+  }
   const raw = options.patterns ?? [...DEFAULT_PATTERNS, ...(options.extraPatterns ?? [])];
   return raw.map(normalizeKey);
 }
