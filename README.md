@@ -244,6 +244,8 @@ npx lookspan [options]
 
 Every flag has a `LOOKSPAN_*` environment-variable equivalent (`LOOKSPAN_PORT`, `LOOKSPAN_TOKEN`, `LOOKSPAN_PRICING`, `LOOKSPAN_ALERT_*`, …). Replay & LLM-as-judge read `LOOKSPAN_OPENAI_API_KEY` / `LOOKSPAN_ANTHROPIC_API_KEY` (or `--openai-key` / `--anthropic-key`); these stay in memory and are never persisted.
 
+See **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** for the complete flag + environment-variable reference, defaults, and examples.
+
 ---
 
 ## How it compares

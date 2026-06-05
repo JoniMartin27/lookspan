@@ -193,7 +193,11 @@ Environment:
   LOOKSPAN_TOKEN        Same as --token
   LOOKSPAN_PRICING      Same as --pricing
   LOOKSPAN_OPENAI_API_KEY / LOOKSPAN_ANTHROPIC_API_KEY   Enable Replay & LLM-as-judge
+  LOOKSPAN_INFERENCE_TIMEOUT_MS    Replay/judge provider timeout (default: 60000)
+  LOOKSPAN_INFERENCE_MAX_RETRIES   Replay/judge provider retries (default: 1)
   LOOKSPAN_ALERT_ERROR / _COST / _TOKENS / _DURATION   Same as --alert-*
+
+  Full reference: docs/CONFIGURATION.md
 
 Quick start:
   npx lookspan
