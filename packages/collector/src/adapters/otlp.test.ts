@@ -117,6 +117,20 @@ describe('otlpToIngest', () => {
     expect(spans).toHaveLength(0);
   });
 
+  it('drops an out-of-range timestamp without throwing', () => {
+    // nanos so large that ms exceeds the max representable Date; the old code
+    // threw RangeError from toISOString() and 500'd the ingest.
+    expect(() =>
+      otlpToIngest(
+        req([{ traceId: 't', spanId: 's', name: 'huge', startTimeUnixNano: `9${'0'.repeat(21)}` }]),
+      ),
+    ).not.toThrow();
+    const { spans } = otlpToIngest(
+      req([{ traceId: 't', spanId: 's', name: 'huge', startTimeUnixNano: `9${'0'.repeat(21)}` }]),
+    );
+    expect(spans).toHaveLength(0); // dropped because startedAt is null
+  });
+
   it('returns an empty payload for junk input', () => {
     expect(otlpToIngest(null).spans).toEqual([]);
     expect(otlpToIngest({}).spans).toEqual([]);
