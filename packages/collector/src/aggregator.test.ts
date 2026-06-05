@@ -1,4 +1,4 @@
-import { type LookspanDatabase, migrate, openDatabase } from '@lookspan/storage';
+import { type LookspanDatabase, migrate, openDatabase, SpansRepository } from '@lookspan/storage';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { isTraceComplete, recomputeTrace } from './aggregator.js';
 import { Collector } from './collector.js';
@@ -34,6 +34,28 @@ describe('recomputeTrace', () => {
     });
     const trace = recomputeTrace(db, 'tr_open');
     expect(trace?.durationMs).toBeNull();
+  });
+
+  it('clamps negative durations to 0 when endedAt precedes startedAt', () => {
+    new Collector({ db }).ingest({
+      spans: [
+        {
+          traceId: 'tr_skew',
+          spanId: 'sp_1',
+          parentSpanId: null,
+          type: 'llm_call',
+          name: 'skewed',
+          startedAt: '2026-06-01T10:00:05Z',
+          endedAt: '2026-06-01T10:00:00Z', // 5s before start (clock skew)
+          status: 'ok',
+          framework: 'custom',
+        },
+      ],
+    });
+    const trace = recomputeTrace(db, 'tr_skew');
+    expect(trace?.durationMs).toBe(0);
+    // the stored span's own duration is clamped too (spans repository)
+    expect(new SpansRepository(db).listByTrace('tr_skew')[0]?.durationMs).toBe(0);
   });
 });
 

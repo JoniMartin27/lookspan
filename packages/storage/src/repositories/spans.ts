@@ -7,9 +7,11 @@ export class SpansRepository {
   constructor(private readonly db: LookspanDatabase) {}
 
   insert(span: SpanInput, receivedAt: string): Span {
+    // Clamp at 0: clock skew or out-of-order timestamps can make endedAt
+    // precede startedAt, and a negative duration would poison SUM()s downstream.
     const durationMs =
       span.endedAt && span.startedAt
-        ? new Date(span.endedAt).getTime() - new Date(span.startedAt).getTime()
+        ? Math.max(0, new Date(span.endedAt).getTime() - new Date(span.startedAt).getTime())
         : null;
 
     this.db

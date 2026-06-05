@@ -72,8 +72,12 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
 
   const startedAt = agg.min_started;
   const endedAt = agg.max_ended;
+  // Clamp at 0: clock skew or out-of-order spans can make the trace's max ended
+  // precede its min started, and a negative duration would skew reports.
   const durationMs =
-    endedAt && startedAt ? new Date(endedAt).getTime() - new Date(startedAt).getTime() : null;
+    endedAt && startedAt
+      ? Math.max(0, new Date(endedAt).getTime() - new Date(startedAt).getTime())
+      : null;
 
   const status: Trace['status'] =
     agg.error_count > 0 ? SpanStatus.Error : endedAt ? SpanStatus.Ok : SpanStatus.Ok;
