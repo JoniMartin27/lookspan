@@ -81,6 +81,31 @@ describe('datasets CRUD', () => {
     expect(detail.runs).toEqual([]);
   });
 
+  it('reports skipped invalid items in a batch instead of dropping silently', async () => {
+    await start();
+    const { dataset } = await (await json('/api/datasets', { name: 'Mixed' })).json();
+    const add = await json(`/api/datasets/${dataset.id}/items`, {
+      items: [
+        { input: { model: 'gpt-4o', messages: [{ role: 'user', content: 'ok' }] } },
+        null,
+        { expected: 'no input here' },
+      ],
+    });
+    expect(add.status).toBe(201);
+    const out = await add.json();
+    expect(out.items).toHaveLength(1);
+    expect(out.received).toBe(3);
+    expect(out.skipped).toBe(2);
+  });
+
+  it('400s when `items` is present but not an array', async () => {
+    await start();
+    const { dataset } = await (await json('/api/datasets', { name: 'Bad items' })).json();
+    const res = await json(`/api/datasets/${dataset.id}/items`, { items: 'nope' });
+    expect(res.status).toBe(400);
+    expect((await res.json()).detail).toMatch(/must be an array/);
+  });
+
   it('seeds an item from a trace', async () => {
     await start();
     await json('/api/ingest', {
