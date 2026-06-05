@@ -1,11 +1,5 @@
-import type {
-  FrameworkName,
-  Span,
-  SpanStatus,
-  SpanType,
-  Trace,
-  TraceListItem,
-} from '@lookspan/types';
+import type { Span, Trace, TraceListItem } from '@lookspan/types';
+import { FrameworkName, SpanStatus, SpanType } from '@lookspan/types';
 import type { SpanRow, TraceRow } from '../schema.js';
 
 function parseJson<T>(value: string | null): T | null {
@@ -17,18 +11,46 @@ function parseJson<T>(value: string | null): T | null {
   }
 }
 
+const SPAN_TYPES = new Set<string>(Object.values(SpanType));
+const SPAN_STATUSES = new Set<string>(Object.values(SpanStatus));
+const FRAMEWORK_NAMES = new Set<string>(Object.values(FrameworkName));
+
+/**
+ * Validate an enum value read from the database. A raw `as SpanType` cast lies
+ * when the stored value is corrupt (older schema, manual SQL edit), letting
+ * invalid data reach the API and dashboard. Instead we check against the known
+ * set and fall back to a safe default — warning rather than throwing, so a
+ * single corrupt row can't break the whole listing.
+ */
+function coerceEnum<T extends string>(
+  value: string,
+  valid: Set<string>,
+  fallback: T,
+  field: string,
+): T {
+  if (valid.has(value)) return value as T;
+  console.warn(`[lookspan/storage] invalid ${field} "${value}" from DB; using "${fallback}"`);
+  return fallback;
+}
+
+const toSpanType = (v: string) => coerceEnum<SpanType>(v, SPAN_TYPES, SpanType.Custom, 'span.type');
+const toSpanStatus = (v: string) =>
+  coerceEnum<SpanStatus>(v, SPAN_STATUSES, SpanStatus.Error, 'span.status');
+const toFramework = (v: string) =>
+  coerceEnum<FrameworkName>(v, FRAMEWORK_NAMES, FrameworkName.Custom, 'span.framework');
+
 export function rowToTrace(row: TraceRow): Trace {
   return {
     traceId: row.trace_id,
     rootName: row.root_name,
-    framework: row.framework as FrameworkName,
+    framework: toFramework(row.framework),
     agentId: row.agent_id,
     sessionId: row.session_id,
     parentTraceId: row.parent_trace_id,
     startedAt: row.started_at,
     endedAt: row.ended_at,
     durationMs: row.duration_ms,
-    status: row.status as SpanStatus,
+    status: toSpanStatus(row.status),
     spanCount: row.span_count,
     errorCount: row.error_count,
     totalUsage: {
@@ -47,12 +69,12 @@ export function rowToTraceListItem(row: TraceRow): TraceListItem {
   return {
     traceId: row.trace_id,
     rootName: row.root_name,
-    framework: row.framework as FrameworkName,
+    framework: toFramework(row.framework),
     agentId: row.agent_id,
     parentTraceId: row.parent_trace_id,
     startedAt: row.started_at,
     durationMs: row.duration_ms,
-    status: row.status as SpanStatus,
+    status: toSpanStatus(row.status),
     spanCount: row.span_count,
     costUsd: row.cost_usd,
   };
@@ -63,13 +85,13 @@ export function rowToSpan(row: SpanRow): Span {
     traceId: row.trace_id,
     spanId: row.span_id,
     parentSpanId: row.parent_span_id,
-    type: row.type as SpanType,
+    type: toSpanType(row.type),
     name: row.name,
     startedAt: row.started_at,
     endedAt: row.ended_at,
     durationMs: row.duration_ms,
-    status: row.status as SpanStatus,
-    framework: row.framework as FrameworkName,
+    status: toSpanStatus(row.status),
+    framework: toFramework(row.framework),
     agentId: row.agent_id,
     sessionId: row.session_id,
     parentTraceId: row.parent_trace_id,
