@@ -142,7 +142,12 @@ export function findPricing(model: string | null | undefined): ModelPricing | nu
   const needle = model.toLowerCase();
   let best: ModelPricing | null = null;
   for (const entry of pricingTable) {
-    if (needle.includes(entry.model) && (!best || entry.model.length > best.model.length)) {
+    // Lowercase both sides so a custom pricing table (loaded via --pricing)
+    // with mixed-case model ids still matches.
+    if (
+      needle.includes(entry.model.toLowerCase()) &&
+      (!best || entry.model.length > best.model.length)
+    ) {
       best = entry;
     }
   }
