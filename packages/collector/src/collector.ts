@@ -24,9 +24,17 @@ export interface CollectorOptions {
   alertRules?: AlertRule[];
   /** Reject batches with more than this many spans (default 2000). */
   maxSpansPerBatch?: number;
+  /**
+   * Reject a single span whose captured `input`/`output`/`attributes` exceed
+   * this many bytes (default 512 KiB). Guards against one oversized blob
+   * bloating memory and the DB even when the overall batch is within the HTTP
+   * body limit. Set 0 to disable.
+   */
+  maxSpanBytes?: number;
 }
 
 const DEFAULT_MAX_SPANS = 2000;
+const DEFAULT_MAX_SPAN_BYTES = 512 * 1024;
 
 export class Collector {
   private readonly spans: SpansRepository;
@@ -36,6 +44,7 @@ export class Collector {
   private readonly db: LookspanDatabase;
   private readonly redactOptions: RedactOptions | null;
   private readonly maxSpansPerBatch: number;
+  private readonly maxSpanBytes: number;
 
   constructor(options: CollectorOptions) {
     this.db = options.db;
@@ -46,10 +55,34 @@ export class Collector {
     const redact = options.redact ?? true;
     this.redactOptions = redact === false ? null : redact === true ? {} : redact;
     this.maxSpansPerBatch = options.maxSpansPerBatch ?? DEFAULT_MAX_SPANS;
+    this.maxSpanBytes = options.maxSpanBytes ?? DEFAULT_MAX_SPAN_BYTES;
+  }
+
+  /**
+   * Reject a span whose captured payload is too large, before the expensive
+   * redaction walk and DB insert. Reported per-span (does not fail the batch).
+   */
+  private assertSpanSize(span: SpanInput, index: number): void {
+    if (this.maxSpanBytes <= 0) return;
+    let bytes = 0;
+    try {
+      if (span.input) bytes += JSON.stringify(span.input).length;
+      if (span.attributes) bytes += JSON.stringify(span.attributes).length;
+    } catch {
+      return; // unserializable (e.g. circular) — can't size it; later stages handle it
+    }
+    if (typeof span.output === 'string') bytes += span.output.length;
+    if (bytes > this.maxSpanBytes) {
+      throw new IngestValidationError(
+        `span payload (${bytes} bytes) exceeds the ${this.maxSpanBytes}-byte per-span limit; trim input/output or set captureContent:false`,
+        index,
+      );
+    }
   }
 
   private prepareSpan(span: unknown, index: number): SpanInput {
     const validated = enrichSpanCost(validateSpan(span, index));
+    this.assertSpanSize(validated, index);
     // Allow cross-agent linking via an attribute too (OTel/instrumentations that
     // can only set attributes), not just the top-level field.
     if (!validated.parentTraceId) {

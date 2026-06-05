@@ -131,6 +131,25 @@ describe('Collector.ingest', () => {
     expect(new TracesRepository(db).getById('tr_atomic')).toBeNull(); // no orphan placeholder
   });
 
+  it('rejects an oversized span but keeps valid ones in the same batch', () => {
+    const big = 'x'.repeat(2000);
+    const small = new Collector({ db, maxSpanBytes: 1000 });
+    const res = small.ingest({
+      spans: [span(), span({ spanId: 'sp_big', traceId: 'tr_big', output: big })],
+    });
+    expect(res.accepted).toBe(1);
+    expect(res.rejected).toBe(1);
+    expect(res.errors?.[0].index).toBe(1);
+    expect(res.errors?.[0].reason).toMatch(/per-span limit/);
+    expect(new TracesRepository(db).getById('tr_big')).toBeNull(); // oversized span not stored
+  });
+
+  it('disables the per-span size limit when maxSpanBytes is 0', () => {
+    const unbounded = new Collector({ db, maxSpanBytes: 0 });
+    const res = unbounded.ingest({ spans: [span({ output: 'y'.repeat(50_000) })] });
+    expect(res.accepted).toBe(1);
+  });
+
   it('rejects a batch that exceeds the span limit', () => {
     const small = new Collector({ db, maxSpansPerBatch: 3 });
     const spans = Array.from({ length: 5 }, (_, i) => span({ spanId: `sp_${i}` }));
