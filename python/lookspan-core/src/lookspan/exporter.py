@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import atexit
 import threading
 from datetime import datetime, timezone
+from types import TracebackType
 from typing import Protocol
 
 import httpx
@@ -39,6 +41,21 @@ class HttpSpanExporter:
         self._client = client or httpx.Client(timeout=timeout)
         self._timer: threading.Timer | None = None
         self._closed = False
+        # Flush buffered spans on a normal interpreter exit even if the caller
+        # forgets to call close() — the flush timer is a daemon thread and would
+        # otherwise be killed with pending spans still in the buffer.
+        atexit.register(self.close)
+
+    def __enter__(self) -> HttpSpanExporter:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self.close()
 
     def send(self, spans: list[Span]) -> None:
         if self._closed:
@@ -55,12 +72,15 @@ class HttpSpanExporter:
             self._flush_locked()
 
     def close(self) -> None:
-        self.flush()
+        if self._closed:
+            return
         self._closed = True
+        self.flush()
         if self._timer:
             self._timer.cancel()
             self._timer = None
         self._client.close()
+        atexit.unregister(self.close)
 
     def _schedule_flush(self) -> None:
         if self._timer is not None:
