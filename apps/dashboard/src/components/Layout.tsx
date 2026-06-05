@@ -65,7 +65,16 @@ export default function Layout({ children }: LayoutProps) {
             </NavLink>
           </nav>
         </div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500">
+        <div
+          className="flex items-center gap-2 text-xs text-neutral-500"
+          role="status"
+          title={
+            connected
+              ? 'Connected to the live span stream — the dashboard updates in real time.'
+              : 'Not connected to the live stream — views refresh on reload or navigation.'
+          }
+          aria-label={connected ? 'Live stream connected' : 'Live stream offline'}
+        >
           <span
             className={`inline-block size-2 rounded-full ${
               connected ? 'bg-emerald-500' : 'bg-neutral-600'
@@ -76,10 +85,15 @@ export default function Layout({ children }: LayoutProps) {
       </header>
       <main className="flex-1 overflow-auto">{children}</main>
 
-      <div className="pointer-events-none fixed bottom-4 right-4 flex w-80 flex-col gap-2">
+      <section
+        className="pointer-events-none fixed bottom-4 right-4 flex w-80 flex-col gap-2"
+        aria-live="assertive"
+        aria-label="Alert notifications"
+      >
         {toasts.map(({ id, alert }) => (
           <div
             key={id}
+            role="alert"
             className="pointer-events-auto rounded-lg border border-red-500/40 bg-neutral-900 p-3 shadow-lg"
           >
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-red-400">
@@ -88,7 +102,7 @@ export default function Layout({ children }: LayoutProps) {
             <p className="mt-1 text-sm text-neutral-200">{alert.message}</p>
           </div>
         ))}
-      </div>
+      </section>
     </div>
   );
 }
