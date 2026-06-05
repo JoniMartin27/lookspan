@@ -114,8 +114,14 @@ export class Collector {
     // trace row must exist before its spans are inserted. recomputeTrace() only
     // runs after insertMany, so seed a placeholder trace per new traceId first
     // (it's overwritten with the aggregated trace right below).
-    this.ensureTracePlaceholders(validSpans);
-    const inserted = this.spans.insertMany(validSpans, receivedAt);
+    //
+    // Seed + insert run in ONE transaction so a crash mid-ingest can't leave an
+    // orphaned placeholder trace with no spans, or commit placeholders without
+    // their spans. better-sqlite3 turns the inner transactions into SAVEPOINTs.
+    const inserted = this.db.transaction(() => {
+      this.ensureTracePlaceholders(validSpans);
+      return this.spans.insertMany(validSpans, receivedAt);
+    })();
 
     const affectedTraces = new Set(inserted.map((s) => s.traceId));
     for (const traceId of affectedTraces) {

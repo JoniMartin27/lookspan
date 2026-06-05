@@ -117,6 +117,20 @@ describe('Collector.ingest', () => {
     expect(trace?.durationMs).toBe(2000);
   });
 
+  it('rolls back the trace placeholder when the span insert fails (atomic ingest)', () => {
+    // redact:false so a circular `input` survives to the DB layer, where
+    // JSON.stringify throws — failing the insert *after* the trace placeholder
+    // would have been seeded. With seed+insert in one transaction, nothing is
+    // left behind.
+    const raw = new Collector({ db, redact: false });
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(() =>
+      raw.ingest({ spans: [span({ traceId: 'tr_atomic', input: circular })] }),
+    ).toThrow();
+    expect(new TracesRepository(db).getById('tr_atomic')).toBeNull(); // no orphan placeholder
+  });
+
   it('rejects a batch that exceeds the span limit', () => {
     const small = new Collector({ db, maxSpansPerBatch: 3 });
     const spans = Array.from({ length: 5 }, (_, i) => span({ spanId: `sp_${i}` }));
