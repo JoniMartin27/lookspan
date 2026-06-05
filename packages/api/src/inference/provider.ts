@@ -19,13 +19,6 @@ export class MissingKeyError extends Error {
   }
 }
 
-export class UnknownProviderError extends Error {
-  constructor(detail: string) {
-    super(detail);
-    this.name = 'UnknownProviderError';
-  }
-}
-
 /**
  * Resolve which provider to call. Infer from the model id first (so an explicit
  * model override like `claude-…` wins), then fall back to the recorded provider

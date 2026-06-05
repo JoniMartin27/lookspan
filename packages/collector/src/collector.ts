@@ -59,6 +59,24 @@ export class Collector {
     return this.redactOptions ? redactSpan(validated, this.redactOptions) : validated;
   }
 
+  /**
+   * Validate, normalize, redact, persist, and aggregate a batch of spans.
+   *
+   * Per-span validation failures do **not** throw: the offending span is
+   * skipped and reported in the returned `errors`, while the rest are still
+   * ingested. Only a structurally invalid payload (not `{ spans: [...] }`) or
+   * an over-limit batch is rejected wholesale.
+   *
+   * @param rawPayload Raw, untrusted ingest body; expected shape
+   *   `{ spans: SpanInput[], source?, sentAt? }`.
+   * @returns `accepted` (persisted count), `rejected` (dropped count), and
+   *   `errors` (`{ index, reason }[]`, omitted when none).
+   * @throws If `rawPayload` is not an object with a `spans` array
+   *   (`validatePayload`). Individual bad spans never throw.
+   * @remarks Side effects: emits `trace.updated` per affected trace,
+   *   `alert.triggered` per fired alert, and `span.ingested` per stored span on
+   *   the in-process event bus (which drives the SSE stream).
+   */
   ingest(rawPayload: unknown): IngestResponse {
     const payload = validatePayload(rawPayload);
 
