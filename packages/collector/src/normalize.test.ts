@@ -57,6 +57,25 @@ describe('validateSpan', () => {
     expect(() => validateSpan(validSpan({ parentSpanId: 42 }), 0)).toThrow(/string or null/);
   });
 
+  it('rejects an unparseable startedAt timestamp', () => {
+    expect(() => validateSpan(validSpan({ startedAt: 'not-a-date' }), 0)).toThrow(
+      /not a valid ISO 8601 timestamp/,
+    );
+  });
+
+  it('accepts a null or absent endedAt', () => {
+    expect(() => validateSpan(validSpan({ endedAt: null }), 0)).not.toThrow();
+    expect(() => validateSpan(validSpan(), 0)).not.toThrow();
+  });
+
+  it('accepts a valid endedAt but rejects an unparseable one', () => {
+    expect(() => validateSpan(validSpan({ endedAt: '2026-06-01T10:00:01Z' }), 0)).not.toThrow();
+    expect(() => validateSpan(validSpan({ endedAt: 'soon' }), 0)).toThrow(
+      /not a valid ISO 8601 timestamp/,
+    );
+    expect(() => validateSpan(validSpan({ endedAt: 42 }), 0)).toThrow(/string or null/);
+  });
+
   it('carries the span index on the error', () => {
     try {
       validateSpan(validSpan({ name: '' }), 7);

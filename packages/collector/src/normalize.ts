@@ -14,6 +14,20 @@ export class IngestValidationError extends Error {
   }
 }
 
+/**
+ * Reject timestamps that don't parse to a real date. Without this, an invalid
+ * `startedAt`/`endedAt` flows downstream and `new Date(x).getTime()` yields NaN,
+ * silently corrupting duration math and trace aggregation.
+ */
+function assertTimestamp(value: string, field: string, index: number): void {
+  if (Number.isNaN(Date.parse(value))) {
+    throw new IngestValidationError(
+      `span.${field} "${value}" is not a valid ISO 8601 timestamp`,
+      index,
+    );
+  }
+}
+
 export function validateSpan(span: unknown, index: number): SpanInput {
   if (!span || typeof span !== 'object') {
     throw new IngestValidationError('span must be an object', index);
@@ -24,6 +38,14 @@ export function validateSpan(span: unknown, index: number): SpanInput {
     if (typeof s[field] !== 'string' || !s[field]) {
       throw new IngestValidationError(`span.${field} must be a non-empty string`, index);
     }
+  }
+
+  assertTimestamp(s.startedAt as string, 'startedAt', index);
+  if (s.endedAt !== null && s.endedAt !== undefined) {
+    if (typeof s.endedAt !== 'string') {
+      throw new IngestValidationError('span.endedAt must be string or null', index);
+    }
+    assertTimestamp(s.endedAt, 'endedAt', index);
   }
 
   if (!VALID_TYPES.has(s.type as string)) {
