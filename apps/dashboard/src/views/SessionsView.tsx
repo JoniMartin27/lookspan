@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
+import { EmptyState } from '../components/EmptyState.tsx';
 
 export default function SessionsView() {
   const { data, isLoading, error } = useQuery({
@@ -21,10 +22,10 @@ export default function SessionsView() {
         A session groups the traces that ran together — useful to see a whole multi-agent run.
       </p>
       {items.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-sm text-neutral-400">
+        <EmptyState>
           No sessions yet. Spans with a <code className="font-mono">sessionId</code> are grouped
           here.
-        </div>
+        </EmptyState>
       ) : (
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
+import { EmptyState } from '../components/EmptyState.tsx';
 
 export default function AlertsView() {
   const { data, isLoading, error } = useQuery({
@@ -18,15 +19,12 @@ export default function AlertsView() {
     <div className="p-6">
       <h1 className="mb-4 text-xl font-semibold">Alerts</h1>
       {items.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
-          <p className="mb-2 text-base font-medium text-neutral-200">No alerts</p>
-          <p className="text-sm">
-            Start the server with alert rules, e.g.{' '}
-            <code className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-xs">
-              npx lookspan --alert-error --alert-cost 0.50
-            </code>
-          </p>
-        </div>
+        <EmptyState title="No alerts">
+          Start the server with alert rules, e.g.{' '}
+          <code className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-xs">
+            npx lookspan --alert-error --alert-cost 0.50
+          </code>
+        </EmptyState>
       ) : (
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">

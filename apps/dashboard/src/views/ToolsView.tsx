@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
+import { EmptyState } from '../components/EmptyState.tsx';
 import { agentColor } from '../lib/agentColor.ts';
 
 export default function ToolsView() {
@@ -23,10 +24,10 @@ export default function ToolsView() {
         glance.
       </p>
       {items.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-sm text-neutral-400">
+        <EmptyState>
           No tool calls yet. Spans of type <code className="font-mono">tool_call</code> show up
           here.
-        </div>
+        </EmptyState>
       ) : (
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
