@@ -171,20 +171,49 @@ function Section({
   );
 }
 
+/**
+ * Copy `text` to the clipboard. Prefers the async Clipboard API but falls back
+ * to a hidden textarea + execCommand for insecure contexts (e.g. Lookspan
+ * served over plain http from `--host 0.0.0.0`), where `navigator.clipboard`
+ * is undefined and the old code threw on `undefined.then(...)`.
+ */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to the textarea fallback
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
   return (
     <button
       type="button"
-      onClick={() => {
-        navigator.clipboard?.writeText(text).then(() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        });
+      onClick={async () => {
+        const ok = await copyText(text);
+        setState(ok ? 'copied' : 'failed');
+        setTimeout(() => setState('idle'), 1500);
       }}
       className="shrink-0 rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:border-brand-500 hover:text-neutral-100"
     >
-      {copied ? 'Copied' : 'Copy'}
+      {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}
     </button>
   );
 }
