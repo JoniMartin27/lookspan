@@ -79,6 +79,13 @@ export function createDatasetsRouter(ctx: ApiContext): Router {
       return;
     }
     const body = (req.body ?? {}) as Record<string, unknown>;
+    // Accept one item ({input, expected?}) or a batch ({items: [...]}). If the
+    // caller sends `items`, it must be an array — don't silently treat a
+    // malformed `items` value as a single item.
+    if ('items' in body && !Array.isArray(body.items)) {
+      res.status(400).json({ error: 'invalid', detail: '`items` must be an array' });
+      return;
+    }
     const raw = Array.isArray(body.items) ? body.items : [body];
     const items = raw.map(coerceItem).filter((x): x is DatasetItemInput => x !== null);
     if (items.length === 0) {
@@ -86,7 +93,11 @@ export function createDatasetsRouter(ctx: ApiContext): Router {
       return;
     }
     const created = ctx.datasets.addItems(id, items, new Date().toISOString());
-    res.status(201).json({ items: created });
+    // Surface dropped items rather than swallowing them: a partial batch
+    // succeeds, but the caller learns how many were skipped as invalid.
+    res
+      .status(201)
+      .json({ items: created, received: raw.length, skipped: raw.length - items.length });
   });
 
   // Seed an item from an existing trace's captured prompt (+ output as expected).
