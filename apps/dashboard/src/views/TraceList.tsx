@@ -3,6 +3,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
+import { EmptyState } from '../components/EmptyState.tsx';
 import { agentColor } from '../lib/agentColor.ts';
 
 const FRAMEWORKS = ['mcp', 'langgraph', 'crewai', 'agent-os', 'openai-agents', 'otlp', 'custom'];
@@ -76,7 +77,7 @@ export default function TraceList() {
       ) : error ? (
         <div className="py-8 text-red-400">Error: {(error as Error).message}</div>
       ) : items.length === 0 ? (
-        <EmptyState filtered={allItems.length > 0} />
+        <TracesEmptyState filtered={allItems.length > 0} />
       ) : (
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
@@ -241,24 +242,17 @@ function Select({
   );
 }
 
-function EmptyState({ filtered }: { filtered: boolean }) {
+function TracesEmptyState({ filtered }: { filtered: boolean }) {
   if (filtered) {
-    return (
-      <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
-        <p className="text-sm">No traces match the current filters.</p>
-      </div>
-    );
+    return <EmptyState>No traces match the current filters.</EmptyState>;
   }
   return (
-    <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-neutral-400">
-      <p className="mb-2 text-base font-medium text-neutral-200">No traces yet</p>
-      <p className="text-sm">
-        Head to{' '}
-        <Link href="/connect" className="text-brand-500 hover:underline">
-          Connect
-        </Link>{' '}
-        to wire up your agent in a couple of lines.
-      </p>
-    </div>
+    <EmptyState title="No traces yet">
+      Head to{' '}
+      <Link href="/connect" className="text-brand-500 hover:underline">
+        Connect
+      </Link>{' '}
+      to wire up your agent in a couple of lines.
+    </EmptyState>
   );
 }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'wouter';
 import { api } from '../api/client.ts';
+import { EmptyState } from '../components/EmptyState.tsx';
 
 export default function DatasetsView() {
   const qc = useQueryClient();
@@ -54,10 +55,10 @@ export default function DatasetsView() {
       </form>
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-neutral-800 p-10 text-center text-sm text-neutral-400">
+        <EmptyState>
           No datasets yet. Create one above, then add prompts from a trace's{' '}
           <span className="font-mono">Replay &amp; judge</span> panel.
-        </div>
+        </EmptyState>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((d) => (
