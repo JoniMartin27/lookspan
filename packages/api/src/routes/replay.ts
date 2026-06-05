@@ -52,7 +52,7 @@ export function createReplayRouter(ctx: ApiContext): Router {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const spanId = typeof body.spanId === 'string' ? body.spanId : undefined;
     const span = pickLlmSpan(ctx.spans.listByTrace(id), spanId);
-    if (!span || !span.input || Object.keys(span.input).length === 0) {
+    if (!span?.input || Object.keys(span.input).length === 0) {
       res.status(400).json({
         error: 'no_replayable_span',
         detail: 'no LLM span with a captured prompt; enable captureContent in the SDK',
@@ -146,7 +146,7 @@ export function createReplayRouter(ctx: ApiContext): Router {
       return;
     }
     const span = pickLlmSpan(ctx.spans.listByTrace(id));
-    if (!span || !span.input || !span.output) {
+    if (!span?.input || !span.output) {
       res.status(400).json({
         error: 'no_content_to_judge',
         detail: 'need a captured prompt and output; enable captureContent in the SDK',
