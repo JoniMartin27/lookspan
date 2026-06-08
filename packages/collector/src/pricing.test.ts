@@ -97,6 +97,49 @@ describe('computeCostUsd', () => {
     ).toBeCloseTo(0.0123, 6);
   });
 
+  it('bills reasoning tokens at the reasoning rate when the entry sets one', () => {
+    setPricingTable([
+      { provider: 'x', model: 'reasoner', inputPer1M: 0, outputPer1M: 10, reasoningPer1M: 60 },
+    ]);
+    // 1000 output incl. 300 reasoning → 700*10/1M + 300*60/1M = 0.007 + 0.018
+    expect(
+      computeCostUsd('reasoner-1', {
+        inputTokens: 0,
+        outputTokens: 1000,
+        reasoningTokens: 300,
+        costUsd: 0,
+      }),
+    ).toBeCloseTo(0.025, 6);
+  });
+
+  it('folds reasoning into output when the entry has no reasoning rate', () => {
+    // claude-opus-4 has no reasoningPer1M → reasoning billed as output ($75/1M)
+    expect(
+      computeCostUsd('claude-opus-4-8', {
+        inputTokens: 0,
+        outputTokens: 1_000_000,
+        reasoningTokens: 400_000,
+        costUsd: 0,
+      }),
+    ).toBe(75);
+  });
+
+  it('clamps reasoning tokens that exceed output to zero non-reasoning output', () => {
+    setPricingTable([
+      { provider: 'x', model: 'reasoner', inputPer1M: 0, outputPer1M: 10, reasoningPer1M: 60 },
+    ]);
+    // reasoning (1200) > output (1000): non-reasoning output clamps to 0,
+    // all reasoning billed at the reasoning rate → 1200*60/1M
+    expect(
+      computeCostUsd('reasoner-1', {
+        inputTokens: 0,
+        outputTokens: 1000,
+        reasoningTokens: 1200,
+        costUsd: 0,
+      }),
+    ).toBeCloseTo(0.072, 6);
+  });
+
   it('returns null when the model is unknown', () => {
     expect(
       computeCostUsd('mystery-model', { inputTokens: 100, outputTokens: 100, costUsd: 0 }),

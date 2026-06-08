@@ -161,8 +161,14 @@ export function findPricing(model: string | null | undefined): ModelPricing | nu
  * `cachedInputTokens` is treated as a **subset of `inputTokens`** (OpenAI
  * semantics, where `prompt_tokens` already includes cached tokens): the cached
  * portion is billed at the cached rate and the rest at the full input rate, so
- * cached tokens are never double-charged. `reasoningTokens` are assumed already
- * counted in `outputTokens` and are not billed again.
+ * cached tokens are never double-charged.
+ *
+ * `reasoningTokens` are treated as a **subset of `outputTokens`** (OpenAI
+ * o-series semantics, where `completion_tokens` already includes reasoning
+ * tokens). When the pricing entry carries an explicit `reasoningPer1M`, the
+ * reasoning portion is billed at that rate and the remaining output at the
+ * output rate — never double-charged. With no `reasoningPer1M`, reasoning stays
+ * folded into output and is billed at the output rate (the prior behavior).
  */
 export function computeCostUsd(
   model: string | null | undefined,
@@ -181,8 +187,20 @@ export function computeCostUsd(
   const output = usage.outputTokens ?? 0;
   const cachedRate = pricing.cachedInputPer1M ?? pricing.inputPer1M;
 
+  // Reasoning tokens are a subset of output. Only split them out when the
+  // pricing entry prices them explicitly; otherwise leave them billed as
+  // output so the math is unchanged for models without a reasoning rate.
+  const reasoning = pricing.reasoningPer1M !== undefined ? (usage.reasoningTokens ?? 0) : 0;
+  const nonReasoningOutput = Math.max(0, output - reasoning);
+  const reasoningCost =
+    pricing.reasoningPer1M !== undefined ? reasoning * pricing.reasoningPer1M : 0;
+
   return (
-    (uncached * pricing.inputPer1M + cached * cachedRate + output * pricing.outputPer1M) / 1_000_000
+    (uncached * pricing.inputPer1M +
+      cached * cachedRate +
+      nonReasoningOutput * pricing.outputPer1M +
+      reasoningCost) /
+    1_000_000
   );
 }
 
