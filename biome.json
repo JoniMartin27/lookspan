@@ -12,7 +12,8 @@
       "!**/*.db",
       "!**/*.css",
       "!**/python",
-      "!website"
+      "!website",
+      "!docs-site"
     ]
   },
   "formatter": {
