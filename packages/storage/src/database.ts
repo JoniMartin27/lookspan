@@ -1,11 +1,24 @@
-import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, resolve } from 'node:path';
-import Database from 'better-sqlite3';
+import { resolve } from 'node:path';
+import { isPostgresConnectionString, PostgresDriver } from './drivers/postgres.js';
+import { SqliteDriver } from './drivers/sqlite.js';
+import type { SqlDriver } from './drivers/types.js';
 
-export type LookspanDatabase = Database.Database;
+/**
+ * The synchronous database handle used throughout Lookspan. Historically this
+ * was better-sqlite3's `Database`; it is now the dialect-agnostic
+ * {@link SqlDriver}, satisfied by both the SQLite (default) and Postgres
+ * drivers. Repositories are unchanged.
+ */
+export type LookspanDatabase = SqlDriver;
+
+export type { RunResult, SqlDialect, SqlDriver, SqlStatement } from './drivers/types.js';
 
 export interface OpenDatabaseOptions {
+  /**
+   * SQLite file path (default) OR a Postgres connection string
+   * (`postgres://…` / `postgresql://…`). Selects the driver automatically.
+   */
   path?: string;
   readonly?: boolean;
   fileMustExist?: boolean;
@@ -15,21 +28,25 @@ export function defaultDatabasePath(): string {
   return resolve(homedir(), '.lookspan', 'lookspan.db');
 }
 
+/** True when `path` selects the Postgres driver rather than SQLite. */
+export function isPostgresTarget(path: string): boolean {
+  return isPostgresConnectionString(path);
+}
+
 export function openDatabase(options: OpenDatabaseOptions = {}): LookspanDatabase {
   const path = options.path ?? defaultDatabasePath();
-  if (!options.readonly) {
-    mkdirSync(dirname(path), { recursive: true });
+
+  if (isPostgresConnectionString(path)) {
+    const driver = new PostgresDriver({ connectionString: path });
+    driver.ensureMeta();
+    return driver;
   }
-  const db = new Database(path, {
-    readonly: options.readonly ?? false,
-    fileMustExist: options.fileMustExist ?? false,
+
+  return new SqliteDriver({
+    path,
+    readonly: options.readonly,
+    fileMustExist: options.fileMustExist,
   });
-  db.pragma('journal_mode = WAL');
-  db.pragma('synchronous = NORMAL');
-  db.pragma('foreign_keys = ON');
-  db.pragma('temp_store = MEMORY');
-  db.pragma('mmap_size = 268435456');
-  return db;
 }
 
 export function closeDatabase(db: LookspanDatabase): void {

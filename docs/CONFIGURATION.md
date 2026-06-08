@@ -15,7 +15,7 @@ an empty default means the feature is off until you set it.
 |---|---|---|---|
 | `-p, --port <port>` | `LOOKSPAN_PORT` | `3100` | Port the ingest API + dashboard listen on. |
 | `--host <host>` | `LOOKSPAN_HOST` | `127.0.0.1` | Address to bind. Use `0.0.0.0` to expose on your LAN (see Security). |
-| `--db <path>` | `LOOKSPAN_DB` | `~/.lookspan/lookspan.db` | SQLite database file. Created if missing. |
+| `--db <path\|url>` | `LOOKSPAN_DB` | `~/.lookspan/lookspan.db` | SQLite database file (created if missing) **or** a Postgres connection string (`postgres://…` / `postgresql://…`). See [Postgres](#postgres). |
 | `--retention <dur>` | `LOOKSPAN_RETENTION` | _(none)_ | Prune traces older than `<dur>` (`7d`, `24h`, `30m`). Runs on startup, then at most hourly. Unset = keep everything. |
 | `--token <token>` | `LOOKSPAN_TOKEN` | _(none)_ | Require `Authorization: Bearer <token>` on `/api/*` and `/v1/*` (`/api/health` is exempt). Unset = no auth. |
 | `--pricing <file>` | `LOOKSPAN_PRICING` | _(built-in table)_ | Load a custom model pricing table (JSON) to keep cost math current. |
@@ -60,6 +60,65 @@ LOOKSPAN_RETENTION=14d LOOKSPAN_TOKEN=secret \
 LOOKSPAN_OPENAI_API_KEY=sk-… LOOKSPAN_INFERENCE_TIMEOUT_MS=20000 \
   npx lookspan
 ```
+
+## Postgres
+
+Lookspan is **SQLite-first** — the default, zero-config store is a single
+file at `~/.lookspan/lookspan.db`, and that is the right choice for the
+local-first, single-process use case Lookspan is built for.
+
+For teams who want a shared, server-backed store, the storage layer is
+**driver-selectable**: pass a Postgres connection string as the database
+target and Lookspan uses the Postgres driver instead of SQLite. The driver is
+chosen automatically from the value — anything starting with `postgres://` or
+`postgresql://` selects Postgres; everything else is treated as a SQLite path.
+
+```bash
+# Flag
+npx lookspan --db postgres://lookspan:secret@db.internal:5432/lookspan
+
+# …or env var (equivalent)
+LOOKSPAN_DB=postgresql://lookspan:secret@db.internal:5432/lookspan npx lookspan
+
+# Run migrations against Postgres without starting the server
+LOOKSPAN_DB=postgres://lookspan:secret@db.internal:5432/lookspan npm run migrate
+```
+
+The connection string is parsed for logging only and the password is redacted
+in startup output. Both drivers implement the **same repository interfaces**
+and the **same schema and migrations** (`v1`…`v6`), so every feature —
+traces, spans, costs, stats, alerts, scores, replays, datasets and runs —
+behaves identically regardless of backend. The SQLite-flavoured SQL the
+repositories emit is translated to Postgres at the driver boundary
+(`AUTOINCREMENT` → identity columns, `INSERT OR IGNORE` → `ON CONFLICT DO
+NOTHING`, `?`/`@name` params bound as Postgres literals, etc.).
+
+### Engine and scope
+
+The Postgres driver runs queries through an **in-process Postgres engine**
+([`pg-mem`](https://github.com/oguimbal/pg-mem)). This keeps the repositories'
+existing **synchronous** interface intact (no async rewrite of the API and
+collector) while giving genuine Postgres-dialect, schema and migration parity —
+parity that is verified in CI by running the full repository test-suite against
+the Postgres driver, with **no external Postgres server required**
+(`packages/storage/src/drivers/postgres.parity.test.ts`).
+
+Two consequences to be aware of:
+
+- **Persistence to an external Postgres _server_** over the wire (the async
+  `pg` client) is a planned follow-up. The driver boundary
+  (`packages/storage/src/drivers/`) is the exact seam that work plugs into —
+  the `SqlDriver` interface, SQL translation and migration parity are already
+  in place. Until then the Postgres path is fully functional in-process and is
+  the supported way to validate Postgres-targeted deployments and migrations.
+- The in-memory engine implements *most* of Postgres but not every construct.
+  One known gap: `DatasetsRepository.list()` uses a correlated scalar subquery
+  in its projection that real Postgres runs fine but `pg-mem` cannot resolve;
+  that specific query is exercised against SQLite in CI. Everything else has
+  full cross-driver coverage.
+
+To opt out entirely and stay on SQLite, simply do nothing — SQLite remains the
+default.
 
 See the [README](../README.md) for what each feature does and how to send spans
 from your agents.
