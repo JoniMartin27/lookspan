@@ -1,0 +1,62 @@
+---
+title: Lookspan
+description: Local-first observability dashboard for AI agents. MCP-native. See every span your agents emit.
+template: splash
+hero:
+  tagline: Local-first observability for AI agents. MCP-native. See every span your agents emit — on your machine, with zero infra.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Getting started
+      link: /lookspan/guides/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/JoniMartin27/lookspan
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+```bash
+npx lookspan          # → http://127.0.0.1:3100
+```
+
+When an AI agent misbehaves — fails, stalls, or quietly burns more tokens than
+expected — there's no native way to see what happened step by step. Existing
+observability tools are cloud-first: they want accounts, API keys, and shipping
+your production data to someone else's servers.
+
+Lookspan takes the opposite approach: **everything runs on your machine, data
+never leaves it, and infra cost is zero.** Instrument your agent with an adapter
+(or just POST JSON) and open the dashboard in your browser.
+
+```
+Agent (MCP · LangGraph · CrewAI · OpenTelemetry · HTTP)  →  POST /api/ingest  →  SQLite  →  real-time dashboard
+```
+
+## What you can do
+
+<CardGrid stagger>
+  <Card title="Instrument in one line" icon="puzzle">
+    Drop-in SDKs for the [OpenAI](/lookspan/sdks/openai/) and
+    [Anthropic](/lookspan/sdks/anthropic/) clients, an
+    [MCP wrapper](/lookspan/sdks/mcp/), [Python adapters](/lookspan/sdks/python/)
+    for LangGraph/CrewAI, or a native [OpenTelemetry](/lookspan/sdks/opentelemetry/)
+    receiver — no proxy, no code rewrite.
+  </Card>
+  <Card title="Replay & diff" icon="random">
+    Re-run a trace's captured prompt against the same or a different model and
+    [diff cost, latency and output](/lookspan/guides/replay-and-diff/).
+  </Card>
+  <Card title="LLM-as-judge & datasets" icon="approve-check">
+    Score a response 0–1 with a [judge model](/lookspan/guides/llm-as-judge/), or
+    scale it to a whole [test set](/lookspan/guides/datasets-and-experiments/).
+  </Card>
+  <Card title="Cost, alerts & sessions" icon="setting">
+    [Track cost per span](/lookspan/guides/pricing-and-cost/),
+    [alert](/lookspan/guides/alerts/) on failures or budget overruns, and follow
+    [multi-agent causality](/lookspan/guides/sessions-and-causality/).
+  </Card>
+</CardGrid>
