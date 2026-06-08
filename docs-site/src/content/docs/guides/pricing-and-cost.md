@@ -42,6 +42,12 @@ npx lookspan --pricing ./pricing.json
 The custom table is merged over the built-in one, so you only need to specify
 the models you want to correct or add.
 
+Each entry needs `model`, `inputPer1M`, and `outputPer1M`; `cachedInputPer1M`
+and `reasoningPer1M` are optional. Cached input and reasoning tokens are treated
+as subsets of input and output respectively, so they are billed at their own
+rate without being double-charged. When `reasoningPer1M` is omitted, reasoning
+tokens are billed at the output rate.
+
 ## Cost-based alerts
 
 Pair cost tracking with an [alert](/lookspan/guides/alerts/) to get notified
