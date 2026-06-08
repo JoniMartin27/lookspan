@@ -87,12 +87,13 @@ async function run() {
   await sleep(800);
 
   // ---- Scene 3: multi-agent delegation session ---------------------------
-  // Brief beat on the star trace's own "view session" link for continuity, then
-  // jump to the multi-agent onboarding session (4 agents, one error → red node).
+  // The star trace now lives in the multi-agent onboarding session, so its own
+  // "view session" link opens the populated delegation graph directly.
   await page.getByRole('link', { name: 'view session' }).first().click();
-  await page.waitForSelector('text=Timeline by agent', { timeout: 15000 });
-  await sleep(700);
-  await page.goto(`${BASE}/sessions/sess-onboard-demo`, { waitUntil: 'domcontentloaded' });
+  // Wait for the delegation graph (React Flow) AND the timeline to be painted
+  // before lingering, so no "Loading…" frame is ever captured.
+  await page.waitForSelector('text=Agent delegation', { timeout: 15000 });
+  await page.waitForSelector('.react-flow__node', { timeout: 15000 }).catch(() => {});
   await page.waitForSelector('text=Timeline by agent', { timeout: 15000 });
   await sleep(1400);
   // drift over the delegation graph
@@ -133,7 +134,13 @@ async function run() {
   }
 
   // ---- Closing beat: aggregated costs ------------------------------------
+  // Wait for the costs view's real content (the "Cost per day" chart) before
+  // lingering so the "Loading…" placeholder is never on screen.
   await page.goto(`${BASE}/costs`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('text=Cost per day', { timeout: 15000 });
+  // Give the bars/SVG a beat to render their geometry.
+  await sleep(600);
+  await glide(page, 720, 400);
   await sleep(2200);
 
   await context.close(); // flush video
