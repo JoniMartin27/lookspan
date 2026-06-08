@@ -1,0 +1,28 @@
+{
+  "date": "2026-06-02",
+  "repo": {
+    "stars": 2,
+    "watchers": 0,
+    "forks": 0
+  },
+  "traffic": {
+    "uniqueViews": 2,
+    "uniqueClones": 119,
+    "views": 4,
+    "clones": 291
+  },
+  "npm": {
+    "cli": 365,
+    "sdkTotal": 457,
+    "sdk": {
+      "@lookspan/anthropic": 0,
+      "@lookspan/openai": 32,
+      "@lookspan/mcp": 205,
+      "@lookspan/collector": 0,
+      "@lookspan/events": 0,
+      "@lookspan/types": 220,
+      "@lookspan/storage": 0,
+      "@lookspan/api": 0
+    }
+  }
+}

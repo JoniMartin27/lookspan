@@ -1,0 +1,51 @@
+name: Traction
+
+# Daily organic-traction snapshot for Lookspan.
+# Runs scripts/traction.mjs, which records GitHub stars/watchers/forks, unique
+# Traffic views/clones, and npm CLI/SDK downloads into scripts/traction-data/,
+# then commits the new snapshot. Optional & non-blocking: it never gates CI.
+#
+# GitHub Traffic data is only retained for ~14 days, so a daily snapshot is the
+# only way to keep a long-term organic-growth history.
+on:
+  schedule:
+    # 06:10 UTC daily — after npm's previous-day stats have settled.
+    - cron: '10 6 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Snapshot date (YYYY-MM-DD, UTC). Defaults to today.'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: traction
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Capture traction snapshot
+        env:
+          # gh CLI auth — repo Traffic Insights require push access.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRACTION_DATE: ${{ github.event.inputs.date }}
+        run: node scripts/traction.mjs
+      - name: Commit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/traction-data
+          if git diff --cached --quiet; then
+            echo "No traction changes to commit."
+          else
+            git commit -m "chore(traction): daily snapshot"
+            git push
+          fi

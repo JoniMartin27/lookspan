@@ -13,7 +13,8 @@
       "!**/*.css",
       "!**/python",
       "!website",
-      "!docs-site"
+      "!docs-site",
+      "!scripts/traction-data"
     ]
   },
   "formatter": {
