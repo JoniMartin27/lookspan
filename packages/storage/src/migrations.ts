@@ -228,7 +228,8 @@ export function migrate(db: LookspanDatabase): { applied: number[]; current: num
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const db = openDatabase();
+  // Honor LOOKSPAN_DB so `npm run migrate` can target Postgres too.
+  const db = openDatabase({ path: process.env.LOOKSPAN_DB });
   const result = migrate(db);
   console.log(
     `[lookspan/storage] migrations applied: ${result.applied.length === 0 ? 'none' : result.applied.join(', ')} (schema v${result.current})`,

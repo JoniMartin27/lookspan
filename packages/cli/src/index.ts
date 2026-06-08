@@ -9,6 +9,7 @@ import { LookspanEventType, subscribe } from '@lookspan/events';
 import {
   cutoffFrom,
   defaultDatabasePath,
+  isPostgresTarget,
   type LookspanDatabase,
   migrate,
   openDatabase,
@@ -53,6 +54,18 @@ function buildAlertRules(values: Record<string, unknown>): AlertRule[] {
     rules.push({ id: 'duration', condition: AlertCondition.DurationOver, threshold: duration });
 
   return rules;
+}
+
+/** Human-readable DB target for startup logs, with any Postgres password redacted. */
+function describeDb(target: string): string {
+  if (!isPostgresTarget(target)) return target;
+  try {
+    const url = new URL(target);
+    if (url.password) url.password = '***';
+    return `${url.toString()} (postgres)`;
+  } catch {
+    return 'postgres';
+  }
 }
 
 /** Read the published package version at runtime (package.json sits next to dist). */
@@ -171,7 +184,8 @@ Usage:
 Options:
   -p, --port <port>     Port to listen on (default: 3100)
       --host <host>     Host to bind to (default: 127.0.0.1)
-      --db <path>       SQLite database path (default: ~/.lookspan/lookspan.db)
+      --db <path|url>   SQLite path (default: ~/.lookspan/lookspan.db) or a
+                        Postgres connection string (postgres://… / postgresql://…)
       --retention <dur> Prune traces older than <dur> (e.g. 7d, 24h, 30m)
       --token <token>   Require Authorization: Bearer <token> on the API
       --pricing <file>  Load a custom model pricing table (JSON) to keep costs current
@@ -188,7 +202,7 @@ Options:
 Environment:
   LOOKSPAN_PORT         Same as --port
   LOOKSPAN_HOST         Same as --host
-  LOOKSPAN_DB           Same as --db
+  LOOKSPAN_DB           Same as --db (SQLite path or postgres:// URL)
   LOOKSPAN_RETENTION    Same as --retention
   LOOKSPAN_TOKEN        Same as --token
   LOOKSPAN_PRICING      Same as --pricing
@@ -269,7 +283,7 @@ function main(): void {
   const server = app.listen(flags.port, flags.host, () => {
     const url = `http://${flags.host}:${flags.port}`;
     console.log(`\n  Lookspan running at ${url}`);
-    console.log(`  Database: ${flags.db}`);
+    console.log(`  Database: ${describeDb(flags.db)}`);
     if (flags.retentionMs) {
       console.log(`  Retention: pruning traces older than ${flags.retentionMs / 86_400_000}d`);
     }

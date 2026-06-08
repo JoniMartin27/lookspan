@@ -67,7 +67,7 @@ Open `http://127.0.0.1:3100` and watch the trace appear — with its cost comput
 - **Evaluation scores** — attach metrics to a trace (`POST /api/traces/:id/scores`) from an LLM judge, an assertion, or by hand.
 - **Replay & LLM-as-judge** — re-run a trace's captured prompt against the same or a different model and diff cost/latency/output, or have a judge model score the response 0–1. Needs a provider key (env, in-memory only).
 - **Datasets & experiments** — collect prompts into a test set (seed from a trace or add by hand), run the whole set against a model in batch and score each output with the judge — aggregate cost/latency/score per run.
-- **Local SQLite** — versioned migrations. Database at `~/.lookspan/lookspan.db` by default; configurable via flag or env var. Optional retention with `--retention`.
+- **Local SQLite (default), optional Postgres** — versioned migrations. SQLite file at `~/.lookspan/lookspan.db` by default; pass a `postgres://…` URL to `--db` / `LOOKSPAN_DB` to use the Postgres driver instead (same schema, same features — see [docs/CONFIGURATION.md → Postgres](docs/CONFIGURATION.md#postgres)). Optional retention with `--retention`.
 - **Security** — binds to `127.0.0.1` by default; optional `--token` auth; server-side redaction of credential-looking attributes before storage.
 - **One-line CLI** — `npx lookspan` starts the server and the dashboard with no global install.
 
@@ -229,7 +229,7 @@ curl -X POST localhost:3100/api/datasets/$DS/run -H 'content-type: application/j
 npx lookspan [options]
   -p, --port <port>        Port to listen on            (default: 3100)
       --host <host>        Host to bind to              (default: 127.0.0.1)
-      --db <path>          SQLite database path         (default: ~/.lookspan/lookspan.db)
+      --db <path|url>      SQLite path or postgres:// URL (default: ~/.lookspan/lookspan.db)
       --retention <dur>    Prune traces older than e.g. 7d, 24h, 30m
       --token <token>      Require Authorization: Bearer <token> on the API
       --pricing <file>     Custom model pricing table (JSON)

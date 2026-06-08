@@ -5,6 +5,7 @@ import { Link } from 'wouter';
 import { api } from '../api/client.ts';
 import { EmptyState } from '../components/EmptyState.tsx';
 import { agentColor } from '../lib/agentColor.ts';
+import { relativeTime } from '../lib/time.ts';
 
 const FRAMEWORKS = ['mcp', 'langgraph', 'crewai', 'agent-os', 'openai-agents', 'otlp', 'custom'];
 const STATUSES = ['ok', 'error', 'cancelled'];
