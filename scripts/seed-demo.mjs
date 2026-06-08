@@ -19,8 +19,10 @@ const DB_PATH = flag('db', null); // for the synthetic replay insert
 
 const iso = (ms) => new Date(ms).toISOString();
 const now = Date.now();
-// Spread traces across ~3.5 hours so the time axis & cost sparkline have shape.
+// Spread traces across the last several days so the "Cost per day" chart reads
+// as a real time series (multiple bars with variation), not one giant bar.
 const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
 
 async function post(path, body) {
   const res = await fetch(`${BASE}${path}`, {
@@ -46,7 +48,11 @@ const sid = () => `sp_${(++spanSeq).toString(36)}_${Math.random().toString(36).s
 // 1) The star trace: support.handle_ticket (langgraph, agent triage).
 // ---------------------------------------------------------------------------
 const STAR_TRACE = 'tr_star_ticket';
-const STAR_SESSION = 'sess-ticket-A4471';
+// The star trace lives inside the multi-agent onboarding session so that the
+// "view session" link opens a populated delegation graph (not a degenerate
+// single-trace session). It is linked as a child of the coordinator below.
+const ONBOARD_SESSION = 'sess-onboard-demo';
+const STAR_SESSION = ONBOARD_SESSION;
 
 const userQuestion = "My order #A-4471 hasn't shipped, what's going on?";
 const planSystem =
@@ -85,6 +91,9 @@ function starSpans() {
       ...common,
       spanId: rootId,
       parentSpanId: null,
+      // Hang the star trace off the coordinator so it appears as a `triage`
+      // node in the onboarding session's delegation graph.
+      parentTraceId: 'tr_onb_coord',
       type: 'agent_step',
       name: 'support.handle_ticket',
       startedAt: iso(t0),
@@ -204,9 +213,8 @@ function starSpans() {
 // ---------------------------------------------------------------------------
 // 2) Multi-agent delegation session for the graph view.
 //    coordinator -> {researcher, writer} -> editor, one child in error.
+//    (The star `triage` trace also hangs off the coordinator — see above.)
 // ---------------------------------------------------------------------------
-const ONBOARD_SESSION = 'sess-onboard-demo';
-
 function delegationTraces() {
   const base = now - 3 * HOUR;
   const mk = (id, name, agent, parentTrace, offsetMs, durMs, status, model, inTok, outTok) => {
@@ -386,9 +394,18 @@ function fillerTraces() {
     null,
   ];
 
+  // Scatter the filler traces across the last 5 days (with a few per day, at
+  // varied hours) so "Cost per day" has several bars with real variation.
+  const dayOffsets = [4, 4, 3, 3, 3, 2, 2, 1, 1, 0, 0];
+  const hourOfDay = [9, 14, 10, 13, 17, 11, 16, 10, 15, 9, 12];
+
   const all = [];
   for (let i = 0; i < frameworks.length; i++) {
-    const start = now - 3.5 * HOUR + i * (HOUR / 3) + Math.floor(Math.random() * 90_000);
+    const start =
+      now -
+      dayOffsets[i] * DAY -
+      (24 - hourOfDay[i]) * HOUR +
+      Math.floor(Math.random() * 50 * 60_000);
     const dur = 800 + Math.floor(Math.random() * 1800);
     const [model, provider, inTok, outTok] = models[i];
     const id = `tr_fill_${i}`;
