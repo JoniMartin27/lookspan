@@ -186,7 +186,9 @@ function Row({
           <span className="text-neutral-600">—</span>
         )}
       </td>
-      <td className="px-3 py-2 text-neutral-500">{new Date(t.startedAt).toLocaleTimeString()}</td>
+      <td className="px-3 py-2 text-neutral-500" title={new Date(t.startedAt).toLocaleString()}>
+        {relativeTime(t.startedAt)}
+      </td>
       <td className="px-3 py-2">
         <MiniBar
           text={fmtMs(t.durationMs)}
