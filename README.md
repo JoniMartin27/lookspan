@@ -21,6 +21,8 @@ Agent (MCP · LangGraph · CrewAI · OpenTelemetry · HTTP)  →  POST /api/inge
 
 > 🇪🇸 ¿Prefieres español? Lee el [README en español](README.es.md).
 
+> ⭐ **If Lookspan saves you a debugging session, [give it a star](https://github.com/JoniMartin27/lookspan) — it's the #1 way to help it grow.** Got a use case, a bug, or a framework you'd like supported? [Open an issue](https://github.com/JoniMartin27/lookspan/issues) or say hi in [Discussions](https://github.com/JoniMartin27/lookspan/discussions).
+
 ---
 
 ## The problem
