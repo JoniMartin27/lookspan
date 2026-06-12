@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { api } from '../api/client.ts';
 import { EmptyState } from '../components/EmptyState.tsx';
 import { agentColor } from '../lib/agentColor.ts';
+import { statusBadgeClass } from '../lib/status.ts';
 
 export default function ToolsView() {
   const { data, isLoading, error } = useQuery({
@@ -64,11 +65,7 @@ export default function ToolsView() {
                 </td>
                 <td className="px-3 py-2">
                   <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${
-                      s.status === 'error'
-                        ? 'bg-red-500/10 text-red-400'
-                        : 'bg-emerald-500/10 text-emerald-400'
-                    }`}
+                    className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadgeClass(s.status)}`}
                   >
                     {s.status}
                   </span>

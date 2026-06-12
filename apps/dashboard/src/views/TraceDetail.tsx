@@ -320,7 +320,11 @@ function SpanDrawer({ span, onClose }: { span: Span; onClose: () => void }) {
 
       <div className="space-y-4 p-4 text-xs">
         <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
-          <Field label="Status" value={span.status} tone={span.status === 'error' ? 'bad' : 'ok'} />
+          <Field
+            label="Status"
+            value={span.status}
+            tone={span.status === 'error' ? 'bad' : span.status === 'cancelled' ? undefined : 'ok'}
+          />
           <Field
             label="Duration"
             value={span.durationMs !== null ? formatMs(span.durationMs) : '—'}
