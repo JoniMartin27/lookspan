@@ -143,6 +143,7 @@ window.LOOKSPAN_I18N = {
     'aria.copyCmd': `Copiar comando`,
     'aria.copyCode': `Copiar código`,
     'aria.langGroup': `Idioma`,
+    'a11y.skip': `Saltar al contenido`,
   },
 
   en: {
@@ -283,5 +284,6 @@ window.LOOKSPAN_I18N = {
     'aria.copyCmd': `Copy command`,
     'aria.copyCode': `Copy code`,
     'aria.langGroup': `Language`,
+    'a11y.skip': `Skip to content`,
   },
 };
