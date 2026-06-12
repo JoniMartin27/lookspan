@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { api } from '../api/client.ts';
 import { agentColor } from '../lib/agentColor.ts';
+import { statusBadgeClass } from '../lib/status.ts';
 
 export default function SessionDetail() {
   const params = useParams<{ id: string }>();
@@ -186,11 +187,7 @@ function TracePreview({
           <span className="text-sm font-medium text-neutral-100">{trace.rootName}</span>
         </div>
         <span
-          className={`rounded px-2 py-0.5 text-xs font-medium ${
-            trace.status === 'error'
-              ? 'bg-red-500/10 text-red-400'
-              : 'bg-emerald-500/10 text-emerald-400'
-          }`}
+          className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadgeClass(trace.status)}`}
         >
           {trace.status}
         </span>
