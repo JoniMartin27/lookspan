@@ -76,7 +76,10 @@ function barChartSvg(title: string, data: BarDatum[], color: string): string {
 }
 
 /** Render a status breakdown as a simple SVG donut. */
-function donutSvg(title: string, segments: { label: string; value: number; color: string }[]): string {
+function donutSvg(
+  title: string,
+  segments: { label: string; value: number; color: string }[],
+): string {
   const total = segments.reduce((s, x) => s + x.value, 0);
   if (total === 0) {
     return `<div class="chart"><h3>${esc(title)}</h3><p class="empty">No data</p></div>`;
@@ -190,10 +193,7 @@ export function renderHtmlReport(
 
   const tableHead = columns.map((c) => `<th>${esc(COLUMN_LABELS[c] ?? c)}</th>`).join('');
   const tableBody = rows
-    .map(
-      (row) =>
-        `<tr>${columns.map((c) => `<td>${esc(row[c])}</td>`).join('')}</tr>`,
-    )
+    .map((row) => `<tr>${columns.map((c) => `<td>${esc(row[c])}</td>`).join('')}</tr>`)
     .join('\n');
 
   return `<!doctype html>

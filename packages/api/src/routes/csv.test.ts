@@ -24,7 +24,7 @@ describe('csvField', () => {
   });
 
   describe('CSV/formula injection guard (CWE-1236)', () => {
-    it("prefixes a leading = + - @ on string values with a single quote", () => {
+    it('prefixes a leading = + - @ on string values with a single quote', () => {
       expect(csvField('=cmd|/c calc')).toBe("'=cmd|/c calc");
       expect(csvField('+1+2')).toBe("'+1+2");
       expect(csvField('-2-3')).toBe("'-2-3");
