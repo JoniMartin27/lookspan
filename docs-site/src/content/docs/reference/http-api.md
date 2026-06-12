@@ -16,6 +16,7 @@ exempt).
 | `POST` | `/api/ingest` | Ingest spans (body: `IngestPayload`). |
 | `GET` | `/api/traces` | List traces (paginated; filter by `framework`, `status`, `sessionId`). |
 | `GET` | `/api/traces/:id` | Trace detail with all its spans and scores. |
+| `GET` | `/api/export/traces` | Download traces as a file (`format=csv\|json`; same `framework`/`status`/`sessionId`/`limit` filters). |
 | `POST` | `/api/traces/:id/scores` | Attach an evaluation score (`{name, value, comment?, source?}`). |
 | `POST` | `/api/traces/:id/replay` | Re-run the captured prompt (`{model?, provider?, spanId?}`); needs a provider key. |
 | `GET` | `/api/traces/:id/replays` | List past replays for the trace. |
@@ -47,6 +48,29 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
 `costUsd` can be `0` — Lookspan computes it server-side from the model and token
 counts. Set `agentId` / `sessionId` / `parentSpanId` to build
 [sessions and causality](/lookspan/guides/sessions-and-causality/).
+
+## Exporting traces
+
+`GET /api/export/traces` returns the trace set as a downloadable file. Pass
+`format=csv` (the default) for a spreadsheet-friendly CSV — one row per trace
+with id, name, framework, agent, session, timing, status, per-trace token counts
+and cost — or `format=json` for the full trace objects (including
+`totalUsage` and `attributes`). The same `framework`, `status`, `sessionId` and
+`limit` filters as `/api/traces` apply, so the dashboard's **Export** button
+exports exactly what's on screen.
+
+```bash
+# All traces as CSV
+curl -OJ http://127.0.0.1:3100/api/export/traces
+
+# Only failed LangGraph traces, as JSON
+curl 'http://127.0.0.1:3100/api/export/traces?format=json&framework=langgraph&status=error'
+```
+
+A `Content-Disposition` header sets a timestamped filename
+(`lookspan-traces-<ts>.csv`), so `curl -OJ` and browser downloads save it
+sensibly. The export is capped server-side (default 1000 traces, max 10000);
+raise it with `?limit=`.
 
 ## Real-time stream
 

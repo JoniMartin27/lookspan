@@ -11,6 +11,13 @@ export interface ListTracesOptions {
   sessionId?: string;
 }
 
+export interface ExportTracesOptions {
+  limit?: number;
+  framework?: string;
+  status?: string;
+  sessionId?: string;
+}
+
 export class TracesRepository {
   constructor(private readonly db: LookspanDatabase) {}
 
@@ -44,6 +51,41 @@ export class TracesRepository {
     `;
     const rows = this.db.prepare(sql).all(params) as TraceRow[];
     return rows.map(rowToTraceListItem);
+  }
+
+  /**
+   * Full trace rows for bulk export, honouring the same filters as `list` but
+   * returning complete {@link Trace} objects (with token usage + attributes)
+   * rather than the trimmed list item. Ordered oldest-first so an exported file
+   * reads like a chronological log. The limit is clamped to keep a single
+   * export bounded; pass a higher `limit` to widen it.
+   */
+  export(options: ExportTracesOptions = {}): Trace[] {
+    const limit = Math.min(options.limit ?? 1000, 10_000);
+    const where: string[] = [];
+    const params: Record<string, unknown> = { limit };
+
+    if (options.framework) {
+      where.push('framework = @framework');
+      params.framework = options.framework;
+    }
+    if (options.status) {
+      where.push('status = @status');
+      params.status = options.status;
+    }
+    if (options.sessionId) {
+      where.push('session_id = @sessionId');
+      params.sessionId = options.sessionId;
+    }
+
+    const sql = `
+      SELECT * FROM traces
+      ${where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''}
+      ORDER BY started_at ASC
+      LIMIT @limit
+    `;
+    const rows = this.db.prepare(sql).all(params) as TraceRow[];
+    return rows.map(rowToTrace);
   }
 
   getById(traceId: string): Trace | null {

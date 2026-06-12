@@ -109,6 +109,66 @@ describe('createApp routing (no auth)', () => {
     expect(detail.scores).toHaveLength(1);
     expect(detail.scores[0]).toMatchObject({ name: 'correctness', value: 1 });
   });
+
+  it('exports traces as CSV (default) and JSON, honouring filters', async () => {
+    await fetch(`${base}/api/ingest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        spans: [
+          {
+            traceId: 'tr_csv1',
+            spanId: 'sp1',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: 'one',
+            startedAt: '2026-06-01T10:00:00Z',
+            endedAt: '2026-06-01T10:00:01Z',
+            status: 'ok',
+            framework: 'mcp',
+          },
+          {
+            traceId: 'tr_csv2',
+            spanId: 'sp2',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: 'two',
+            startedAt: '2026-06-01T11:00:00Z',
+            endedAt: '2026-06-01T11:00:02Z',
+            status: 'error',
+            framework: 'langgraph',
+          },
+        ],
+      }),
+    });
+
+    // CSV is the default format.
+    const csvRes = await fetch(`${base}/api/export/traces`);
+    expect(csvRes.status).toBe(200);
+    expect(csvRes.headers.get('content-type')).toContain('text/csv');
+    expect(csvRes.headers.get('content-disposition')).toMatch(/attachment; filename=".*\.csv"/);
+    const csv = await csvRes.text();
+    const lines = csv.trim().split('\r\n');
+    expect(lines[0]).toContain('traceId');
+    expect(lines).toHaveLength(3); // header + 2 traces
+    expect(csv).toContain('tr_csv1');
+    expect(csv).toContain('tr_csv2');
+
+    // JSON format returns full trace objects.
+    const jsonRes = await fetch(`${base}/api/export/traces?format=json`);
+    expect(jsonRes.headers.get('content-type')).toContain('application/json');
+    const body = await jsonRes.json();
+    expect(body.count).toBe(2);
+    expect(body.traces).toHaveLength(2);
+    expect(body.traces[0]).toHaveProperty('totalUsage');
+
+    // The status filter narrows the export.
+    const filtered = await (
+      await fetch(`${base}/api/export/traces?format=json&status=error`)
+    ).json();
+    expect(filtered.count).toBe(1);
+    expect(filtered.traces[0].traceId).toBe('tr_csv2');
+  });
 });
 
 describe('aggregation & session routes', () => {

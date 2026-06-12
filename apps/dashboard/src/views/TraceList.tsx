@@ -71,6 +71,11 @@ export default function TraceList() {
           options={FRAMEWORKS}
         />
         <Select value={status} onChange={setStatus} placeholder="All statuses" options={STATUSES} />
+        <ExportMenu
+          disabled={allItems.length === 0}
+          framework={framework || undefined}
+          status={status || undefined}
+        />
       </div>
 
       {isLoading ? (
@@ -242,6 +247,59 @@ function Select({
         </option>
       ))}
     </select>
+  );
+}
+
+/**
+ * Download the current (filtered) trace set as CSV or JSON. Uses plain anchor
+ * links to the export endpoint so the browser saves the file with the
+ * server-supplied filename — no blob juggling. Respects the active
+ * framework/status filters.
+ */
+function ExportMenu({
+  disabled,
+  framework,
+  status,
+}: {
+  disabled: boolean;
+  framework: string | undefined;
+  status: string | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  const link = (fmt: 'csv' | 'json') => api.exportTracesUrl(fmt, { framework, status });
+  const linkCls =
+    'block px-3 py-1.5 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100';
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        className="rounded border border-neutral-800 px-3 py-1.5 text-sm text-neutral-300 hover:border-brand-500 hover:text-neutral-100 disabled:opacity-40"
+      >
+        Export ▾
+      </button>
+      {open && !disabled && (
+        <>
+          {/* Invisible backdrop closes the menu on outside click (and Esc). */}
+          <button
+            type="button"
+            aria-label="Close export menu"
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute right-0 z-20 mt-1 w-32 overflow-hidden rounded border border-neutral-800 bg-neutral-900 shadow-lg">
+            {/* download attr asks the browser to save rather than navigate. */}
+            <a href={link('csv')} download className={linkCls} onClick={() => setOpen(false)}>
+              CSV
+            </a>
+            <a href={link('json')} download className={linkCls} onClick={() => setOpen(false)}>
+              JSON
+            </a>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
