@@ -36,6 +36,85 @@ describe('recomputeTrace', () => {
     expect(trace?.durationMs).toBeNull();
   });
 
+  it('reports cancelled when all spans are cancelled and none errored', () => {
+    new Collector({ db }).ingest({
+      spans: [
+        {
+          traceId: 'tr_cancel',
+          spanId: 'sp_1',
+          parentSpanId: null,
+          type: 'agent_step',
+          name: 'root',
+          startedAt: '2026-06-01T10:00:00Z',
+          endedAt: '2026-06-01T10:00:01Z',
+          status: 'cancelled',
+          framework: 'custom',
+        },
+        {
+          traceId: 'tr_cancel',
+          spanId: 'sp_2',
+          parentSpanId: 'sp_1',
+          type: 'llm_call',
+          name: 'child',
+          startedAt: '2026-06-01T10:00:00Z',
+          endedAt: '2026-06-01T10:00:01Z',
+          status: 'cancelled',
+          framework: 'custom',
+        },
+      ],
+    });
+    expect(recomputeTrace(db, 'tr_cancel')?.status).toBe('cancelled');
+  });
+
+  it('lets an error take precedence over a cancelled span', () => {
+    new Collector({ db }).ingest({
+      spans: [
+        {
+          traceId: 'tr_mixed',
+          spanId: 'sp_1',
+          parentSpanId: null,
+          type: 'agent_step',
+          name: 'root',
+          startedAt: '2026-06-01T10:00:00Z',
+          endedAt: '2026-06-01T10:00:01Z',
+          status: 'cancelled',
+          framework: 'custom',
+        },
+        {
+          traceId: 'tr_mixed',
+          spanId: 'sp_2',
+          parentSpanId: 'sp_1',
+          type: 'llm_call',
+          name: 'child',
+          startedAt: '2026-06-01T10:00:00Z',
+          endedAt: '2026-06-01T10:00:01Z',
+          status: 'error',
+          framework: 'custom',
+        },
+      ],
+    });
+    expect(recomputeTrace(db, 'tr_mixed')?.status).toBe('error');
+  });
+
+  it('stays ok when all spans are ok', () => {
+    new Collector({ db }).ingest({
+      spans: [
+        {
+          traceId: 'tr_ok',
+          spanId: 'sp_1',
+          parentSpanId: null,
+          type: 'agent_step',
+          name: 'root',
+          startedAt: '2026-06-01T10:00:00Z',
+          endedAt: '2026-06-01T10:00:01Z',
+          status: 'ok',
+          framework: 'custom',
+        },
+      ],
+    });
+    expect(recomputeTrace(db, 'tr_ok')?.status).toBe('ok');
+  });
+
   it('clamps negative durations to 0 when endedAt precedes startedAt', () => {
     new Collector({ db }).ingest({
       spans: [

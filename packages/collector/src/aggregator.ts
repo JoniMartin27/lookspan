@@ -24,6 +24,7 @@ export interface TraceAggregate {
 interface AggregateRow {
   span_count: number;
   error_count: number;
+  cancelled_count: number;
   min_started: string;
   max_ended: string | null;
   input_tokens: number;
@@ -44,6 +45,7 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
       SELECT
         COUNT(*) as span_count,
         SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as error_count,
+        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_count,
         MIN(started_at) as min_started,
         MAX(ended_at) as max_ended,
         COALESCE(SUM(input_tokens), 0) as input_tokens,
@@ -79,8 +81,17 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
       ? Math.max(0, new Date(endedAt).getTime() - new Date(startedAt).getTime())
       : null;
 
+  // Status precedence mirrors the error rule: an error anywhere in the trace
+  // dominates; otherwise a cancelled span anywhere marks the whole trace as
+  // cancelled; everything else is ok (including still-open traces, which stay
+  // ok until a terminal span lands). Previously this branch could only ever
+  // yield ok, so cancelled traces were silently reported as successful.
   const status: Trace['status'] =
-    agg.error_count > 0 ? SpanStatus.Error : endedAt ? SpanStatus.Ok : SpanStatus.Ok;
+    agg.error_count > 0
+      ? SpanStatus.Error
+      : agg.cancelled_count > 0
+        ? SpanStatus.Cancelled
+        : SpanStatus.Ok;
 
   const trace: Trace = {
     traceId,
