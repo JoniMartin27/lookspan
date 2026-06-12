@@ -65,7 +65,7 @@ Open `http://127.0.0.1:3100` and watch the trace appear — with its cost comput
 - **Real-time streaming** — SSE endpoint `GET /api/stream` pushes `span.ingested`, `trace.updated` and `alert.triggered` to the dashboard, no polling.
 - **React dashboard** — recent traces with a health strip + per-row latency/cost mini-bars; trace detail with a **timeline (waterfall)** or tree view and a **conversation transcript** of the prompt/response; replay diffs and A/B run comparison; costs & overview (error rate, latency p50/p95/p99, cost per day); alerts history.
 - **Cost tracking** — aggregates input/output/cached/reasoning tokens and computes `cost_usd` per span and per trace from a model pricing table, overridable with `--pricing`.
-- **Export** — download the trace set as CSV (spreadsheet-friendly) or JSON (full objects with token usage + attributes) straight from the dashboard, or `GET /api/export/traces?format=csv|json`; honours the active framework/status/session filters.
+- **Export & audit** — download the trace set as CSV (spreadsheet-friendly, UTF-8 BOM, formula-injection safe), JSON (metadata-only by default; `?raw=1` to include attributes), or a self-contained printable HTML audit report (`format=html`) with provenance, summary cards and hand-drawn SVG charts. `GET /api/export/traces?format=csv|json|html`; honours the active framework/status/session filters. Every response carries provenance/integrity (`X-Lookspan-Export-Sha256`, `-Count`, `-Truncated`).
 - **Alerts** — get notified when a trace fails or exceeds a cost/token/duration threshold (toast + desktop notification + CLI + persisted history).
 - **Evaluation scores** — attach metrics to a trace (`POST /api/traces/:id/scores`) from an LLM judge, an assertion, or by hand.
 - **Replay & LLM-as-judge** — re-run a trace's captured prompt against the same or a different model and diff cost/latency/output, or have a judge model score the response 0–1. Needs a provider key (env, in-memory only).
@@ -206,7 +206,7 @@ curl -X POST localhost:3100/api/datasets/$DS/run -H 'content-type: application/j
 | `POST` | `/api/ingest` | Ingest spans (body: `IngestPayload`) |
 | `GET` | `/api/traces` | List traces (paginated; filter by `framework`, `status`, `sessionId`) |
 | `GET` | `/api/traces/:id` | Trace detail with all its spans and scores |
-| `GET` | `/api/export/traces` | Download traces as a file (`format=csv\|json`; same `framework`/`status`/`sessionId`/`limit` filters) |
+| `GET` | `/api/export/traces` | Download traces as a file (`format=csv\|json\|html`; `raw=1` un-redacts JSON; same `framework`/`status`/`sessionId`/`limit` filters) |
 | `POST` | `/api/traces/:id/scores` | Attach an evaluation score (`{name, value, comment?, source?}`) |
 | `POST` | `/api/traces/:id/replay` | Re-run the captured prompt (`{model?, provider?, spanId?}`); needs a provider key |
 | `GET` | `/api/traces/:id/replays` | List past replays for the trace |

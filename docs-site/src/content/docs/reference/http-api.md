@@ -16,7 +16,7 @@ exempt).
 | `POST` | `/api/ingest` | Ingest spans (body: `IngestPayload`). |
 | `GET` | `/api/traces` | List traces (paginated; filter by `framework`, `status`, `sessionId`). |
 | `GET` | `/api/traces/:id` | Trace detail with all its spans and scores. |
-| `GET` | `/api/export/traces` | Download traces as a file (`format=csv\|json`; same `framework`/`status`/`sessionId`/`limit` filters). |
+| `GET` | `/api/export/traces` | Download traces as a file (`format=csv\|json\|html`; `raw=1` un-redacts JSON; same `framework`/`status`/`sessionId`/`limit` filters). |
 | `POST` | `/api/traces/:id/scores` | Attach an evaluation score (`{name, value, comment?, source?}`). |
 | `POST` | `/api/traces/:id/replay` | Re-run the captured prompt (`{model?, provider?, spanId?}`); needs a provider key. |
 | `GET` | `/api/traces/:id/replays` | List past replays for the trace. |
@@ -51,26 +51,88 @@ counts. Set `agentId` / `sessionId` / `parentSpanId` to build
 
 ## Exporting traces
 
-`GET /api/export/traces` returns the trace set as a downloadable file. Pass
-`format=csv` (the default) for a spreadsheet-friendly CSV — one row per trace
-with id, name, framework, agent, session, timing, status, per-trace token counts
-and cost — or `format=json` for the full trace objects (including
-`totalUsage` and `attributes`). The same `framework`, `status`, `sessionId` and
-`limit` filters as `/api/traces` apply, so the dashboard's **Export** button
-exports exactly what's on screen.
+`GET /api/export/traces` returns the trace set as a downloadable file for audit
+and offline analysis. The same `framework`, `status`, `sessionId` and `limit`
+filters as `/api/traces` apply, so the dashboard's **Export** button exports
+exactly what's on screen.
+
+### Formats (`format=`)
+
+- **`csv`** (default) — a spreadsheet-friendly CSV, one **metadata** row per
+  trace (id, name, framework, agent, session, timing, status, per-trace token
+  counts and cost). The file starts with a **UTF-8 BOM** so Excel on Windows
+  renders accents correctly, and is **formula-injection safe** (see below).
+  The CSV never contains trace `attributes` or prompt bodies.
+- **`json`** — the full trace objects with `totalUsage`. By default
+  `attributes` are **redacted** (see PII redaction below); pass `?raw=1` to
+  include them in the clear. The response wraps the traces in a provenance block.
+- **`html`** — a self-contained, printable **audit report** (single file, zero
+  client dependencies, no CDN): a provenance header, summary cards (trace count,
+  error/cancelled rate, total cost, tokens in/out), hand-drawn inline-SVG charts
+  (traces per day, cost per framework, status breakdown, tokens in vs out) and
+  the full trace table. Ideal for print-to-PDF evidence.
 
 ```bash
 # All traces as CSV
 curl -OJ http://127.0.0.1:3100/api/export/traces
 
-# Only failed LangGraph traces, as JSON
+# Only failed LangGraph traces, as JSON (attributes redacted)
 curl 'http://127.0.0.1:3100/api/export/traces?format=json&framework=langgraph&status=error'
+
+# Same, but include raw attributes (may contain personal data — handle with care)
+curl 'http://127.0.0.1:3100/api/export/traces?format=json&framework=langgraph&raw=1'
+
+# A printable HTML audit report
+curl -OJ 'http://127.0.0.1:3100/api/export/traces?format=html'
 ```
 
 A `Content-Disposition` header sets a timestamped filename
-(`lookspan-traces-<ts>.csv`), so `curl -OJ` and browser downloads save it
-sensibly. The export is capped server-side (default 1000 traces, max 10000);
-raise it with `?limit=`.
+(`lookspan-traces-<ts>.{csv,json,html}`), so `curl -OJ` and browser downloads
+save it sensibly. The export is capped server-side (default 1000 traces, max
+10000); raise it with `?limit=`.
+
+### Provenance & integrity
+
+Every response carries a tamper-evidence block so an exported file can be
+attributed and verified:
+
+| Header (all formats) | JSON / HTML field | Meaning |
+| --- | --- | --- |
+| `X-Lookspan-Export-Sha256` | `sha256` | SHA-256 of the exact CSV body (the canonical artefact). |
+| `X-Lookspan-Export-Count` | `count` | Number of traces in the file. |
+| `X-Lookspan-Export-Truncated` | `truncated` | `true` if the limit dropped matching rows. |
+| — | `totalAvailable` | Rows matching the filters, ignoring the limit. |
+| — | `exportedAt` | ISO 8601 UTC export timestamp. |
+| — | `tool` / `version` | `"lookspan"` and the running version. |
+| — | `filters` | The applied `framework`/`status`/`sessionId` filters. |
+
+The JSON body and the HTML report footer also surface the same SHA-256 so the
+hash can be recorded alongside the evidence.
+
+### Truncation is explicit
+
+Previously the export truncated silently at the limit. It now reports truncation
+explicitly: the `X-Lookspan-Export-Truncated` header (and the `truncated` /
+`totalAvailable` fields, and a visible banner in the HTML report) tell you when
+matching rows were dropped. Rows are ordered `started_at ASC, trace_id ASC` for
+byte-for-byte reproducibility (stable hash).
+
+### PII redaction by default (GDPR art. 5 / 32)
+
+**Behaviour change:** the JSON export no longer includes trace `attributes` by
+default. Free-form attributes can carry personal data or secrets, so they are
+omitted (data minimisation) unless you explicitly opt in with `?raw=1`. The
+response includes `raw: true|false` so consumers know which they received. The
+CSV and HTML exports are metadata-only and never include attributes.
+
+### CSV / formula injection safety (CWE-1236)
+
+String cells that begin with `=`, `+`, `-`, `@`, TAB or CR are prefixed with a
+single quote (`'`) before RFC 4180 quoting, so a malicious trace name like
+`=cmd|'/c calc'` can't execute as a formula when the CSV is opened in Excel,
+LibreOffice or Google Sheets. The guard applies only to attacker-controllable
+**string** values — numeric and boolean columns (including legitimate negative
+numbers such as a `-5` cost) are never prefixed.
 
 ## Real-time stream
 
