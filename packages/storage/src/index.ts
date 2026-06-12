@@ -7,6 +7,11 @@ export { ReplaysRepository } from './repositories/replays.js';
 export { ScoresRepository } from './repositories/scores.js';
 export { SpansRepository } from './repositories/spans.js';
 export { StatsRepository } from './repositories/stats.js';
+export type {
+  ExportTracesOptions,
+  ExportTracesResult,
+  ListTracesOptions,
+} from './repositories/traces.js';
 export { TracesRepository } from './repositories/traces.js';
 export * from './retention.js';
 export type {

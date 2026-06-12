@@ -147,6 +147,10 @@ describe('createApp routing (no auth)', () => {
     expect(csvRes.status).toBe(200);
     expect(csvRes.headers.get('content-type')).toContain('text/csv');
     expect(csvRes.headers.get('content-disposition')).toMatch(/attachment; filename=".*\.csv"/);
+    // UTF-8 BOM so Excel reads accents correctly (point 2). `fetch().text()`
+    // strips a leading BOM per the Encoding Standard, so check the raw bytes.
+    const csvBytes = new Uint8Array(await csvRes.clone().arrayBuffer());
+    expect([csvBytes[0], csvBytes[1], csvBytes[2]]).toEqual([0xef, 0xbb, 0xbf]);
     const csv = await csvRes.text();
     const lines = csv.trim().split('\r\n');
     expect(lines[0]).toContain('traceId');
@@ -154,13 +158,33 @@ describe('createApp routing (no auth)', () => {
     expect(csv).toContain('tr_csv1');
     expect(csv).toContain('tr_csv2');
 
-    // JSON format returns full trace objects.
+    // Provenance/integrity headers (points 4 & 5).
+    expect(csvRes.headers.get('x-lookspan-export-truncated')).toBe('false');
+    expect(csvRes.headers.get('x-lookspan-export-count')).toBe('2');
+    expect(csvRes.headers.get('x-lookspan-export-sha256')).toMatch(/^[0-9a-f]{64}$/);
+
+    // JSON format returns full trace objects with a provenance block.
     const jsonRes = await fetch(`${base}/api/export/traces?format=json`);
     expect(jsonRes.headers.get('content-type')).toContain('application/json');
     const body = await jsonRes.json();
     expect(body.count).toBe(2);
     expect(body.traces).toHaveLength(2);
     expect(body.traces[0]).toHaveProperty('totalUsage');
+    // Provenance fields (point 5).
+    expect(body.tool).toBe('lookspan');
+    expect(typeof body.version).toBe('string');
+    expect(body.truncated).toBe(false);
+    expect(body.totalAvailable).toBe(2);
+    expect(body.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(typeof body.exportedAt).toBe('string');
+    // PII redaction by default (point 6): attributes are dropped.
+    expect(body.traces[0]).not.toHaveProperty('attributes');
+    expect(body.raw).toBe(false);
+
+    // ?raw=1 returns attributes in the clear.
+    const rawBody = await (await fetch(`${base}/api/export/traces?format=json&raw=1`)).json();
+    expect(rawBody.raw).toBe(true);
+    expect(rawBody.traces[0]).toHaveProperty('attributes');
 
     // The status filter narrows the export.
     const filtered = await (
@@ -168,6 +192,85 @@ describe('createApp routing (no auth)', () => {
     ).json();
     expect(filtered.count).toBe(1);
     expect(filtered.traces[0].traceId).toBe('tr_csv2');
+    expect(filtered.filters).toEqual({ status: 'error' });
+
+    // HTML audit report (point 7).
+    const htmlRes = await fetch(`${base}/api/export/traces?format=html`);
+    expect(htmlRes.headers.get('content-type')).toContain('text/html');
+    expect(htmlRes.headers.get('content-disposition')).toMatch(/attachment; filename=".*\.html"/);
+    const html = await htmlRes.text();
+    expect(html).toContain('<!doctype html>');
+    expect(html).toContain('Lookspan');
+    expect(html).toContain('<svg'); // hand-drawn charts
+    expect(html).toContain('tr_csv1'); // trace table
+    expect(html).toContain(htmlRes.headers.get('x-lookspan-export-sha256') ?? 'NO_HASH');
+  });
+
+  it('reports truncation explicitly when the export limit drops rows', async () => {
+    await fetch(`${base}/api/ingest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        spans: [
+          {
+            traceId: 'tr_t1',
+            spanId: 'spt1',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: 'one',
+            startedAt: '2026-06-01T10:00:00Z',
+            endedAt: '2026-06-01T10:00:01Z',
+            status: 'ok',
+            framework: 'mcp',
+          },
+          {
+            traceId: 'tr_t2',
+            spanId: 'spt2',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: 'two',
+            startedAt: '2026-06-01T11:00:00Z',
+            endedAt: '2026-06-01T11:00:02Z',
+            status: 'ok',
+            framework: 'mcp',
+          },
+        ],
+      }),
+    });
+
+    const res = await fetch(`${base}/api/export/traces?format=json&limit=1`);
+    expect(res.headers.get('x-lookspan-export-truncated')).toBe('true');
+    const body = await res.json();
+    expect(body.count).toBe(1);
+    expect(body.truncated).toBe(true);
+    expect(body.totalAvailable).toBe(2);
+  });
+
+  it('neutralises CSV formula injection in exported string fields', async () => {
+    await fetch(`${base}/api/ingest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        spans: [
+          {
+            traceId: 'tr_inj',
+            spanId: 'spinj',
+            parentSpanId: null,
+            type: 'llm_call',
+            name: '=cmd|/c calc',
+            startedAt: '2026-06-01T10:00:00Z',
+            endedAt: '2026-06-01T10:00:01Z',
+            status: 'ok',
+            framework: 'custom',
+          },
+        ],
+      }),
+    });
+
+    const csv = await (await fetch(`${base}/api/export/traces`)).text();
+    // The dangerous rootName is neutralised with a leading single quote.
+    expect(csv).toContain("'=cmd|/c calc");
+    expect(csv).not.toMatch(/,=cmd/);
   });
 });
 

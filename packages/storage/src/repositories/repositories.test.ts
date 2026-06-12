@@ -154,28 +154,47 @@ describe('TracesRepository.export', () => {
   });
 
   it('returns full Trace objects ordered oldest-first', () => {
-    const rows = new TracesRepository(db).export();
-    expect(rows.map((t) => t.traceId)).toEqual(['tr_a', 'tr_b', 'tr_c']);
+    const { traces, truncated, totalAvailable } = new TracesRepository(db).export();
+    expect(traces.map((t) => t.traceId)).toEqual(['tr_a', 'tr_b', 'tr_c']);
     // Full trace shape (not the trimmed list item) — token usage is present.
-    expect(rows[0]).toHaveProperty('totalUsage');
-    expect(rows[0]).toHaveProperty('errorCount');
+    expect(traces[0]).toHaveProperty('totalUsage');
+    expect(traces[0]).toHaveProperty('errorCount');
+    expect(truncated).toBe(false);
+    expect(totalAvailable).toBe(3);
+  });
+
+  it('breaks ties on started_at deterministically by trace_id', () => {
+    const repo = new TracesRepository(db);
+    // Same timestamp as tr_a, but a trace_id that sorts before it.
+    repo.upsert(
+      trace({ traceId: 'tr_0', framework: 'mcp', status: 'ok', startedAt: '2026-06-01T10:00:00Z' }),
+    );
+    const { traces } = repo.export();
+    // tr_0 and tr_a share a timestamp; trace_id ASC puts tr_0 first.
+    expect(traces.slice(0, 2).map((t) => t.traceId)).toEqual(['tr_0', 'tr_a']);
   });
 
   it('honours the same filters as list', () => {
-    expect(new TracesRepository(db).export({ framework: 'mcp' }).map((t) => t.traceId)).toEqual([
-      'tr_a',
-      'tr_c',
-    ]);
-    expect(new TracesRepository(db).export({ status: 'error' }).map((t) => t.traceId)).toEqual([
-      'tr_b',
-    ]);
-    expect(new TracesRepository(db).export({ sessionId: 's1' }).map((t) => t.traceId)).toEqual([
-      'tr_c',
-    ]);
+    expect(
+      new TracesRepository(db).export({ framework: 'mcp' }).traces.map((t) => t.traceId),
+    ).toEqual(['tr_a', 'tr_c']);
+    expect(
+      new TracesRepository(db).export({ status: 'error' }).traces.map((t) => t.traceId),
+    ).toEqual(['tr_b']);
+    expect(
+      new TracesRepository(db).export({ sessionId: 's1' }).traces.map((t) => t.traceId),
+    ).toEqual(['tr_c']);
   });
 
   it('clamps the limit to 10000', () => {
     expect(() => new TracesRepository(db).export({ limit: 999999 })).not.toThrow();
+  });
+
+  it('reports truncation explicitly when the limit drops rows', () => {
+    const { traces, truncated, totalAvailable } = new TracesRepository(db).export({ limit: 2 });
+    expect(traces).toHaveLength(2);
+    expect(truncated).toBe(true);
+    expect(totalAvailable).toBe(3);
   });
 });
 
