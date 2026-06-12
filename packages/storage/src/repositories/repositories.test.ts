@@ -128,6 +128,57 @@ describe('TracesRepository.list', () => {
   });
 });
 
+describe('TracesRepository.export', () => {
+  beforeEach(() => {
+    const repo = new TracesRepository(db);
+    repo.upsert(
+      trace({ traceId: 'tr_a', framework: 'mcp', status: 'ok', startedAt: '2026-06-01T10:00:00Z' }),
+    );
+    repo.upsert(
+      trace({
+        traceId: 'tr_b',
+        framework: 'langgraph',
+        status: 'error',
+        startedAt: '2026-06-01T11:00:00Z',
+      }),
+    );
+    repo.upsert(
+      trace({
+        traceId: 'tr_c',
+        framework: 'mcp',
+        status: 'ok',
+        sessionId: 's1',
+        startedAt: '2026-06-01T12:00:00Z',
+      }),
+    );
+  });
+
+  it('returns full Trace objects ordered oldest-first', () => {
+    const rows = new TracesRepository(db).export();
+    expect(rows.map((t) => t.traceId)).toEqual(['tr_a', 'tr_b', 'tr_c']);
+    // Full trace shape (not the trimmed list item) — token usage is present.
+    expect(rows[0]).toHaveProperty('totalUsage');
+    expect(rows[0]).toHaveProperty('errorCount');
+  });
+
+  it('honours the same filters as list', () => {
+    expect(new TracesRepository(db).export({ framework: 'mcp' }).map((t) => t.traceId)).toEqual([
+      'tr_a',
+      'tr_c',
+    ]);
+    expect(new TracesRepository(db).export({ status: 'error' }).map((t) => t.traceId)).toEqual([
+      'tr_b',
+    ]);
+    expect(new TracesRepository(db).export({ sessionId: 's1' }).map((t) => t.traceId)).toEqual([
+      'tr_c',
+    ]);
+  });
+
+  it('clamps the limit to 10000', () => {
+    expect(() => new TracesRepository(db).export({ limit: 999999 })).not.toThrow();
+  });
+});
+
 describe('TracesRepository.listSessions / sessionSummary', () => {
   beforeEach(() => {
     const repo = new TracesRepository(db);

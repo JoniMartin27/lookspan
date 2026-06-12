@@ -5,6 +5,7 @@ import type { ApiContext } from './context.js';
 import { createAlertsRouter } from './routes/alerts.js';
 import { createCostsRouter } from './routes/costs.js';
 import { createDatasetsRouter, createRunsRouter } from './routes/datasets.js';
+import { createExportRouter } from './routes/export.js';
 import { createHealthRouter } from './routes/health.js';
 import { createIngestRouter } from './routes/ingest.js';
 import { createOtlpRouter } from './routes/otlp.js';
@@ -76,6 +77,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use('/api/datasets', createDatasetsRouter(options.context));
   app.use('/api/runs', createRunsRouter(options.context));
   app.use('/api/tools', createToolsRouter(options.context));
+  app.use('/api/export', createExportRouter(options.context));
   app.use('/api/ingest', createIngestRouter(options.context));
   app.use('/api/stream', createStreamRouter());
 

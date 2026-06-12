@@ -173,6 +173,7 @@ curl -X POST localhost:3100/api/datasets/$DS/run -H 'content-type: application/j
 | `POST` | `/api/ingest` | Ingesta de spans (body: `IngestPayload`) |
 | `GET` | `/api/traces` | Lista de trazas (paginada; filtrable por `framework`, `status`, `sessionId`) |
 | `GET` | `/api/traces/:id` | Detalle de una traza con sus spans y scores |
+| `GET` | `/api/export/traces` | Descarga las trazas como fichero (`format=csv\|json`; mismos filtros `framework`/`status`/`sessionId`/`limit`) |
 | `POST` | `/api/traces/:id/scores` | Adjunta un score de evaluación (`{name, value, comment?, source?}`) |
 | `POST` | `/api/traces/:id/replay` | Reejecuta el prompt capturado (`{model?, provider?, spanId?}`); requiere clave de proveedor |
 | `GET` | `/api/traces/:id/replays` | Lista los replays previos de la traza |

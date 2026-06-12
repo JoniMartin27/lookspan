@@ -58,7 +58,24 @@ function toQuery(filters: TraceFilters): string {
   return qs ? `?${qs}` : '';
 }
 
+/**
+ * Build the URL for the bulk trace-export endpoint. Returns a plain link so the
+ * browser handles the download (and the `Content-Disposition` filename) itself,
+ * rather than buffering the file through fetch.
+ */
+function exportTracesUrl(
+  format: 'csv' | 'json',
+  filters: Pick<TraceFilters, 'framework' | 'status' | 'sessionId'> = {},
+): string {
+  const params = new URLSearchParams({ format });
+  if (filters.framework) params.set('framework', filters.framework);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.sessionId) params.set('sessionId', filters.sessionId);
+  return `${API_BASE}/export/traces?${params.toString()}`;
+}
+
 export const api = {
+  exportTracesUrl,
   listTraces: (filters: TraceFilters = {}) =>
     request<{ items: TraceListItem[] }>(`/traces${toQuery(filters)}`),
   getTrace: (id: string) =>
