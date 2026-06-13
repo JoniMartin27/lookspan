@@ -198,6 +198,13 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_run_items_run ON run_items(run_id, id);
     `,
   },
+  {
+    version: 7,
+    name: 'span_reasoning_cost',
+    up: `
+      ALTER TABLE spans ADD COLUMN reasoning_cost_usd REAL;
+    `,
+  },
 ];
 
 export function getCurrentSchemaVersion(db: LookspanDatabase): number {

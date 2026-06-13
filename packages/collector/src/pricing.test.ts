@@ -1,6 +1,7 @@
 import type { SpanInput } from '@lookspan/types';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  computeCostBreakdownUsd,
   computeCostUsd,
   enrichSpanCost,
   findPricing,
@@ -151,6 +152,51 @@ describe('computeCostUsd', () => {
   });
 });
 
+describe('computeCostBreakdownUsd', () => {
+  it('itemizes reasoning at the reasoning rate, as a slice of the total', () => {
+    setPricingTable([
+      { provider: 'x', model: 'reasoner', inputPer1M: 0, outputPer1M: 10, reasoningPer1M: 60 },
+    ]);
+    // 1000 output incl. 300 reasoning → total 700*10 + 300*60 = 0.025; reasoning 300*60 = 0.018
+    const b = computeCostBreakdownUsd('reasoner-1', {
+      inputTokens: 0,
+      outputTokens: 1000,
+      reasoningTokens: 300,
+      costUsd: 0,
+    });
+    expect(b?.total).toBeCloseTo(0.025, 6);
+    expect(b?.reasoning).toBeCloseTo(0.018, 6);
+  });
+
+  it('attributes reasoning at the output rate when no reasoning rate is set, without changing the total', () => {
+    // claude-opus-4: $75 out, no reasoning rate. Total is unchanged; reasoning is
+    // the share of the output bill those tokens account for.
+    const b = computeCostBreakdownUsd('claude-opus-4-8', {
+      inputTokens: 0,
+      outputTokens: 1_000_000,
+      reasoningTokens: 400_000,
+      costUsd: 0,
+    });
+    expect(b?.total).toBe(75);
+    expect(b?.reasoning).toBeCloseTo(30, 6); // 400k * 75 / 1M
+  });
+
+  it('reports zero reasoning when there are no reasoning tokens', () => {
+    const b = computeCostBreakdownUsd('claude-opus-4-8', {
+      inputTokens: 0,
+      outputTokens: 1000,
+      costUsd: 0,
+    });
+    expect(b?.reasoning).toBe(0);
+  });
+
+  it('returns null for an unknown model', () => {
+    expect(
+      computeCostBreakdownUsd('mystery-model', { inputTokens: 1, outputTokens: 1, costUsd: 0 }),
+    ).toBeNull();
+  });
+});
+
 function span(overrides: Partial<SpanInput> = {}): SpanInput {
   return {
     traceId: 'tr_1',
@@ -179,6 +225,20 @@ describe('enrichSpanCost', () => {
       span({ usage: { inputTokens: 1_000_000, outputTokens: 0, costUsd: 999 } }),
     );
     expect(s.usage?.costUsd).toBe(999);
+  });
+
+  it('itemizes reasoning cost on the usage when a reasoning rate applies', () => {
+    setPricingTable([
+      { provider: 'x', model: 'foo', inputPer1M: 0, outputPer1M: 10, reasoningPer1M: 60 },
+    ]);
+    const s = enrichSpanCost(
+      span({
+        model: 'foo-1',
+        usage: { inputTokens: 0, outputTokens: 1000, reasoningTokens: 300, costUsd: 0 },
+      }),
+    );
+    expect(s.usage?.costUsd).toBeCloseTo(0.025, 6);
+    expect(s.usage?.reasoningCostUsd).toBeCloseTo(0.018, 6);
   });
 
   it('leaves spans without usage untouched', () => {

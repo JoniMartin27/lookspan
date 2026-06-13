@@ -48,6 +48,24 @@ as subsets of input and output respectively, so they are billed at their own
 rate without being double-charged. When `reasoningPer1M` is omitted, reasoning
 tokens are billed at the output rate.
 
+## Reasoning cost, itemized
+
+Reasoning tokens are billed correctly (at their own rate when set), but they are
+also **itemized** so you can see what the reasoning premium actually costs — per
+span and per model, not just blended into output. `cost/summary` returns:
+
+- `reasoning` — total USD attributable to reasoning tokens (a sub-component of
+  `total`, never an extra charge).
+- `reasoningByModel` — that cost broken down by model: the routing dimension, so
+  a "use a smarter model on harder requests" strategy is legible per request
+  type instead of only in aggregate.
+
+The figure is computed even when a model has no explicit `reasoningPer1M`: it is
+then the share of the output bill those tokens account for, which is exactly the
+signal that tells you whether setting a dedicated reasoning rate is worth it. In
+the dashboard, the overview shows reasoning as a share of total cost and charts
+**Reasoning cost by model** when any is present.
+
 ## Cost-based alerts
 
 Pair cost tracking with an [alert](/lookspan/guides/alerts/) to get notified

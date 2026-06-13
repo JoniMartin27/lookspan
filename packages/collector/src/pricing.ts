@@ -154,9 +154,22 @@ export function findPricing(model: string | null | undefined): ModelPricing | nu
   return best;
 }
 
+/** USD cost of a span, split into its total and the reasoning sub-component. */
+export interface SpanCost {
+  /** Full span cost in USD. */
+  total: number;
+  /**
+   * USD attributable to reasoning tokens — a subset of `total`, never an extra
+   * charge. Priced at `reasoningPer1M` when the entry sets one, otherwise at the
+   * output rate (where reasoning is folded into output and this is the share of
+   * the output bill those tokens account for).
+   */
+  reasoning: number;
+}
+
 /**
- * Estimate the USD cost of a span from its token usage and the pricing table.
- * Returns null when the model is unknown.
+ * Estimate the USD cost of a span from its token usage and the pricing table,
+ * itemizing the reasoning portion. Returns null when the model is unknown.
  *
  * `cachedInputTokens` is treated as a **subset of `inputTokens`** (OpenAI
  * semantics, where `prompt_tokens` already includes cached tokens): the cached
@@ -169,11 +182,14 @@ export function findPricing(model: string | null | undefined): ModelPricing | nu
  * reasoning portion is billed at that rate and the remaining output at the
  * output rate — never double-charged. With no `reasoningPer1M`, reasoning stays
  * folded into output and is billed at the output rate (the prior behavior).
+ *
+ * `reasoning` in the result is the cost attributable to reasoning either way,
+ * so cost-per-span stays legible per route even before a reasoning rate is set.
  */
-export function computeCostUsd(
+export function computeCostBreakdownUsd(
   model: string | null | undefined,
   usage: TokenUsage | null | undefined,
-): number | null {
+): SpanCost | null {
   if (!usage) return null;
   const pricing = findPricing(model);
   if (!pricing) return null;
@@ -187,21 +203,44 @@ export function computeCostUsd(
   const output = usage.outputTokens ?? 0;
   const cachedRate = pricing.cachedInputPer1M ?? pricing.inputPer1M;
 
-  // Reasoning tokens are a subset of output. Only split them out when the
-  // pricing entry prices them explicitly; otherwise leave them billed as
-  // output so the math is unchanged for models without a reasoning rate.
-  const reasoning = pricing.reasoningPer1M !== undefined ? (usage.reasoningTokens ?? 0) : 0;
-  const nonReasoningOutput = Math.max(0, output - reasoning);
-  const reasoningCost =
-    pricing.reasoningPer1M !== undefined ? reasoning * pricing.reasoningPer1M : 0;
+  // Reasoning tokens are a subset of output. Only split them out of the total
+  // when the pricing entry prices them explicitly; otherwise leave them billed
+  // as output so the math is unchanged for models without a reasoning rate.
+  // (Comparing the rate inline lets TS narrow it to a number, no cast needed.)
+  const reasoningRate = pricing.reasoningPer1M;
+  const reasoningTokens = usage.reasoningTokens ?? 0;
+  const billedReasoning = reasoningRate !== undefined ? reasoningTokens : 0;
+  const nonReasoningOutput = Math.max(0, output - billedReasoning);
+  const reasoningCharge = reasoningRate !== undefined ? billedReasoning * reasoningRate : 0;
 
-  return (
+  const total =
     (uncached * pricing.inputPer1M +
       cached * cachedRate +
       nonReasoningOutput * pricing.outputPer1M +
-      reasoningCost) /
-    1_000_000
-  );
+      reasoningCharge) /
+    1_000_000;
+
+  // Itemized reasoning cost. With an explicit rate it is exactly the reasoning
+  // slice of `total`; without one it is the share of the output bill those
+  // tokens account for (capped at the output tokens that actually exist).
+  const reasoning =
+    reasoningRate !== undefined
+      ? reasoningCharge / 1_000_000
+      : (Math.min(reasoningTokens, output) * pricing.outputPer1M) / 1_000_000;
+
+  return { total, reasoning };
+}
+
+/**
+ * Estimate the USD cost of a span. Thin wrapper over
+ * {@link computeCostBreakdownUsd} that returns just the total (or null when the
+ * model is unknown), preserving the original behavior and signature.
+ */
+export function computeCostUsd(
+  model: string | null | undefined,
+  usage: TokenUsage | null | undefined,
+): number | null {
+  return computeCostBreakdownUsd(model, usage)?.total ?? null;
 }
 
 /**
@@ -214,7 +253,10 @@ export function enrichSpanCost(span: SpanInput): SpanInput {
   if (!usage) return span;
   if (usage.costUsd && usage.costUsd > 0) return span;
 
-  const computed = computeCostUsd(span.model, usage);
-  if (computed !== null) usage.costUsd = computed;
+  const cost = computeCostBreakdownUsd(span.model, usage);
+  if (cost !== null) {
+    usage.costUsd = cost.total;
+    usage.reasoningCostUsd = cost.reasoning;
+  }
   return span;
 }

@@ -40,11 +40,28 @@ export class CostsRepository {
       )
       .all(where.params) as { agent_id: string; cost: number }[];
 
+    // Reasoning cost is a precomputed sub-component of cost_usd (set at ingest
+    // by enrichSpanCost), so it sums the same way — total and per model, the
+    // dimension that makes a model-routing strategy's reasoning premium legible.
+    const reasoning = this.db
+      .prepare(`SELECT COALESCE(SUM(reasoning_cost_usd), 0) as total FROM spans ${where.sql}`)
+      .get(where.params) as { total: number };
+
+    const reasoningByModel = this.db
+      .prepare(
+        `SELECT model, COALESCE(SUM(reasoning_cost_usd), 0) as cost
+         FROM spans ${where.sql} ${where.sql ? 'AND' : 'WHERE'} model IS NOT NULL
+         GROUP BY model`,
+      )
+      .all(where.params) as { model: string; cost: number }[];
+
     return {
       total: total.total,
       byProvider: Object.fromEntries(byProvider.map((r) => [r.provider, r.cost])),
       byModel: Object.fromEntries(byModel.map((r) => [r.model, r.cost])),
       byAgent: Object.fromEntries(byAgent.map((r) => [r.agent_id, r.cost])),
+      reasoning: reasoning.total,
+      reasoningByModel: Object.fromEntries(reasoningByModel.map((r) => [r.model, r.cost])),
     };
   }
 
