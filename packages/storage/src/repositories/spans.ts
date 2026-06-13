@@ -22,14 +22,14 @@ export class SpansRepository {
         started_at, ended_at, duration_ms, status, framework,
         agent_id, session_id, model, provider, parent_trace_id,
         input, output, error,
-        input_tokens, output_tokens, cached_input_tokens, reasoning_tokens, cost_usd,
+        input_tokens, output_tokens, cached_input_tokens, reasoning_tokens, cost_usd, reasoning_cost_usd,
         attributes, received_at
       ) VALUES (
         @spanId, @traceId, @parentSpanId, @type, @name,
         @startedAt, @endedAt, @durationMs, @status, @framework,
         @agentId, @sessionId, @model, @provider, @parentTraceId,
         @input, @output, @error,
-        @inputTokens, @outputTokens, @cachedInputTokens, @reasoningTokens, @costUsd,
+        @inputTokens, @outputTokens, @cachedInputTokens, @reasoningTokens, @costUsd, @reasoningCostUsd,
         @attributes, @receivedAt
       )
       ON CONFLICT(span_id) DO UPDATE SET
@@ -43,6 +43,7 @@ export class SpansRepository {
         cached_input_tokens = excluded.cached_input_tokens,
         reasoning_tokens = excluded.reasoning_tokens,
         cost_usd = excluded.cost_usd,
+        reasoning_cost_usd = excluded.reasoning_cost_usd,
         attributes = excluded.attributes
     `,
       )
@@ -70,6 +71,7 @@ export class SpansRepository {
         cachedInputTokens: span.usage?.cachedInputTokens ?? null,
         reasoningTokens: span.usage?.reasoningTokens ?? null,
         costUsd: span.usage?.costUsd ?? null,
+        reasoningCostUsd: span.usage?.reasoningCostUsd ?? null,
         attributes: span.attributes ? JSON.stringify(span.attributes) : null,
         receivedAt,
       });

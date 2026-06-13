@@ -239,6 +239,32 @@ describe('CostsRepository on Postgres', () => {
     expect(s.byModel).toEqual({ 'gpt-4o': 5, 'claude-opus-4-8': 5 });
     expect(s.byAgent).toEqual({ a1: 5, a2: 5 });
   });
+
+  it('round-trips and sums reasoning cost (migration v7 + translated SQL)', () => {
+    new TracesRepository(db).upsert(trace());
+    const repo = new SpansRepository(db);
+    repo.insert(
+      span({
+        spanId: 'r1',
+        model: 'gpt-4o',
+        usage: { inputTokens: 0, outputTokens: 0, costUsd: 4, reasoningCostUsd: 1 },
+      }),
+      'now',
+    );
+    repo.insert(
+      span({
+        spanId: 'r2',
+        model: 'claude-opus-4-8',
+        provider: 'anthropic',
+        usage: { inputTokens: 0, outputTokens: 0, costUsd: 6, reasoningCostUsd: 2.5 },
+      }),
+      'now',
+    );
+    expect(repo.getById('r1')?.usage?.reasoningCostUsd).toBeCloseTo(1, 6);
+    const s = new CostsRepository(db).summary();
+    expect(s.reasoning).toBeCloseTo(3.5, 6);
+    expect(s.reasoningByModel).toEqual({ 'gpt-4o': 1, 'claude-opus-4-8': 2.5 });
+  });
 });
 
 describe('StatsRepository on Postgres', () => {

@@ -323,4 +323,33 @@ describe('CostsRepository.summary', () => {
     expect(s.byModel).toEqual({ 'gpt-4o': 5, 'claude-opus-4-8': 5 });
     expect(s.byAgent).toEqual({ a1: 5, a2: 5 });
   });
+
+  it('itemizes reasoning cost overall and per model', () => {
+    const repo = new SpansRepository(db);
+    repo.insert(
+      span({
+        spanId: 'r1',
+        model: 'gpt-4o',
+        provider: 'openai',
+        agentId: 'a1',
+        usage: { inputTokens: 0, outputTokens: 0, costUsd: 4, reasoningCostUsd: 1 },
+      }),
+      'now',
+    );
+    repo.insert(
+      span({
+        spanId: 'r2',
+        model: 'claude-opus-4-8',
+        provider: 'anthropic',
+        agentId: 'a2',
+        usage: { inputTokens: 0, outputTokens: 0, costUsd: 6, reasoningCostUsd: 2.5 },
+      }),
+      'now',
+    );
+    const s = new CostsRepository(db).summary();
+    // The seeded s1–s3 carry no reasoning cost, so only r1/r2 contribute.
+    expect(s.reasoning).toBeCloseTo(3.5, 6);
+    expect(s.reasoningByModel['gpt-4o']).toBeCloseTo(1, 6);
+    expect(s.reasoningByModel['claude-opus-4-8']).toBeCloseTo(2.5, 6);
+  });
 });

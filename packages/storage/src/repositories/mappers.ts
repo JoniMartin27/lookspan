@@ -108,6 +108,9 @@ export function rowToSpan(row: SpanRow): Span {
             cachedInputTokens: row.cached_input_tokens ?? 0,
             reasoningTokens: row.reasoning_tokens ?? 0,
             costUsd: row.cost_usd ?? 0,
+            // Only present once a reasoning cost has been computed for the span,
+            // so spans predating the column keep their original usage shape.
+            ...(row.reasoning_cost_usd != null ? { reasoningCostUsd: row.reasoning_cost_usd } : {}),
           }
         : null,
     attributes: parseJson<Record<string, unknown>>(row.attributes),

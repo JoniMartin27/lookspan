@@ -329,6 +329,10 @@ describe('aggregation & session routes', () => {
     const c = await (await fetch(`${base}/api/costs/summary`)).json();
     expect(c.total).toBe(2.5); // 1M input gpt-4o @ $2.5
     expect(c.byProvider.openai).toBe(2.5);
+    // Reasoning cost is itemized in the summary (zero here — fixture has no
+    // reasoning tokens — but the field is always present and queryable).
+    expect(c.reasoning).toBe(0);
+    expect(c.reasoningByModel).toBeDefined();
   });
 
   it('GET /api/sessions lists the session with its agents', async () => {

@@ -44,6 +44,7 @@ export interface SpanRow {
   cached_input_tokens: number | null;
   reasoning_tokens: number | null;
   cost_usd: number | null;
+  reasoning_cost_usd: number | null;
   attributes: string | null;
   received_at: string;
   created_at: string;

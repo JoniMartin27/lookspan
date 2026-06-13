@@ -30,6 +30,10 @@ export default function CostsView() {
     .map(([name, cost]) => ({ name, cost }))
     .sort((a, b) => b.cost - a.cost)
     .slice(0, 12);
+  const reasoningByModel = Object.entries(data.reasoningByModel)
+    .map(([name, cost]) => ({ name, cost }))
+    .filter((d) => d.cost > 0)
+    .sort((a, b) => b.cost - a.cost);
   const byDay = (stats?.byDay ?? []).map((d) => ({ name: d.day.slice(5), cost: d.costUsd }));
 
   return (
@@ -39,6 +43,15 @@ export default function CostsView() {
         <p className="text-sm text-neutral-500">
           Total cost: <span className="font-mono text-neutral-200">${data.total.toFixed(4)}</span>
         </p>
+        {data.reasoning > 0 && (
+          <p className="mt-0.5 text-sm text-neutral-500">
+            Of which reasoning tokens:{' '}
+            <span className="font-mono text-neutral-200">${data.reasoning.toFixed(4)}</span>
+            <span className="ml-1 text-xs text-neutral-600">
+              ({((data.reasoning / data.total) * 100).toFixed(0)}% of total)
+            </span>
+          </p>
+        )}
         {data.total === 0 && (
           <p className="mt-1 text-xs text-neutral-600">
             No billable cost yet — your models are priced at $0 or aren't in the pricing table. Add
@@ -88,6 +101,11 @@ export default function CostsView() {
       <Card title="By model">
         <Chart data={byModel} />
       </Card>
+      {reasoningByModel.length > 0 && (
+        <Card title="Reasoning cost by model">
+          <Chart data={reasoningByModel} />
+        </Card>
+      )}
       <Card title="By provider">
         <Chart data={byProvider} />
       </Card>
