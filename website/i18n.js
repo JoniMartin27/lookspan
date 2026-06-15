@@ -133,6 +133,7 @@ window.LOOKSPAN_I18N = {
     'footer.license': `Licencia MIT`,
     'footer.changelog': `Changelog`,
     'footer.copy': `© 2026 Jonathan Martin · Licencia MIT`,
+    'footer.fervon': `Parte de Fervon · forjado al rojo vivo`,
     'footer.made': `Hecho con SQLite y cariño · 100% local`,
 
     /* dynamic (JS) */
@@ -274,6 +275,7 @@ window.LOOKSPAN_I18N = {
     'footer.license': `MIT license`,
     'footer.changelog': `Changelog`,
     'footer.copy': `© 2026 Jonathan Martin · MIT License`,
+    'footer.fervon': `Part of Fervon · forged red-hot`,
     'footer.made': `Built with SQLite and care · 100% local`,
 
     /* dynamic (JS) */

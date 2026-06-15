@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0c0a14"/>
-      <stop offset="1" stop-color="#0a0a0a"/>
+      <stop offset="0" stop-color="#16110e"/>
+      <stop offset="1" stop-color="#0e0b0a"/>
     </linearGradient>
     <radialGradient id="glow" cx="0.5" cy="0" r="0.8">
-      <stop offset="0" stop-color="#7c3aed" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+      <stop offset="0" stop-color="#e0480f" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#e0480f" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="txt" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#c4b5fd"/>
-      <stop offset="0.5" stop-color="#8b5cf6"/>
-      <stop offset="1" stop-color="#818cf8"/>
+      <stop offset="0" stop-color="#ffb02e"/>
+      <stop offset="0.5" stop-color="#ff6a00"/>
+      <stop offset="1" stop-color="#ffd37a"/>
     </linearGradient>
   </defs>
 
@@ -26,26 +26,26 @@
 
   <!-- logo mark -->
   <g transform="translate(96 96)">
-    <rect x="0" y="2" width="70" height="14" rx="7" fill="#a78bfa"/>
-    <rect x="13" y="24" width="48" height="14" rx="7" fill="#8b5cf6"/>
-    <rect x="6" y="46" width="35" height="14" rx="7" fill="#7c3aed"/>
+    <rect x="0" y="2" width="70" height="14" rx="7" fill="#ffb02e"/>
+    <rect x="13" y="24" width="48" height="14" rx="7" fill="#ff6a00"/>
+    <rect x="6" y="46" width="35" height="14" rx="7" fill="#e0480f"/>
   </g>
-  <text x="186" y="146" font-family="Inter, sans-serif" font-size="46" font-weight="700" fill="#fafafa" letter-spacing="-1">Lookspan</text>
+  <text x="186" y="146" font-family="Inter, sans-serif" font-size="46" font-weight="700" fill="#efe7dc" letter-spacing="-1">Lookspan</text>
 
   <!-- headline -->
-  <text x="96" y="320" font-family="Inter, sans-serif" font-size="78" font-weight="800" fill="#fafafa" letter-spacing="-2.5">Mira cada <tspan fill="url(#txt)">span</tspan></text>
-  <text x="96" y="408" font-family="Inter, sans-serif" font-size="78" font-weight="800" fill="#fafafa" letter-spacing="-2.5">que emiten tus agentes.</text>
+  <text x="96" y="320" font-family="Inter, sans-serif" font-size="78" font-weight="800" fill="#efe7dc" letter-spacing="-2.5">Mira cada <tspan fill="url(#txt)">span</tspan></text>
+  <text x="96" y="408" font-family="Inter, sans-serif" font-size="78" font-weight="800" fill="#efe7dc" letter-spacing="-2.5">que emiten tus agentes.</text>
 
   <!-- subtitle -->
-  <text x="98" y="478" font-family="Inter, sans-serif" font-size="30" font-weight="400" fill="#a1a1aa">Observabilidad local-first para agentes de IA · Nativo para MCP</text>
+  <text x="98" y="478" font-family="Inter, sans-serif" font-size="30" font-weight="400" fill="#a89a8e">Observabilidad local-first para agentes de IA · Nativo para MCP</text>
 
   <!-- command pill -->
-  <rect x="96" y="520" width="330" height="64" rx="14" fill="#141416" stroke="#262629"/>
-  <text x="122" y="561" font-family="'JetBrains Mono', monospace" font-size="26" fill="#8b5cf6">$</text>
-  <text x="150" y="561" font-family="'JetBrains Mono', monospace" font-size="26" fill="#fafafa">npx lookspan</text>
+  <rect x="96" y="520" width="330" height="64" rx="14" fill="#1a1310" stroke="#2c211b"/>
+  <text x="122" y="561" font-family="'JetBrains Mono', monospace" font-size="26" fill="#ff6a00">$</text>
+  <text x="150" y="561" font-family="'JetBrains Mono', monospace" font-size="26" fill="#efe7dc">npx lookspan</text>
 
   <!-- tags -->
-  <g font-family="'JetBrains Mono', monospace" font-size="22" fill="#a1a1aa">
+  <g font-family="'JetBrains Mono', monospace" font-size="22" fill="#a89a8e">
     <text x="470" y="561">MCP · LangGraph · CrewAI · OTLP</text>
   </g>
 </svg>
