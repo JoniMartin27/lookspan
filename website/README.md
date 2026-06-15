@@ -1,9 +1,10 @@
 # Lookspan — Landing page
 
 Sitio estático (sin build) de marketing para Lookspan. HTML + CSS + JS vanilla,
-tema oscuro con el acento púrpura de la marca (`#8b5cf6`) y tipografías Inter +
-JetBrains Mono. Vive fuera de los workspaces npm del monorepo, así que no
-interfiere con `npm run build`.
+con la **identidad de marca Fervon**: fondo carbón (`#0e0b0a`), acentos de fuego
+ámbar/ember (`#ffb02e` / `#ff6a00`), tipografía del sistema + JetBrains Mono para
+código. Vive fuera de los workspaces npm del monorepo, así que no interfiere con
+`npm run build`. Forjado al rojo vivo.
 
 ## Estructura
 

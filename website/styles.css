@@ -1,38 +1,51 @@
 /* ============================================================
    Lookspan — Landing page
-   Dark, developer-tool aesthetic. Brand purple #8b5cf6.
+   Fervon brand identity. Carbon + ember/amber fire palette.
+   Forjado al rojo vivo.
    ============================================================ */
 
 :root {
-  /* Surfaces */
-  --bg: #0a0a0a;
-  --bg-elev: #111113;
-  --surface: #141416;
-  --surface-2: #18181b;
-  --border: #262629;
-  --border-soft: #1e1e21;
+  /* Fervon palette */
+  --carbon: #0e0b0a;
+  --carbon-2: #16110e;
+  --card: #1a1310;
+  --line: #2c211b;
+  --line2: #3a2c22;
+  --ember: #ff6a00;
+  --brasa: #e0480f;
+  --amber: #ffb02e;
+  --bone: #efe7dc;
+  --ash: #a89a8e;
+  --dim: #94867a;
+
+  /* Surfaces (mapped to Fervon carbon) */
+  --bg: var(--carbon);
+  --bg-elev: var(--carbon-2);
+  --surface: var(--card);
+  --surface-2: #1f1813;
+  --border: var(--line);
+  --border-soft: #221a15;
 
   /* Text */
-  --text: #fafafa;
-  --text-muted: #a1a1aa;
-  --text-faint: #71717a;
+  --text: var(--bone);
+  --text-muted: var(--ash);
+  --text-faint: var(--dim);
 
-  /* Brand */
-  --brand: #8b5cf6;
-  --brand-600: #7c3aed;
-  --brand-700: #6d28d9;
-  --brand-300: #c4b5fd;
-  --brand-soft: rgba(139, 92, 246, 0.12);
+  /* Brand (Fervon ember/amber — lookspan accent is amber) */
+  --brand: #ff6a00;
+  --brand-600: #e0480f;
+  --brand-700: #b5300a;
+  --brand-300: #ffb02e;
+  --brand-soft: rgba(255, 106, 0, 0.12);
 
   /* Accents */
-  --green: #10b981;
-  --cyan: #22d3ee;
-  --amber: #fbbf24;
-  --indigo: #818cf8;
+  --green: #8fd06b;
+  --cyan: #5bc8d8;
+  --indigo: #ffb02e;
   --red: #f87171;
 
   /* Type */
-  --font: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Layout */
@@ -40,7 +53,7 @@
   --radius-sm: 10px;
   --maxw: 1160px;
   --shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 16px 40px -12px rgba(139, 92, 246, 0.45);
+  --shadow-glow: 0 0 0 1px rgba(255, 106, 0, 0.4), 0 16px 40px -12px rgba(255, 106, 0, 0.4);
 }
 
 /* ---------- Reset / base ---------- */
@@ -157,14 +170,19 @@ pre {
   top: -260px;
   left: 50%;
   transform: translateX(-50%);
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.55), transparent 65%);
+  background: radial-gradient(circle, rgba(255, 106, 0, 0.42), rgba(224, 72, 15, 0.12) 40%, transparent 70%);
+  animation: breathe 6s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.42; }
+  50% { opacity: 0.6; }
 }
 .bg-glow--2 {
   width: 520px;
   height: 520px;
   top: 340px;
   right: -180px;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.16), transparent 65%);
+  background: radial-gradient(circle, rgba(255, 176, 46, 0.14), transparent 65%);
 }
 
 /* ---------- Buttons ---------- */
@@ -196,10 +214,10 @@ pre {
 .btn-primary {
   background: linear-gradient(180deg, var(--brand) 0%, var(--brand-600) 100%);
   color: #fff;
-  box-shadow: 0 8px 24px -10px rgba(139, 92, 246, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px -10px rgba(255, 106, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 .btn-primary:hover {
-  box-shadow: 0 12px 30px -8px rgba(139, 92, 246, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 30px -8px rgba(255, 106, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 .btn-ghost {
@@ -217,7 +235,7 @@ pre {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10, 10, 10, 0.72);
+  background: rgba(14, 11, 10, 0.72);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
   border-bottom: 1px solid transparent;
@@ -225,7 +243,7 @@ pre {
 }
 .site-header.scrolled {
   border-bottom-color: var(--border-soft);
-  background: rgba(10, 10, 10, 0.86);
+  background: rgba(14, 11, 10, 0.86);
 }
 .header-inner {
   display: flex;
@@ -293,8 +311,8 @@ pre {
 }
 .lang-opt.is-active {
   color: #fff;
-  background: rgba(139, 92, 246, 0.22);
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.35);
+  background: rgba(255, 106, 0, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 106, 0, 0.35);
 }
 .lang-switch--mobile {
   align-self: flex-start;
@@ -338,7 +356,7 @@ pre {
   gap: 4px;
   padding: 8px 24px 20px;
   border-bottom: 1px solid var(--border-soft);
-  background: rgba(10, 10, 10, 0.96);
+  background: rgba(14, 11, 10, 0.96);
 }
 .mobile-menu[hidden] {
   display: none;
@@ -392,7 +410,7 @@ pre {
   margin-bottom: 16px;
 }
 .gradient-text {
-  background: linear-gradient(120deg, #c4b5fd 0%, var(--brand) 45%, #818cf8 100%);
+  background: linear-gradient(120deg, var(--amber) 0%, var(--ember) 50%, var(--brasa) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -581,7 +599,7 @@ pre {
 .tag-fw {
   color: var(--brand-300);
   background: var(--brand-soft);
-  border-color: rgba(139, 92, 246, 0.3);
+  border-color: rgba(255, 106, 0, 0.3);
 }
 .tag-ok {
   color: var(--green);
@@ -625,10 +643,10 @@ pre {
   border-radius: 5px;
   letter-spacing: -0.01em;
 }
-.t-agent { color: var(--indigo); background: rgba(129, 140, 248, 0.12); }
+.t-agent { color: var(--amber); background: rgba(255, 176, 46, 0.12); }
 .t-llm { color: var(--brand-300); background: var(--brand-soft); }
-.t-tool { color: var(--cyan); background: rgba(34, 211, 238, 0.1); }
-.t-ret { color: var(--amber); background: rgba(251, 191, 36, 0.12); }
+.t-tool { color: var(--cyan); background: rgba(91, 200, 216, 0.1); }
+.t-ret { color: var(--ember); background: rgba(255, 106, 0, 0.12); }
 .wf-track {
   position: relative;
   height: 9px;
@@ -649,12 +667,12 @@ pre {
   from { transform: scaleX(0); opacity: 0.4; }
   to { transform: scaleX(1); opacity: 1; }
 }
-.c-agent { background: linear-gradient(90deg, #6366f1, #818cf8); }
+.c-agent { background: linear-gradient(90deg, var(--brasa), var(--amber)); }
 .c-llm { background: linear-gradient(90deg, var(--brand-600), var(--brand)); }
-.c-tool { background: linear-gradient(90deg, #0891b2, var(--cyan)); }
-.c-ret { background: linear-gradient(90deg, #d97706, var(--amber)); }
+.c-tool { background: linear-gradient(90deg, #2f8a96, var(--cyan)); }
+.c-ret { background: linear-gradient(90deg, var(--brasa), var(--amber)); }
 .wf-bar--new {
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 106, 0, 0.5);
   animation: growBar 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both, shimmer 2.4s ease-in-out 1s infinite;
 }
 @keyframes shimmer {
@@ -822,8 +840,8 @@ pre {
   font-weight: 700;
 }
 .compare-good {
-  border-color: rgba(139, 92, 246, 0.4);
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.08), rgba(139, 92, 246, 0.02));
+  border-color: rgba(255, 106, 0, 0.4);
+  background: linear-gradient(180deg, rgba(255, 106, 0, 0.08), rgba(255, 106, 0, 0.02));
   box-shadow: var(--shadow-glow);
 }
 .compare-good li::before {
@@ -863,7 +881,7 @@ pre {
 }
 .feature-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(255, 106, 0, 0.4);
   background: var(--surface-2);
 }
 .feature-icon {
@@ -876,7 +894,7 @@ pre {
   margin-bottom: 18px;
   color: var(--brand-300);
   background: var(--brand-soft);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  border: 1px solid rgba(255, 106, 0, 0.25);
 }
 .feature-icon svg {
   width: 22px;
@@ -893,7 +911,7 @@ pre {
 .feature-card code {
   color: var(--brand-300);
   font-size: 0.82rem;
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(255, 106, 0, 0.1);
   padding: 1px 5px;
   border-radius: 4px;
 }
@@ -920,8 +938,8 @@ pre {
   text-align: center;
 }
 .flow-node--accent {
-  border-color: rgba(139, 92, 246, 0.5);
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.12), rgba(139, 92, 246, 0.03));
+  border-color: rgba(255, 106, 0, 0.5);
+  background: linear-gradient(180deg, rgba(255, 106, 0, 0.12), rgba(255, 106, 0, 0.03));
 }
 .flow-ico {
   font-size: 1.5rem;
@@ -1059,10 +1077,10 @@ pre {
   white-space: pre;
 }
 /* Syntax tokens */
-.tab-panel .c { color: #6b7280; font-style: italic; }
-.tab-panel .s { color: #86efac; }
-.tab-panel .k { color: #c4b5fd; }
-.tab-panel .f { color: #7dd3fc; }
+.tab-panel .c { color: #8a7d70; font-style: italic; }
+.tab-panel .s { color: #a6d585; }
+.tab-panel .k { color: var(--amber); }
+.tab-panel .f { color: var(--ember); }
 
 /* ---------- Costs ---------- */
 .costs-grid {
@@ -1194,8 +1212,8 @@ pre {
   text-align: center;
   padding: 64px 32px;
   border-radius: 24px;
-  border: 1px solid rgba(139, 92, 246, 0.35);
-  background: radial-gradient(ellipse 70% 130% at 50% 0%, rgba(139, 92, 246, 0.18), var(--surface) 70%);
+  border: 1px solid rgba(255, 106, 0, 0.35);
+  background: radial-gradient(ellipse 70% 130% at 50% 0%, rgba(255, 106, 0, 0.18), var(--surface) 70%);
   overflow: hidden;
 }
 .cta-card h2 {
@@ -1267,6 +1285,25 @@ pre {
 .footer-made {
   font-family: var(--mono);
   font-size: 0.78rem;
+}
+.footer-fervon a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  transition: color 0.16s ease;
+}
+.footer-fervon a::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--ember), var(--brasa));
+  box-shadow: 0 0 8px rgba(255, 106, 0, 0.6);
+}
+.footer-fervon a:hover {
+  color: var(--amber);
 }
 
 /* ---------- Reveal animation ---------- */
