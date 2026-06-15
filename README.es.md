@@ -59,6 +59,7 @@ Abre `http://127.0.0.1:3100` y verás la traza aparecer — con su coste calcula
 - **Ingesta de spans por HTTP** — `POST /api/ingest` acepta batches JSON. Compatible con cualquier agente que pueda hacer una petición HTTP.
 - **Nativo para MCP** — el SDK TypeScript `@lookspan/mcp` envuelve cualquier `McpClient` y emite un span por llamada a herramienta MCP, sin tocar el código del agente.
 - **SDKs Python** — `lookspan` (cliente genérico) + adaptadores para LangGraph/LangChain (`lookspan-langgraph`) y CrewAI (`lookspan-crewai`).
+- **SDKs drop-in OpenAI / Anthropic** — `@lookspan/openai` y `@lookspan/anthropic` envuelven tu cliente en una línea y trazan cada llamada a modelo (sin OTel, sin proxy).
 - **OpenTelemetry** — receptor OTLP/HTTP en `POST /v1/traces`; apunta cualquier exporter OTel sin SDK propio. Los atributos `gen_ai.*` se mapean a provider/model/tokens.
 - **Tiempo real** — SSE en `GET /api/stream` empuja `span.ingested`, `trace.updated` y `alert.triggered` al dashboard, sin polling.
 - **Dashboard React** — lista de trazas con franja de salud + mini-barras de latencia/coste; detalle con **timeline (waterfall)** o árbol y **transcript de conversación** del prompt/respuesta; diffs de replay y comparación de runs A/B; costes y overview (tasa de error, latencia p50/p95/p99, coste por día); historial de alertas.
@@ -67,13 +68,44 @@ Abre `http://127.0.0.1:3100` y verás la traza aparecer — con su coste calcula
 - **Scores de evaluación** — adjunta métricas a una traza (`POST /api/traces/:id/scores`) desde un juez LLM, un assert o a mano.
 - **Replay y juez LLM** — reejecuta el prompt capturado de una traza contra el mismo modelo u otro y compara coste/latencia/salida, o deja que un modelo juez puntúe la respuesta de 0 a 1. Requiere una clave de proveedor (por entorno, solo en memoria).
 - **Datasets y experimentos** — junta prompts en un conjunto de pruebas (desde una traza o a mano), ejecuta todo el set contra un modelo en batch y puntúa cada salida con el juez — coste/latencia/score agregados por run.
-- **SQLite local** — migraciones versionadas. BD en `~/.lookspan/lookspan.db` por defecto; configurable. Retención opcional con `--retention`.
+- **Exportación y auditoría** — descarga el conjunto de trazas como CSV (apto para hojas de cálculo, UTF-8 BOM, a prueba de inyección de fórmulas), JSON (solo metadatos por defecto; `?raw=1` incluye atributos) o un informe de auditoría HTML imprimible y autocontenido (`format=html`) con procedencia, tarjetas de resumen y gráficos SVG. `GET /api/export/traces?format=csv|json|html`; respeta los filtros activos de framework/estado/sesión. Cada respuesta lleva procedencia/integridad (`X-Lookspan-Export-Sha256`, `-Count`, `-Truncated`).
+- **SQLite local (por defecto), Postgres opcional** — migraciones versionadas. BD en `~/.lookspan/lookspan.db` por defecto; pasa una URL `postgres://…` a `--db` / `LOOKSPAN_DB` para usar el driver Postgres (mismo esquema, mismas features). Retención opcional con `--retention`.
 - **Seguridad** — bind a `127.0.0.1` por defecto; auth opcional `--token`; redacción de credenciales antes de persistir.
 - **CLI en una línea** — `npx lookspan` arranca servidor + dashboard sin instalación global.
 
 ---
 
 ## Integración con agentes
+
+### SDK de OpenAI (drop-in)
+
+Envuelve tu cliente en una línea — cada llamada a modelo queda trazada (sin OTel, sin proxy):
+
+```bash
+npm install @lookspan/openai
+```
+
+```typescript
+import OpenAI from 'openai';
+import { observeOpenAI } from '@lookspan/openai';
+
+const openai = observeOpenAI(new OpenAI());
+await openai.chat.completions.create({ model: 'gpt-4o', messages });
+```
+
+### SDK de Anthropic (drop-in)
+
+```bash
+npm install @lookspan/anthropic
+```
+
+```typescript
+import Anthropic from '@anthropic-ai/sdk';
+import { observeAnthropic } from '@lookspan/anthropic';
+
+const anthropic = observeAnthropic(new Anthropic());
+await anthropic.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages });
+```
 
 ### TypeScript / MCP
 
@@ -173,7 +205,7 @@ curl -X POST localhost:3100/api/datasets/$DS/run -H 'content-type: application/j
 | `POST` | `/api/ingest` | Ingesta de spans (body: `IngestPayload`) |
 | `GET` | `/api/traces` | Lista de trazas (paginada; filtrable por `framework`, `status`, `sessionId`) |
 | `GET` | `/api/traces/:id` | Detalle de una traza con sus spans y scores |
-| `GET` | `/api/export/traces` | Descarga las trazas como fichero (`format=csv\|json`; mismos filtros `framework`/`status`/`sessionId`/`limit`) |
+| `GET` | `/api/export/traces` | Descarga las trazas como fichero (`format=csv\|json\|html`; `raw=1` quita la redacción en JSON; mismos filtros `framework`/`status`/`sessionId`/`limit`) |
 | `POST` | `/api/traces/:id/scores` | Adjunta un score de evaluación (`{name, value, comment?, source?}`) |
 | `POST` | `/api/traces/:id/replay` | Reejecuta el prompt capturado (`{model?, provider?, spanId?}`); requiere clave de proveedor |
 | `GET` | `/api/traces/:id/replays` | Lista los replays previos de la traza |
@@ -200,7 +232,7 @@ curl -X POST localhost:3100/api/datasets/$DS/run -H 'content-type: application/j
 npx lookspan [opciones]
   -p, --port <puerto>      Puerto de escucha            (por defecto: 3100)
       --host <host>        Host de escucha              (por defecto: 127.0.0.1)
-      --db <ruta>          Ruta de la BD SQLite         (por defecto: ~/.lookspan/lookspan.db)
+      --db <ruta|url>      Ruta SQLite o URL postgres:// (por defecto: ~/.lookspan/lookspan.db)
       --retention <dur>    Poda trazas anteriores a p.ej. 7d, 24h, 30m
       --token <token>      Exige Authorization: Bearer <token> en la API
       --pricing <fichero>  Tabla de precios por modelo personalizada (JSON)
@@ -214,6 +246,8 @@ npx lookspan [opciones]
 ```
 
 Cada flag tiene equivalente por entorno `LOOKSPAN_*` (`LOOKSPAN_PORT`, `LOOKSPAN_TOKEN`, `LOOKSPAN_PRICING`, `LOOKSPAN_ALERT_*`, …). Replay y juez LLM leen `LOOKSPAN_OPENAI_API_KEY` / `LOOKSPAN_ANTHROPIC_API_KEY` (o `--openai-key` / `--anthropic-key`); permanecen en memoria y nunca se persisten.
+
+Consulta **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** para la referencia completa de flags + variables de entorno, valores por defecto y ejemplos (incluida la sección de Postgres).
 
 ---
 
@@ -270,3 +304,7 @@ Proceso de release en [docs/PUBLISHING.md](docs/PUBLISHING.md). Política de seg
 ## Licencia
 
 MIT — Copyright (c) 2026 Jonathan Martin. Consulta [LICENSE](LICENSE).
+
+---
+
+Lookspan forma parte de [**Fervon**](https://fervon.dev), el estudio que agrupa un portfolio de herramientas open source para desarrolladores (Trace, InferBench, ClaudeScope, Launchpad y más). La identidad de marca Fervon se está aplicando a la landing — ver la rama `feat/fervon-theme`.

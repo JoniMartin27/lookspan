@@ -11,7 +11,8 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 - [x] **SDKs published** — `@lookspan/mcp` + `@lookspan/types` on npm and
       `lookspan` / `lookspan-langgraph` / `lookspan-crewai` on PyPI (all v0.1.0).
 - [x] **Discovery** — README (English primary, Spanish in `README.es.md`) with
-      badges, quickstart, comparison, and `examples/`. *(Demo GIF still to record.)*
+      badges, quickstart, comparison, `examples/`, and a recorded demo GIF
+      (`docs/demo.gif`).
 
 ## P1 — Win the niche
 
@@ -27,8 +28,8 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 - [x] **Tools view** — cross-trace tool-call inspector (MCP & frameworks).
 - [x] **Eval score aggregates** — average per metric on the Overview.
 - [x] **Maintainable pricing** — `--pricing <file>` JSON override.
-- [x] **Community assets** — `examples/`, `.github/` (CI, CONTRIBUTING, templates).
-      *(Dedicated docs site still pending.)*
+- [x] **Community assets** — `examples/`, `.github/` (CI, CONTRIBUTING, templates),
+      and a dedicated Astro Starlight docs site under `docs-site/`.
 
 ## P2 — Depth & parity
 
@@ -45,9 +46,10 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
       trace or by hand), run the whole set against a model in batch, and score each
       output with the judge — aggregate cost/latency/score per run. `/datasets` +
       `/runs/:id` in the dashboard; SQLite migration v6.
-- [ ] **Scale options** — optional Postgres driver for teams, sampling. (SQLite's
-      local-first ceiling is intentional; a per-batch span cap already guards
-      against floods.)
+- [x] **Optional Postgres driver** — pass a `postgres://…` URL to `--db` /
+      `LOOKSPAN_DB` to run on Postgres instead of SQLite (same schema, same
+      features). SQLite stays the local-first default; a per-batch span cap
+      already guards against floods. (Sampling still open.)
 
 ## Review hardening (done in 0.1.1)
 
@@ -63,5 +65,4 @@ pagination · API + Python tests · unified versions.
 ## Human-gated steps (not automatable here)
 
 - `npm publish` / PyPI upload (needs maintainer auth + 2FA).
-- Recording the demo GIF.
 - Launch posts (Show HN, r/LocalLLaMA, MCP community, dev.to).

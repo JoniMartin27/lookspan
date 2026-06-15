@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased
+
+Merged on `main` since 0.4.1; not yet cut as a release.
+
+### Added
+- **Trace export & audit** — download the trace set as CSV (UTF-8 BOM,
+  formula-injection safe), JSON (metadata-only by default, `?raw=1` to include
+  attributes) or a self-contained printable HTML audit report (`format=html`)
+  with provenance, summary cards and SVG charts. `GET /api/export/traces`;
+  honours the active framework/status/session filters and ships
+  provenance/integrity headers (`X-Lookspan-Export-Sha256`, `-Count`,
+  `-Truncated`).
+- **Optional Postgres driver** behind a selectable DB layer — pass a
+  `postgres://…` URL to `--db` / `LOOKSPAN_DB` to use Postgres instead of SQLite
+  (same schema, same features).
+- **Per-model reasoning-token cost** — reasoning tokens are billed at their own
+  rate when the pricing table prices them, itemised per span and by model.
+- **Astro Starlight documentation site** under `docs-site/` (isolated from the
+  monorepo CI).
+- **Organic traction tracker** (`scripts/traction.mjs`) for npm/PyPI/GitHub
+  metrics.
+- **Dashboard**: relative timestamps in the trace list (full timestamp on
+  hover); accessible live-stream status + alert toasts.
+
+### Fixed
+- **Cancelled trace status** — the collector now derives a `cancelled` status
+  instead of always reporting `ok`, and the dashboard shows it with a neutral
+  colour (not success green).
+- Python exporter flushes buffered spans on exit (atexit + context manager).
+- OTLP timestamp conversion guarded against out-of-range values; negative
+  span/trace durations clamped to zero.
+- SSE subscription cleaned up on abnormal disconnect; invalid dataset items no
+  longer silently dropped; trace-placeholder + span insert made atomic.
+- Website i18n: translated the missing accessibility skip-link.
+
 ## 0.4.1 — 2026-06-03
 
 Representation upgrades — the dashboard now shows understanding, not just records.

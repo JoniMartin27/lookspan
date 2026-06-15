@@ -307,3 +307,7 @@ Release process in [docs/PUBLISHING.md](docs/PUBLISHING.md). Security policy: [S
 ## License
 
 MIT — Copyright (c) 2026 Jonathan Martin. See [LICENSE](LICENSE).
+
+---
+
+Lookspan is part of [**Fervon**](https://fervon.dev), the studio behind a portfolio of open-source developer tools (Trace, InferBench, ClaudeScope, Launchpad and more). The Fervon brand identity is being rolled out to the landing — see the `feat/fervon-theme` branch.
