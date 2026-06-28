@@ -36,6 +36,7 @@ export default defineConfig({
             { label: 'Introduction', link: '/' },
             { label: 'Getting started', link: '/guides/getting-started/' },
             { label: 'Installation', link: '/guides/installation/' },
+            { label: 'Lookspan vs alternatives', link: '/compare/' },
           ],
         },
         {
