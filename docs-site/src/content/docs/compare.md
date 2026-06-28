@@ -1,6 +1,6 @@
 ---
-title: Lookspan vs Langfuse, LangSmith & Phoenix
-description: An honest comparison of Lookspan with Langfuse, LangSmith, Arize Phoenix and Helicone. A local-first, zero-infra, open-source LLM observability alternative for the TypeScript/MCP agent stack — your data never leaves your machine.
+title: "Lookspan: open-source Langfuse & LangSmith alternative"
+description: "Lookspan is a local-first, open-source LLM observability alternative to Langfuse & LangSmith. Run npx lookspan — zero infra, your data never leaves your machine."
 ---
 
 Looking for an **open-source, local-first alternative to Langfuse or LangSmith** — one that doesn't ask for an account, an API key, or for your production traces to be shipped to someone else's cloud? That's exactly the gap Lookspan fills.
@@ -19,8 +19,8 @@ It is *not* a hosted, multi-tenant production platform with prompt management an
 |---|---|---|---|---|---|
 | License | **MIT (open source)** | Open source (MIT core) | Proprietary | Open source (ELv2) | Open source (Apache-2) |
 | Get started | **`npx lookspan` — zero infra** | Docker + Postgres (+ ClickHouse self-host) | Cloud account / SaaS | `pip install arize-phoenix` | Cloud, or self-host via Docker |
-| Default storage | **local SQLite** (optional Postgres) | Postgres + ClickHouse | their cloud | local / in-memory | their cloud / Postgres |
-| Where your data lives | **never leaves your machine** | self-host or their cloud | their cloud | local or Arize cloud | proxy/cloud or self-host |
+| Default storage | **local SQLite** (optional Postgres) | Postgres + ClickHouse | their cloud | local / in-memory | their cloud / ClickHouse + Postgres |
+| Where your data lives | **never leaves your machine** (by default) | self-host or their cloud | their cloud (self-host on Enterprise) | local or Arize cloud | proxy/cloud or self-host |
 | Primary language focus | **TypeScript/JS + MCP** | Python & JS | Python & JS | **Python** (RAG/evals) | language-agnostic (proxy) |
 | Integration style | drop-in SDK · MCP wrapper · OTLP receiver · plain HTTP | SDK / OTel | SDK (LangChain-native) | OTel-native | **proxy / gateway** + async logging |
 | Eval loop | **replay-vs-model diff, LLM-as-judge & datasets built in** | evals + datasets | evals + datasets | evals / experiments | scores / evals |
@@ -41,7 +41,7 @@ It is *not* a hosted, multi-tenant production platform with prompt management an
 
 We'd rather be honest than oversell:
 
-- **You need a hosted, multi-tenant production platform** with team RBAC, prompt versioning/management, and long-term cloud retention → **Langfuse** (open source, self-host or cloud) or **LangSmith** (if your team already lives in LangChain).
+- **You need a hosted, multi-tenant production platform** with team RBAC, prompt versioning/management, and long-term cloud retention → a fully **self-hosted** option like **Langfuse** (open source, self-host or cloud) or **LangSmith** (if your team already lives in LangChain).
 - **Your stack is Python-first and RAG/eval-heavy** → **Arize Phoenix** is OTel-native and strong on retrieval evaluation.
 - **You want zero code changes via a drop-in proxy** that logs every call by routing through a gateway → **Helicone**.
 - **You need massive-scale, columnar analytics over millions of traces** → a ClickHouse-backed platform (Langfuse) will outscale a single SQLite file.
