@@ -54,6 +54,17 @@ describe('findPricing', () => {
     expect(findPricing('gpt-4o-2026')?.model).toBe('GPT-4o');
   });
 
+  it('matches newly priced default models', () => {
+    expect(findPricing('o3-2026-04-16')?.model).toBe('o3');
+    expect(findPricing('o4-mini-2026-04-16')?.model).toBe('o4-mini');
+    expect(findPricing('gpt-4.1-nano-2026-04-14')?.model).toBe('gpt-4.1-nano');
+    expect(findPricing('gemini-2.5-pro-preview')?.model).toBe('gemini-2.5-pro');
+    expect(findPricing('gemini-2.5-flash-preview')?.model).toBe('gemini-2.5-flash');
+    expect(findPricing('mistral-large-latest')?.model).toBe('mistral-large');
+    expect(findPricing('deepseek-chat')?.model).toBe('deepseek-chat');
+    expect(findPricing('deepseek-reasoner')?.model).toBe('deepseek-reasoner');
+  });
+
   it('returns null for unknown or empty models', () => {
     expect(findPricing('llama-3-70b')).toBeNull();
     expect(findPricing(null)).toBeNull();

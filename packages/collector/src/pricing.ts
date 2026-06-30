@@ -75,8 +75,23 @@ const DEFAULT_PRICING: ModelPricing[] = [
     outputPer1M: 1.6,
     cachedInputPer1M: 0.1,
   },
+  {
+    provider: 'openai',
+    model: 'gpt-4.1-nano',
+    inputPer1M: 0.1,
+    outputPer1M: 0.4,
+    cachedInputPer1M: 0.025,
+  },
   { provider: 'openai', model: 'gpt-4.1', inputPer1M: 2, outputPer1M: 8, cachedInputPer1M: 0.5 },
   { provider: 'openai', model: 'gpt-4-turbo', inputPer1M: 10, outputPer1M: 30 },
+  {
+    provider: 'openai',
+    model: 'o4-mini',
+    inputPer1M: 1.1,
+    outputPer1M: 4.4,
+    cachedInputPer1M: 0.275,
+  },
+  { provider: 'openai', model: 'o3', inputPer1M: 2, outputPer1M: 8, cachedInputPer1M: 0.5 },
   {
     provider: 'openai',
     model: 'o3-mini',
@@ -93,9 +108,28 @@ const DEFAULT_PRICING: ModelPricing[] = [
   },
   { provider: 'openai', model: 'o1', inputPer1M: 15, outputPer1M: 60, cachedInputPer1M: 7.5 },
   // Google
+  { provider: 'google', model: 'gemini-2.5-pro', inputPer1M: 1.25, outputPer1M: 10 },
+  { provider: 'google', model: 'gemini-2.5-flash', inputPer1M: 0.3, outputPer1M: 2.5 },
   { provider: 'google', model: 'gemini-2.0-flash', inputPer1M: 0.1, outputPer1M: 0.4 },
   { provider: 'google', model: 'gemini-1.5-flash', inputPer1M: 0.075, outputPer1M: 0.3 },
   { provider: 'google', model: 'gemini-1.5-pro', inputPer1M: 1.25, outputPer1M: 5 },
+  // Mistral
+  { provider: 'mistral', model: 'mistral-large', inputPer1M: 2, outputPer1M: 6 },
+  // DeepSeek
+  {
+    provider: 'deepseek',
+    model: 'deepseek-reasoner',
+    inputPer1M: 0.55,
+    outputPer1M: 2.19,
+    cachedInputPer1M: 0.14,
+  },
+  {
+    provider: 'deepseek',
+    model: 'deepseek-chat',
+    inputPer1M: 0.27,
+    outputPer1M: 1.1,
+    cachedInputPer1M: 0.07,
+  },
 ];
 
 let pricingTable: ModelPricing[] = DEFAULT_PRICING;
