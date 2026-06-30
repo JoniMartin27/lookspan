@@ -38,6 +38,9 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# Local Claude Code tool config
+.claude/
+
 # Environment
 .env
 .env.local
