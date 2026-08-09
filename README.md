@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jonimartin27-lookspan-badge.png)](https://mseep.ai/app/jonimartin27-lookspan)
+
 # Lookspan
 
 **Local-first observability dashboard for AI agents. MCP-native. See every span your agents emit.**
