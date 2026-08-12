@@ -62,8 +62,9 @@ lookspan install-desktop          # puedes dejar flags fijadas: --port 3200 --re
 ```
 
 Eso añade una entrada **Lookspan** al Escritorio y al menú Inicio en Windows, a
-`~/Applications` en macOS y al menú de aplicaciones en Linux. Al hacer clic
-arranca el servidor y abre el dashboard. `lookspan uninstall-desktop` la quita.
+`~/Applications` en macOS y al menú de aplicaciones en Linux — con el icono de
+Lookspan en Windows y Linux. Al hacer clic arranca el servidor y abre el
+dashboard. `lookspan uninstall-desktop` la quita.
 
 > Necesita una instalación de verdad: un acceso directo a la caché de `npx` deja
 > de funcionar en cuanto npm la limpia, así que `install-desktop` se niega a

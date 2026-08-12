@@ -6,6 +6,7 @@ import {
   buildWindowsScript,
   type DesktopInput,
   desktopPlan,
+  iconPath,
   isEphemeralInstall,
   supportedPlatform,
   withOpenFlag,
@@ -55,6 +56,35 @@ describe('withOpenFlag', () => {
 
   it('does not duplicate one the user already passed', () => {
     expect(withOpenFlag(['--open'])).toEqual(['--open']);
+  });
+});
+
+describe('icons', () => {
+  it('the linux entry points at the png when it shipped', () => {
+    const entry = buildLinuxEntry(base({ icons: { png: '/opt/lookspan/assets/lookspan.png' } }));
+    expect(entry).toContain('Icon=/opt/lookspan/assets/lookspan.png');
+  });
+
+  it('the windows shortcut points at the ico, index 0', () => {
+    const script = buildWindowsScript(
+      ['C:\\a.lnk'],
+      base({ platform: 'win32', icons: { ico: 'C:\\lookspan\\assets\\lookspan.ico' } }),
+    );
+    expect(script).toContain(`$s0.IconLocation = 'C:\\lookspan\\assets\\lookspan.ico,0'`);
+  });
+
+  it('an install with no icons omits the key rather than writing an empty one', () => {
+    expect(buildLinuxEntry(base())).not.toContain('Icon=');
+    expect(buildWindowsScript(['C:\\a.lnk'], base({ platform: 'win32' }))).not.toContain(
+      'IconLocation',
+    );
+  });
+
+  it('reads whichever kind is asked for', () => {
+    const input = base({ icons: { ico: 'a.ico', png: 'b.png' } });
+    expect(iconPath(input, 'ico')).toBe('a.ico');
+    expect(iconPath(input, 'png')).toBe('b.png');
+    expect(iconPath(base(), 'png')).toBeNull();
   });
 });
 
