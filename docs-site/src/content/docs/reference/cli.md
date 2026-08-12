@@ -7,6 +7,25 @@ description: The npx lookspan command-line interface.
 npx lookspan [options]
 ```
 
+## Commands
+
+Without a command, `lookspan` starts the server. There are two subcommands:
+
+```
+  install-desktop [options]   Add a one-click desktop launcher
+  uninstall-desktop           Remove it again
+```
+
+`install-desktop` registers Lookspan as a desktop app — a shortcut on the
+Desktop and in the Start Menu on Windows, `~/Applications/Lookspan.app` on
+macOS, a `.desktop` entry on Linux — so clicking it starts the server and opens
+the dashboard. Any options you pass are baked into the launcher and validated
+first, e.g. `lookspan install-desktop --port 3200 --retention 7d`.
+
+It needs a real install (`npm install -g lookspan`) and refuses to run from the
+`npx` cache, which npm is free to delete. Full details in
+[Installation](/lookspan/guides/installation/#one-click-desktop-launcher).
+
 ## Options
 
 ```

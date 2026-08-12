@@ -88,12 +88,18 @@ LOOKSPAN_DB=postgres://lookspan:secret@db.internal:5432/lookspan npm run migrate
 ```
 
 Both drivers implement the **same repository interfaces** and the **same schema
-and migrations**, so every feature behaves identically regardless of backend.
-The connection string is parsed for logging only and the password is redacted in
-startup output.
+and migrations**, so the API surface behaves identically regardless of backend.
+The connection string selects the driver and is parsed for logging, with the
+password redacted in startup output.
 
-> The Postgres driver currently runs queries through an in-process engine
-> (`pg-mem`), which keeps the repositories synchronous while giving genuine
-> Postgres-dialect, schema and migration parity (verified in CI). Persistence to
-> an external Postgres *server* over the wire is a planned follow-up. To stay on
-> SQLite, do nothing — it remains the default.
+> The Postgres driver runs queries through an **embedded** engine (`pg-mem`),
+> which keeps the repositories synchronous while giving genuine
+> Postgres-dialect, schema and migration parity (verified in CI).
+>
+> **Nothing is written to the server in your connection string.** The host is
+> never dialled, and the data lives in the process and is gone when it exits —
+> the startup line says so. Use this path to validate Postgres-targeted
+> schemas, migrations and SQL, not to keep data. Persistence to an external
+> Postgres *server* over the wire is a planned follow-up.
+>
+> To stay on SQLite, do nothing — it remains the default.
