@@ -2,22 +2,18 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
-import { createApp, createContext, type InferenceKeys } from '@lookspan/api';
+import { createApp, createContext } from '@lookspan/api';
 import { parsePricingTable, setPricingTable } from '@lookspan/collector';
 import { LookspanEventType, subscribe } from '@lookspan/events';
 import {
   cutoffFrom,
-  defaultDatabasePath,
   isPostgresTarget,
   type LookspanDatabase,
   migrate,
   openDatabase,
-  parseDuration,
   pruneOlderThan,
   vacuum,
 } from '@lookspan/storage';
-import { AlertCondition, type AlertRule } from '@lookspan/types';
 import {
   APP_NAME,
   currentDesktopInput,
@@ -26,43 +22,7 @@ import {
   supportedPlatform,
   uninstallDesktop,
 } from './desktop.js';
-
-interface CliFlags {
-  port: number;
-  host: string;
-  db: string;
-  open: boolean;
-  retentionMs: number | null;
-  token: string | undefined;
-  alertRules: AlertRule[];
-  pricingFile: string | undefined;
-  inferenceKeys: InferenceKeys;
-}
-
-function buildAlertRules(values: Record<string, unknown>): AlertRule[] {
-  const rules: AlertRule[] = [];
-  const numFromEnv = (flag: unknown, env: string | undefined): number | undefined => {
-    const raw = (flag as string) ?? env;
-    if (raw === undefined) return undefined;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : undefined;
-  };
-
-  if (values['alert-error'] || process.env.LOOKSPAN_ALERT_ERROR) {
-    rules.push({ id: 'error', condition: AlertCondition.Error });
-  }
-  const cost = numFromEnv(values['alert-cost'], process.env.LOOKSPAN_ALERT_COST);
-  if (cost !== undefined)
-    rules.push({ id: 'cost', condition: AlertCondition.CostOver, threshold: cost });
-  const tokens = numFromEnv(values['alert-tokens'], process.env.LOOKSPAN_ALERT_TOKENS);
-  if (tokens !== undefined)
-    rules.push({ id: 'tokens', condition: AlertCondition.TokensOver, threshold: tokens });
-  const duration = numFromEnv(values['alert-duration'], process.env.LOOKSPAN_ALERT_DURATION);
-  if (duration !== undefined)
-    rules.push({ id: 'duration', condition: AlertCondition.DurationOver, threshold: duration });
-
-  return rules;
-}
+import { type CliFlags, FlagError, parseFlags } from './flags.js';
 
 /**
  * Human-readable DB target for startup logs, with any Postgres password
@@ -95,66 +55,6 @@ function readVersion(): string {
     }
   }
   return '0.0.0';
-}
-
-function parseFlags(argv: string[]): CliFlags {
-  const { values } = parseArgs({
-    args: argv,
-    allowPositionals: false,
-    options: {
-      port: { type: 'string', short: 'p' },
-      host: { type: 'string' },
-      db: { type: 'string' },
-      retention: { type: 'string' },
-      token: { type: 'string' },
-      pricing: { type: 'string' },
-      'openai-key': { type: 'string' },
-      'anthropic-key': { type: 'string' },
-      'alert-error': { type: 'boolean', default: false },
-      'alert-cost': { type: 'string' },
-      'alert-tokens': { type: 'string' },
-      'alert-duration': { type: 'string' },
-      open: { type: 'boolean', default: false },
-      help: { type: 'boolean', short: 'h', default: false },
-      version: { type: 'boolean', short: 'v', default: false },
-    },
-  });
-
-  if (values.help) {
-    printHelp();
-    process.exit(0);
-  }
-  if (values.version) {
-    console.log(`lookspan ${readVersion()}`);
-    process.exit(0);
-  }
-
-  // Precedence: explicit flag > environment variable > built-in default.
-  const retentionRaw = (values.retention as string) ?? process.env.LOOKSPAN_RETENTION;
-  let retentionMs: number | null = null;
-  if (retentionRaw) {
-    retentionMs = parseDuration(retentionRaw);
-    if (retentionMs === null) {
-      console.error(`[lookspan] invalid --retention "${retentionRaw}" (use e.g. 7d, 24h, 30m)`);
-      process.exit(1);
-    }
-  }
-
-  return {
-    port: Number(values.port ?? process.env.LOOKSPAN_PORT ?? '3100'),
-    host: (values.host as string) ?? process.env.LOOKSPAN_HOST ?? '127.0.0.1',
-    db: (values.db as string) ?? process.env.LOOKSPAN_DB ?? defaultDatabasePath(),
-    open: Boolean(values.open),
-    retentionMs,
-    token: (values.token as string) ?? process.env.LOOKSPAN_TOKEN ?? undefined,
-    alertRules: buildAlertRules(values),
-    pricingFile: (values.pricing as string) ?? process.env.LOOKSPAN_PRICING ?? undefined,
-    inferenceKeys: {
-      openai: (values['openai-key'] as string) ?? process.env.LOOKSPAN_OPENAI_API_KEY ?? undefined,
-      anthropic:
-        (values['anthropic-key'] as string) ?? process.env.LOOKSPAN_ANTHROPIC_API_KEY ?? undefined,
-    },
-  };
 }
 
 /** Load a user pricing JSON file and install it as the active price table. */
@@ -334,7 +234,25 @@ function main(): void {
     return;
   }
 
-  const flags = parseFlags(argv);
+  let flags: CliFlags;
+  try {
+    flags = parseFlags(argv);
+  } catch (err) {
+    if (err instanceof FlagError) {
+      console.error(`[lookspan] ${err.message}`);
+      process.exit(1);
+    }
+    throw err;
+  }
+
+  if (flags.showHelp) {
+    printHelp();
+    return;
+  }
+  if (flags.showVersion) {
+    console.log(`lookspan ${readVersion()}`);
+    return;
+  }
 
   const db = openDatabase({ path: flags.db });
   const result = migrate(db);

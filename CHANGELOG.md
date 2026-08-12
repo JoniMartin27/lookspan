@@ -2,7 +2,17 @@
 
 ## Unreleased
 
+### Added
+- **An out-of-range port is refused instead of crashing.**  used
+  to reach  and fail with an obscure error; the CLI now says what is
+  wrong.
+
 ### Changed
+- **The CLI flag layer moved out of the entrypoint** so it can be tested.
+   calls  at module scope, so importing it started a server
+  and the parsing had never been exercised; it also called  from
+  inside the parser. Parsing now lives in , takes its environment as
+  an argument and throws instead of exiting. 21 tests.
 - **Startup is about a third faster.** The Postgres engine was imported at
   module scope, and the driver picker imports that file — so every SQLite user,
   which is everyone by default, loaded and executed 2 MB of pg-mem for a driver
