@@ -2,13 +2,17 @@
 # Turn the recorded take.webm into an optimized GIF (+ an h264 mp4 for long-form
 # sharing) using the 2-pass palettegen/paletteuse pipeline.
 #
+# 1000px / 10fps keeps the GIF near 5 MB. GitHub renders a README image at
+# roughly 830px, so a wider capture only costs bytes. Override with
+# `WIDTH=1200 FPS=12 scripts/make-gif.sh …` if you need a crisper take.
+#
 # Usage: scripts/make-gif.sh <input.webm> [out_dir]
 set -euo pipefail
 
 IN="${1:?usage: make-gif.sh <input.webm> [out_dir]}"
 OUT_DIR="${2:-docs}"
-FPS="${FPS:-12}"
-WIDTH="${WIDTH:-1200}"
+FPS="${FPS:-10}"
+WIDTH="${WIDTH:-1000}"
 
 PALETTE="$(mktemp -u).png"
 GIF="${OUT_DIR}/demo.gif"
