@@ -4,6 +4,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'wouter';
 import { useStream } from '../hooks/useStream.ts';
 import { DATA_EVENTS, initialRefreshState, planRefresh, refreshRan } from '../lib/liveRefresh.ts';
+import { visibleToasts } from '../lib/toastStack.ts';
 
 interface LayoutProps {
   children: ReactNode;
@@ -64,6 +65,10 @@ export default function Layout({ children }: LayoutProps) {
       new Notification('Lookspan alert', { body: alert.message });
     }
   });
+
+  // An agent failing in a loop fires one alert per failure, and the stack was
+  // unbounded: thirty of them covered the Export button and the filters.
+  const { shown, hidden } = visibleToasts(toasts);
 
   return (
     <div className="flex h-full flex-col">
@@ -148,7 +153,15 @@ export default function Layout({ children }: LayoutProps) {
         aria-live="assertive"
         aria-label="Alert notifications"
       >
-        {toasts.map(({ id, alert }) => (
+        {hidden > 0 && (
+          <div className="pointer-events-auto rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-400">
+            {`+${hidden} more `}
+            <Link href="/alerts" className="text-brand-500 underline">
+              in Alerts
+            </Link>
+          </div>
+        )}
+        {shown.map(({ id, alert }) => (
           <div
             key={id}
             role="alert"

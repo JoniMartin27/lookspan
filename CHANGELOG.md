@@ -5,6 +5,15 @@
 The first screen a new user sees had never been audited, and "live" was not.
 
 ### Fixed
+- **A failing agent buried the dashboard in its own alerts.** Every alert
+  raised a toast on an unbounded stack, and an agent failing in a loop raises
+  one per failure. Measured with thirty: the stack grew to 2,212px inside a
+  900px window, eighteen toasts sat off the top of the screen, and the rest
+  covered the right-hand column — `elementFromPoint` on the Export button and
+  on the status filter both came back as a toast. The two controls you reach
+  for when things are failing were the ones you could no longer click. Four
+  toasts now, newest first, with a `+26 more in Alerts` line above them; every
+  alert is still listed and persisted under `/alerts`.
 - **The cost breakdowns did not add up to the total beside them.** Each one
   dropped rows where its dimension was NULL, and a CrewAI span carries no
   `provider` at all — its adapter never sets one. Measured against a running
