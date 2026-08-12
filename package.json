@@ -25,7 +25,8 @@
     "dev:dashboard": "npm --workspace @lookspan/dashboard run dev",
     "clean": "tsc --build --clean && rimraf \"packages/*/dist\" \"apps/*/dist\"",
     "smoke:cli": "node packages/cli/scripts/bundle.mjs && node packages/cli/dist/index.js --version",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "og": "node scripts/make-og.mjs"
   },
   "workspaces": [
     "packages/*",
