@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import type { ApiContext } from './context.js';
+import { hostAllowed } from './host-guard.js';
 import { createAlertsRouter } from './routes/alerts.js';
 import { createCostsRouter } from './routes/costs.js';
 import { createDatasetsRouter, createRunsRouter } from './routes/datasets.js';
@@ -20,6 +21,15 @@ import { createTracesRouter } from './routes/traces.js';
 export interface CreateAppOptions {
   context: ApiContext;
   corsOrigin?: string | string[] | boolean;
+  /**
+   * Reject requests whose `Host` header does not name loopback.
+   *
+   * The CLI turns this on whenever it binds to loopback, which is the default.
+   * It is the only defence against DNS rebinding: once the attacker's domain
+   * resolves to 127.0.0.1 the browser treats the request as same-origin and
+   * CORS never runs, so the `Host` header is all that distinguishes it.
+   */
+  requireLoopbackHost?: boolean;
   /**
    * Absolute path to the built dashboard (the Vite `dist/` directory). When
    * provided, the SPA is served at `/` and any non-`/api` route falls back to
@@ -65,6 +75,20 @@ export function createApp(options: CreateAppOptions): Express {
       credentials: false,
     }),
   );
+  // Before anything else reads the request: a rebound request is otherwise
+  // indistinguishable from a local one.
+  if (options.requireLoopbackHost) {
+    app.use((req, res, next) => {
+      if (hostAllowed(req.headers.host)) return next();
+      res.status(421).json({
+        error: 'misdirected_request',
+        detail:
+          'Lookspan is bound to loopback and only answers requests addressed to localhost. ' +
+          'Expose it deliberately with --host if you need to reach it by another name.',
+      });
+    });
+  }
+
   app.use(express.json({ limit: '10mb' }));
   // OTLP/HTTP exporters default to protobuf — accept it as a raw Buffer.
   app.use(express.raw({ type: 'application/x-protobuf', limit: '10mb' }));

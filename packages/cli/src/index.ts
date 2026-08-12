@@ -2,7 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createApp, createContext } from '@lookspan/api';
+import { bindsToLoopback, createApp, createContext } from '@lookspan/api';
 import { parsePricingTable, setPricingTable } from '@lookspan/collector';
 import { LookspanEventType, subscribe } from '@lookspan/events';
 import {
@@ -276,6 +276,10 @@ function main(): void {
     dashboardDir: dashboardDir ?? undefined,
     authToken: flags.token,
     corsOrigin: flags.corsOrigins.length > 0 ? flags.corsOrigins : false,
+    // Only when we are actually bound to loopback. A server the user has
+    // deliberately exposed is reachable by whatever name they gave it, and an
+    // attacker can reach it directly there anyway — rebinding buys nothing.
+    requireLoopbackHost: bindsToLoopback(flags.host),
   });
   const stopRetention = flags.retentionMs ? startRetention(db, flags.retentionMs) : null;
 
