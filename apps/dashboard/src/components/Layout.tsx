@@ -93,7 +93,7 @@ export default function Layout({ children }: LayoutProps) {
           href="https://fervon.dev"
           target="_blank"
           rel="noreferrer"
-          className="text-neutral-400 hover:text-brand-500"
+          className="text-neutral-400 underline underline-offset-2 hover:text-brand-500"
         >
           Fervon
         </a>

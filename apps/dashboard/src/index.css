@@ -26,9 +26,12 @@
   --color-neutral-100: #efe7dc;
   --color-neutral-200: #ded3c7;
   --color-neutral-300: #c8bbad;
+  /* 500 and 600 carry real text — table headers, tile labels, hints — so they
+     have to clear 4.5:1 on both the carbon page and the lighter card. The first
+     warm ramp put them at 4.42 and 2.54, which axe flagged across every view. */
   --color-neutral-400: #a89a8e;
-  --color-neutral-500: #857567;
-  --color-neutral-600: #5f5044;
+  --color-neutral-500: #9a8a7e;
+  --color-neutral-600: #8f7f70;
   --color-neutral-700: #3d2f26;
   --color-neutral-800: #2c211b;
   --color-neutral-900: #1a1310;

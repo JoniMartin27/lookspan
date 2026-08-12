@@ -239,7 +239,10 @@ function Select({
   options: string[];
 }) {
   return (
+    // The placeholder doubles as the accessible name: with no label, a screen
+    // reader announced these filters as an unnamed combo box.
     <select
+      aria-label={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none"
