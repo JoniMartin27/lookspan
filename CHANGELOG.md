@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-08-12
 
-Merged on `main` since 0.4.1; not yet cut as a release.
+The release that makes the published package match the repo: it also carries
+fixes for a bundle that could not start and a Postgres driver that rejected
+every write.
 
 ### Added
 - **CI now tests the Python SDKs.** All three (`lookspan`, `lookspan-langgraph`,
