@@ -22,6 +22,15 @@ an empty default means the feature is off until you set it.
 | `--open` | — | `false` | Open the dashboard in your browser on startup. |
 | — | `LOOKSPAN_DASHBOARD_DIR` | _(auto-detected)_ | Override the path to the built dashboard assets. Normally found automatically. |
 
+## Commands
+
+Besides running the server, the CLI takes two subcommands.
+
+| Command | What it does |
+|---|---|
+| `lookspan install-desktop [options]` | Writes a one-click desktop launcher: `Lookspan.lnk` on the Desktop + Start Menu (Windows), `~/Applications/Lookspan.app` (macOS), `~/.local/share/applications/lookspan.desktop` (Linux). Any server options given are baked into it and validated first. Requires a real install (`npm install -g lookspan`) — it refuses to point a shortcut at the `npx` cache. |
+| `lookspan uninstall-desktop` | Removes whatever `install-desktop` created. Safe to run when nothing is installed. |
+
 ## Replay & LLM-as-judge
 
 These only matter if you use the Replay / judge features. Without a key, those

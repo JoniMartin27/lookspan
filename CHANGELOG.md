@@ -5,6 +5,17 @@
 Merged on `main` since 0.4.1; not yet cut as a release.
 
 ### Added
+- **One-click desktop launcher** — `lookspan install-desktop` registers Lookspan
+  as a real desktop app: a shortcut on the Desktop and in the Start Menu on
+  Windows, `~/Applications/Lookspan.app` on macOS, a `.desktop` entry on Linux.
+  Clicking it boots the server and opens the dashboard, no terminal. Server
+  options given to the command are baked into the launcher (and validated
+  first); `lookspan uninstall-desktop` removes it. Refuses to run from the `npx`
+  cache, which npm may delete.
+- **Fervon brand identity across the whole product** — the forge palette
+  (carbon surfaces, ember/amber accents) now covers the dashboard and the
+  documentation site, not just the landing. Includes a contrast fix on solid
+  buttons and the dashboard favicon, which was 404ing.
 - **Trace export & audit** — download the trace set as CSV (UTF-8 BOM,
   formula-injection safe), JSON (metadata-only by default, `?raw=1` to include
   attributes) or a self-contained printable HTML audit report (`format=html`)
