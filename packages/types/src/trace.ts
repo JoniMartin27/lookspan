@@ -1,11 +1,11 @@
 import type { TokenUsage } from './cost.js';
-import type { FrameworkName } from './framework.js';
+import type { FrameworkLabel } from './framework.js';
 import type { SpanStatus } from './span.js';
 
 export interface Trace {
   traceId: string;
   rootName: string;
-  framework: FrameworkName;
+  framework: FrameworkLabel;
   agentId: string | null;
   sessionId: string | null;
   parentTraceId: string | null;
@@ -23,7 +23,7 @@ export interface Trace {
 export interface TraceListItem {
   traceId: string;
   rootName: string;
-  framework: FrameworkName;
+  framework: FrameworkLabel;
   agentId: string | null;
   parentTraceId: string | null;
   startedAt: string;

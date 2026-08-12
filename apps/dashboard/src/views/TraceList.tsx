@@ -7,7 +7,18 @@ import { EmptyState } from '../components/EmptyState.tsx';
 import { agentColor } from '../lib/agentColor.ts';
 import { relativeTime } from '../lib/time.ts';
 
-const FRAMEWORKS = ['mcp', 'langgraph', 'crewai', 'agent-os', 'openai-agents', 'otlp', 'custom'];
+// Frameworks Lookspan knows by name. The filter also offers whatever else
+// actually shows up in the data: `framework` is an open label, so a producer
+// the dashboard has never heard of must still be filterable.
+const KNOWN_FRAMEWORKS = [
+  'mcp',
+  'langgraph',
+  'crewai',
+  'agent-os',
+  'openai-agents',
+  'otlp',
+  'custom',
+];
 const STATUSES = ['ok', 'error', 'cancelled'];
 const PAGE = 50;
 
@@ -41,6 +52,11 @@ export default function TraceList() {
     });
 
   const allItems = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
+  const frameworks = useMemo(() => {
+    const seen = new Set(allItems.map((t) => t.framework).filter(Boolean));
+    for (const f of KNOWN_FRAMEWORKS) seen.add(f);
+    return [...seen].sort();
+  }, [allItems]);
   const items = useMemo(() => {
     const q = search.trim().toLowerCase();
     return q ? allItems.filter((t) => t.rootName.toLowerCase().includes(q)) : allItems;
@@ -68,7 +84,7 @@ export default function TraceList() {
           value={framework}
           onChange={setFramework}
           placeholder="All frameworks"
-          options={FRAMEWORKS}
+          options={frameworks}
         />
         <Select value={status} onChange={setStatus} placeholder="All statuses" options={STATUSES} />
         <ExportMenu
