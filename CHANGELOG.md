@@ -5,6 +5,17 @@
 The first screen a new user sees had never been audited, and "live" was not.
 
 ### Fixed
+- **The judge graded a truncated answer without being told.** Long content is
+  cut before it reaches the LLM judge — 12,000 characters of the request and
+  the response, 6,000 of the reference. The cut was unmarked, so a 15,200-
+  character answer arrived ending mid-word and the judge, instructed to grade
+  the response in front of it, had every reason to mark it down for stopping
+  abruptly. The resulting low score describes our truncation rather than the
+  agent, and nothing distinguishes it from a genuinely bad answer — a score
+  nobody earned is worse than a score that is missing. Each cut now carries a
+  marker saying it is ours and how much was withheld. It matters most on the
+  request, where cutting serialised JSON leaves a fragment the judge cannot
+  tell apart from a malformed one.
 - **A dataset run skipped items without saying so.** A run covers the first 100
   items; the panel said "Runs up to 100 items synchronously" — the same
   sentence whether the dataset held five items or five hundred — and the button
