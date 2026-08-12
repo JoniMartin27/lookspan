@@ -114,12 +114,20 @@ the Postgres driver, with **no external Postgres server required**
 
 Two consequences to be aware of:
 
-- **Persistence to an external Postgres _server_** over the wire (the async
-  `pg` client) is a planned follow-up. The driver boundary
+- **Nothing is written to the server in your connection string.** The URL
+  selects the driver and is parsed for logging; the host is never dialled, and
+  the data lives in the process and is gone when it exits. The startup line
+  says so. Persisting to an external Postgres _server_ over the wire (the async
+  `pg` client) is a planned follow-up; the driver boundary
   (`packages/storage/src/drivers/`) is the exact seam that work plugs into —
   the `SqlDriver` interface, SQL translation and migration parity are already
-  in place. Until then the Postgres path is fully functional in-process and is
-  the supported way to validate Postgres-targeted deployments and migrations.
+  in place. Until then this path is for validating Postgres-targeted schemas,
+  migrations and SQL, not for keeping data.
+- **Transactions are snapshot-based.** pg-mem parses `BEGIN`/`COMMIT`/
+  `ROLLBACK` and then ignores them, so the driver brackets each outermost
+  block with `mem.backup()` and restores that snapshot if the block throws.
+  Nested blocks join the outermost one rather than opening a `SAVEPOINT`,
+  which pg-mem cannot parse.
 - The in-memory engine implements *most* of Postgres but not every construct.
   One known gap: `DatasetsRepository.list()` uses a correlated scalar subquery
   in its projection that real Postgres runs fine but `pg-mem` cannot resolve;

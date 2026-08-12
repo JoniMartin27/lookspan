@@ -373,3 +373,46 @@ describe('Datasets / Runs on Postgres', () => {
     expect(datasets.get('ds1')?.runCount).toBe(1);
   });
 });
+
+describe('nested transactions on Postgres', () => {
+  // pg-mem cannot parse SAVEPOINT, so the driver flattens nested transactions
+  // into the outermost one. These assert the guarantee that flattening keeps:
+  // the whole block is still all-or-nothing.
+  it('commits work done inside a nested transaction', () => {
+    const traces = new TracesRepository(db);
+    db.transaction(() => {
+      db.transaction(() => {
+        traces.upsert(trace({ traceId: 'anidada' }));
+      })();
+    })();
+
+    expect(traces.getById('anidada')).not.toBeNull();
+  });
+
+  it('rolls the outer block back when the inner one throws', () => {
+    const traces = new TracesRepository(db);
+    expect(() =>
+      db.transaction(() => {
+        traces.upsert(trace({ traceId: 'se_deshace' }));
+        db.transaction(() => {
+          throw new Error('boom');
+        })();
+      })(),
+    ).toThrow('boom');
+
+    expect(traces.getById('se_deshace')).toBeNull();
+  });
+
+  it('survives three levels deep', () => {
+    const traces = new TracesRepository(db);
+    db.transaction(() => {
+      db.transaction(() => {
+        db.transaction(() => {
+          traces.upsert(trace({ traceId: 'tres_niveles' }));
+        })();
+      })();
+    })();
+
+    expect(traces.getById('tres_niveles')).not.toBeNull();
+  });
+});
