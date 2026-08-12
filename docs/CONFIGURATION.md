@@ -14,7 +14,7 @@ an empty default means the feature is off until you set it.
 | Flag | Env var | Default | What it does |
 |---|---|---|---|
 | `-p, --port <port>` | `LOOKSPAN_PORT` | `3100` | Port the ingest API + dashboard listen on. |
-| `--host <host>` | `LOOKSPAN_HOST` | `127.0.0.1` | Address to bind. Use `0.0.0.0` to expose on your LAN (see Security). |
+| `--host <host>` | `LOOKSPAN_HOST` | `127.0.0.1` | Address to bind. Use `0.0.0.0` to expose on your LAN (see Security). While bound to loopback, requests whose `Host` header names anything else are refused with 421 — that is the defence against DNS rebinding, which CORS cannot see. Binding elsewhere lifts the check, since the server is then reachable by whatever name you gave it. |
 | `--db <path\|url>` | `LOOKSPAN_DB` | `~/.lookspan/lookspan.db` | SQLite database file (created if missing) **or** a Postgres connection string (`postgres://…` / `postgresql://…`). See [Postgres](#postgres). |
 | `--retention <dur>` | `LOOKSPAN_RETENTION` | _(none)_ | Prune traces older than `<dur>` (`7d`, `24h`, `30m`). Runs on startup, then at most hourly. Unset = keep everything. |
 | `--token <token>` | `LOOKSPAN_TOKEN` | _(none)_ | Require `Authorization: Bearer <token>` on `/api/*` and `/v1/*` (`/api/health` is exempt). Unset = no auth. |

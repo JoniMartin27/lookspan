@@ -90,7 +90,7 @@ dashboard. `lookspan uninstall-desktop` removes it.
 - **Replay & LLM-as-judge** — re-run a trace's captured prompt against the same or a different model and diff cost/latency/output, or have a judge model score the response 0–1. Needs a provider key (env, in-memory only).
 - **Datasets & experiments** — collect prompts into a test set (seed from a trace or add by hand), run the whole set against a model in batch and score each output with the judge — aggregate cost/latency/score per run.
 - **Local SQLite (default), Postgres driver for dialect parity** — versioned migrations. SQLite file at `~/.lookspan/lookspan.db` by default. Passing a `postgres://…` URL to `--db` / `LOOKSPAN_DB` selects the Postgres driver, which runs an **embedded** Postgres engine: same schema, same migrations, same SQL dialect, so you can validate a Postgres-targeted deployment without a server — but it does **not** connect to the host in that URL and its data does not survive a restart. Persisting to an external Postgres server is a planned follow-up; see [docs/CONFIGURATION.md → Postgres](docs/CONFIGURATION.md#postgres). Optional retention with `--retention`.
-- **Security** — binds to `127.0.0.1` by default; no cross-origin access unless you grant it with `--cors-origin`; optional `--token` auth; server-side redaction of credential-looking attributes before storage.
+- **Security** — binds to `127.0.0.1` by default and only answers requests addressed to it (so a rebound domain gets nothing); no cross-origin access unless you grant it with `--cors-origin`; optional `--token` auth; server-side redaction of credential-looking attributes before storage.
 - **One-line CLI** — `npx lookspan` starts the server and the dashboard with no global install.
 
 ---

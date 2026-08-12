@@ -5,6 +5,17 @@
 The first screen a new user sees had never been audited, and "live" was not.
 
 ### Security
+- **A rebound domain walked straight past the CORS fix.** Closing CORS stops a
+  page on another origin from reading the API; it does nothing about DNS
+  rebinding, where the attacker's domain is made to resolve to 127.0.0.1 after
+  the page has loaded. From that moment the browser calls the request
+  same-origin and no CORS check runs at all — what arrives is an ordinary
+  request whose `Host` header says `evil.example`, and it was answered like any
+  other, read and write. A loopback-bound server now only answers requests
+  addressed to loopback (`localhost`, `127.0.0.0/8`, `::1`, `*.localhost`), and
+  returns 421 otherwise. Not enforced when the server has been exposed on
+  purpose with `--host`: it is reachable directly there anyway, and the check
+  would only break reaching it by name.
 - **Any website you visited could read your local database.** CORS reflected
   whatever origin asked, so a page on an unrelated site could `fetch` the API
   from your browser — which reaches loopback even when the network does not —

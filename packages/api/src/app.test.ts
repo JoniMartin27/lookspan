@@ -1,5 +1,6 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import type { Server } from 'node:http';
+import { request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -588,6 +589,99 @@ describe('CORS', () => {
         headers: { origin: 'https://evil.example' },
       });
       expect(res.headers.get('access-control-allow-origin')).toBeNull();
+    });
+  });
+});
+
+describe('Host header guard', () => {
+  // The defence against DNS rebinding, which CORS cannot touch: once the
+  // attacker's domain resolves to loopback the browser calls it same-origin.
+  //
+  // `fetch` silently drops a `host` header you set — verified: the server sees
+  // the real authority — so these have to go out over a raw request or they
+  // assert nothing at all.
+  function request(
+    path: string,
+    { host, method = 'GET', body }: { host?: string; method?: string; body?: string } = {},
+  ): Promise<{ status: number; body: string }> {
+    const { port } = server.address() as AddressInfo;
+    return new Promise((resolve, reject) => {
+      const req = httpRequest(
+        {
+          host: '127.0.0.1',
+          port,
+          path,
+          method,
+          headers: {
+            ...(host ? { Host: host } : {}),
+            ...(body ? { 'content-type': 'application/json' } : {}),
+          },
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (c) => {
+            data += c;
+          });
+          res.on('end', () => resolve({ status: res.statusCode ?? 0, body: data }));
+        },
+      );
+      req.on('error', reject);
+      if (body) req.write(body);
+      req.end();
+    });
+  }
+
+  function startGuarded() {
+    const db = openDatabase({ path: ':memory:' });
+    migrate(db);
+    const app = createApp({ context: createContext(db), requireLoopbackHost: true });
+    return new Promise<void>((resolve) => {
+      server = app.listen(0, '127.0.0.1', () => {
+        base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+        resolve();
+      });
+    });
+  }
+
+  describe('when bound to loopback', () => {
+    beforeEach(() => startGuarded());
+
+    it('answers a request addressed to loopback', async () => {
+      expect((await request('/api/traces')).status).toBe(200);
+      expect((await request('/api/traces', { host: 'localhost:1234' })).status).toBe(200);
+    });
+
+    it('refuses a request addressed to somewhere else', async () => {
+      const res = await request('/api/traces', { host: 'evil.example' });
+      expect(res.status).toBe(421);
+      expect(JSON.parse(res.body).error).toBe('misdirected_request');
+    });
+
+    it('refuses writes too, not just reads', async () => {
+      const res = await request('/api/ingest', {
+        host: 'evil.example',
+        method: 'POST',
+        body: JSON.stringify({ spans: [] }),
+      });
+      expect(res.status).toBe(421);
+    });
+
+    it('guards the dashboard and health as well', async () => {
+      // The rebound page loads the SPA from the same origin; there is no
+      // reason to hand it anything at all.
+      for (const path of ['/', '/api/health']) {
+        expect((await request(path, { host: 'evil.example' })).status, path).toBe(421);
+      }
+    });
+  });
+
+  describe('when the user has exposed the server', () => {
+    beforeEach(() => start()); // no requireLoopbackHost
+
+    it('answers whatever name it is reached by', async () => {
+      // `--host 0.0.0.0` is reachable directly, so enforcing the header would
+      // only break reaching it as `myserver.lan`.
+      expect((await request('/api/traces', { host: 'myserver.lan' })).status).toBe(200);
     });
   });
 });
