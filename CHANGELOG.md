@@ -1,8 +1,27 @@
 # Changelog
 
-## Unreleased
+## 0.5.2 — 2026-08-12
+
+The trace view answered what the model did and never what it was asked.
+
+### Added
+- **The prompt that set the trace off, in the header.** A trace now shows the
+  request that triggered it — the last user turn of the earliest span that
+  recorded one, with the root span taking precedence — as a row under the
+  title. Clicking it opens the span that carried it. When a trace makes an LLM
+  call and no prompt was recorded, it says so instead of leaving a blank.
 
 ### Fixed
+- **The stored request was silently dropped.** The chat transcript only
+  understood the OpenAI shape (`input.messages` as a real array) and, because a
+  reply on its own was enough to render a conversation, everything else was
+  discarded — you saw the answer with no sign of the question. Three shapes
+  measured against a real deployment were being lost: a message list that
+  arrived JSON-stringified (producers that can only store scalars, such as the
+  Python tracer), a single prompt field (`{"mensaje": "…"}` from an agent step),
+  and an input with no readable text at all (`{"prompt_id": "chat"}`), which is
+  now shown raw rather than thrown away. Identifiers (`prompt_id`, `runId`) are
+  never mistaken for a prompt.
 - **Starting on a busy port claimed success and exited silently.** On Windows
   the listen callback runs before the error event, so a second instance printed
   Lookspan running at … and then exited with code 0. Double-clicking the

@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/api",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "description": "Lookspan HTTP API and SSE stream — Express server.",
   "type": "module",

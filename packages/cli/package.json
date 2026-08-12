@@ -1,6 +1,6 @@
 {
   "name": "lookspan",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Local-first observability dashboard for AI agents. MCP-native. Run it with one command.",
   "type": "module",
   "bin": {
