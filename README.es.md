@@ -52,6 +52,23 @@ curl -X POST http://127.0.0.1:3100/api/ingest \
 
 Abre `http://127.0.0.1:3100` y verás la traza aparecer — con su coste calculado en el servidor.
 
+### Ábrelo como cualquier otra aplicación
+
+Si prefieres hacer clic en un icono a escribir un comando:
+
+```bash
+npm install -g lookspan
+lookspan install-desktop          # puedes dejar flags fijadas: --port 3200 --retention 7d
+```
+
+Eso añade una entrada **Lookspan** al Escritorio y al menú Inicio en Windows, a
+`~/Applications` en macOS y al menú de aplicaciones en Linux. Al hacer clic
+arranca el servidor y abre el dashboard. `lookspan uninstall-desktop` la quita.
+
+> Necesita una instalación de verdad: un acceso directo a la caché de `npx` deja
+> de funcionar en cuanto npm la limpia, así que `install-desktop` se niega a
+> crearlo.
+
 ---
 
 ## Características
@@ -230,6 +247,13 @@ curl -X POST localhost:3100/api/datasets/$DS/run -H 'content-type: application/j
 
 ```
 npx lookspan [opciones]
+
+Comandos:
+  install-desktop [opciones]  Añade un lanzador de escritorio de un click
+                              (las opciones quedan fijadas en él)
+  uninstall-desktop           Lo quita
+
+Opciones:
   -p, --port <puerto>      Puerto de escucha            (por defecto: 3100)
       --host <host>        Host de escucha              (por defecto: 127.0.0.1)
       --db <ruta|url>      Ruta SQLite o URL postgres:// (por defecto: ~/.lookspan/lookspan.db)

@@ -33,6 +33,45 @@ npm install -g lookspan
 lookspan
 ```
 
+## One-click desktop launcher
+
+Once Lookspan is installed globally, it can add itself to your desktop so you
+open it the way you open anything else — by clicking an icon:
+
+```bash
+lookspan install-desktop
+```
+
+| Platform | What it creates |
+|---|---|
+| Windows | `Lookspan.lnk` on the Desktop **and** in the Start Menu (starts minimized) |
+| macOS | `~/Applications/Lookspan.app` |
+| Linux | `~/.local/share/applications/lookspan.desktop` (appears in your app menu) |
+
+Clicking it starts the server and opens the dashboard — no terminal involved.
+
+Any options you pass are baked into the launcher, so it always starts the way
+you want:
+
+```bash
+lookspan install-desktop --port 3200 --retention 7d
+```
+
+Those options are validated before anything is written, so a typo fails now
+rather than producing an icon that does nothing when clicked.
+
+Remove it with:
+
+```bash
+lookspan uninstall-desktop
+```
+
+:::caution[Needs a real install]
+`install-desktop` refuses to run from the `npx` cache. npm is free to delete
+that cache, which would leave you with a shortcut pointing at nothing — install
+with `npm install -g lookspan` first.
+:::
+
 ## Where data lives
 
 By default Lookspan stores everything in a single SQLite file at

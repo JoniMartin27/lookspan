@@ -18,6 +18,14 @@ import {
   vacuum,
 } from '@lookspan/storage';
 import { AlertCondition, type AlertRule } from '@lookspan/types';
+import {
+  APP_NAME,
+  currentDesktopInput,
+  installDesktop,
+  isEphemeralInstall,
+  supportedPlatform,
+  uninstallDesktop,
+} from './desktop.js';
 
 interface CliFlags {
   port: number;
@@ -181,6 +189,14 @@ function printHelp(): void {
 Usage:
   npx lookspan [options]
 
+Commands:
+  install-desktop [options]   Add a one-click desktop launcher (Desktop + Start
+                              Menu on Windows, ~/Applications on macOS, the app
+                              menu on Linux). Any options given are baked in,
+                              e.g. \`lookspan install-desktop --port 3200\`.
+                              Needs a real install: \`npm install -g lookspan\`.
+  uninstall-desktop           Remove it again.
+
 Options:
   -p, --port <port>     Port to listen on (default: 3100)
       --host <host>     Host to bind to (default: 127.0.0.1)
@@ -248,8 +264,69 @@ function findDashboardDir(): string | null {
   return null;
 }
 
+/** Absolute path to this entrypoint — what a desktop shortcut has to invoke. */
+function cliEntrypoint(): string {
+  return fileURLToPath(import.meta.url);
+}
+
+/**
+ * `lookspan install-desktop [flags]` / `uninstall-desktop`.
+ *
+ * Any flags after the subcommand are baked into the launcher, so
+ * `install-desktop --port 3200 --retention 7d` gives you an icon that starts
+ * Lookspan exactly that way. They're parsed here too, so a typo fails now
+ * instead of silently producing an icon that does nothing when clicked.
+ */
+async function runDesktopCommand(command: string, rest: string[]): Promise<void> {
+  if (!supportedPlatform(process.platform)) {
+    console.error(`[lookspan] no desktop launcher for ${process.platform}`);
+    process.exit(1);
+  }
+
+  const cliPath = cliEntrypoint();
+  const input = currentDesktopInput(cliPath, rest);
+
+  if (command === 'uninstall-desktop') {
+    const removed = uninstallDesktop(input);
+    console.log(`\n  ${APP_NAME} desktop launcher removed:`);
+    for (const path of removed) console.log(`  · ${path}`);
+    console.log('');
+    return;
+  }
+
+  if (isEphemeralInstall(cliPath)) {
+    console.error(
+      '[lookspan] this copy runs from the npx cache, which npm may delete —\n' +
+        '           a shortcut to it would stop working. Install it first:\n\n' +
+        '             npm install -g lookspan\n' +
+        '             lookspan install-desktop\n',
+    );
+    process.exit(1);
+  }
+
+  parseFlags(rest); // validate before writing anything
+
+  try {
+    const created = await installDesktop(input);
+    console.log(`\n  ${APP_NAME} is now one click away:`);
+    for (const path of created) console.log(`  · ${path}`);
+    console.log('\n  Click it to start Lookspan and open the dashboard.');
+    console.log(`  Undo with: lookspan uninstall-desktop\n`);
+  } catch (err) {
+    console.error(`[lookspan] could not create the desktop launcher: ${(err as Error).message}`);
+    process.exit(1);
+  }
+}
+
 function main(): void {
-  const flags = parseFlags(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const command = argv[0];
+  if (command === 'install-desktop' || command === 'uninstall-desktop') {
+    void runDesktopCommand(command, argv.slice(1));
+    return;
+  }
+
+  const flags = parseFlags(argv);
 
   const db = openDatabase({ path: flags.db });
   const result = migrate(db);
