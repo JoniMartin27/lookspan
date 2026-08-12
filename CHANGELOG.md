@@ -46,6 +46,11 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **The trace list wasted half a phone screen on chrome.** At 390px, 427 of the
+  844 available pixels went to the header, the health strip and the filter row
+  before a single trace was visible. The health tiles now sit in one row on
+  small screens and the section header packs tighter: 302px, and 11 traces
+  visible instead of 9. Desktop is unchanged.
 - **`npm run ci` could not pass on a Windows checkout.** The repo had no
   `.gitattributes`, so Git's `core.autocrlf` rewrote the working tree to CRLF —
   which does not change what is committed, but does break the tools that read

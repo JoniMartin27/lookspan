@@ -52,17 +52,17 @@ export default function TraceList() {
   const p95 = stats.data?.latencyMs?.p95 ?? Number.POSITIVE_INFINITY;
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <HealthStrip stats={stats.data} />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-xl font-semibold">Recent traces</h1>
+      <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-4 sm:gap-3">
+        <h1 className="w-full text-xl font-semibold sm:mr-auto sm:w-auto">Recent traces</h1>
         <input
           type="search"
           placeholder="Search name…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm placeholder:text-neutral-600 focus:border-brand-500 focus:outline-none"
+          className="min-w-0 flex-1 rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm placeholder:text-neutral-600 focus:border-brand-500 focus:outline-none sm:flex-none"
         />
         <Select
           value={framework}
@@ -140,7 +140,7 @@ function HealthStrip({ stats }: { stats: StatsSummary | undefined }) {
     stats.errorRate > 0 && stats.errorRate < 0.01 ? 1 : 0,
   );
   return (
-    <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="mb-4 grid grid-cols-4 gap-2 sm:mb-5 sm:gap-3">
       <Tile label="Traces" value={String(stats.totalTraces)} />
       <Tile label="Error rate" value={`${errPct}%`} tone={stats.errorTraces > 0 ? 'bad' : 'good'} />
       <Tile label="p95 latency" value={stats.latencyMs ? fmtMs(stats.latencyMs.p95) : '—'} />
@@ -153,9 +153,11 @@ function Tile({ label, value, tone }: { label: string; value: string; tone?: 'go
   const color =
     tone === 'bad' ? 'text-red-400' : tone === 'good' ? 'text-emerald-400' : 'text-neutral-100';
   return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3">
-      <div className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</div>
-      <div className={`mt-0.5 text-lg font-semibold tabular-nums ${color}`}>{value}</div>
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900 px-2 py-2 sm:px-4 sm:py-3">
+      <div className="truncate text-[10px] uppercase tracking-wider text-neutral-500">{label}</div>
+      <div className={`mt-0.5 text-base font-semibold tabular-nums sm:text-lg ${color}`}>
+        {value}
+      </div>
     </div>
   );
 }
