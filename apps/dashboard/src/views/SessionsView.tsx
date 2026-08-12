@@ -27,45 +27,49 @@ export default function SessionsView() {
           here.
         </EmptyState>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
-            <tr>
-              <th className="px-3 py-2">Session</th>
-              <th className="px-3 py-2">Agents</th>
-              <th className="px-3 py-2">Traces</th>
-              <th className="px-3 py-2">Errors</th>
-              <th className="px-3 py-2">Cost</th>
-              <th className="px-3 py-2">Started</th>
-              <th className="px-3 py-2">Span</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((s) => (
-              <tr key={s.sessionId} className="border-t border-neutral-800 hover:bg-neutral-900">
-                <td className="px-3 py-2">
-                  <Link
-                    href={`/sessions/${s.sessionId}`}
-                    className="font-mono text-brand-500 hover:underline"
-                  >
-                    {s.sessionId.slice(0, 16)}
-                  </Link>
-                </td>
-                <td className="px-3 py-2 text-neutral-300">{s.agentCount}</td>
-                <td className="px-3 py-2 text-neutral-400">{s.traceCount}</td>
-                <td
-                  className={`px-3 py-2 ${s.errorCount > 0 ? 'text-red-400' : 'text-neutral-500'}`}
-                >
-                  {s.errorCount}
-                </td>
-                <td className="px-3 py-2 text-neutral-400">${s.totalCostUsd.toFixed(4)}</td>
-                <td className="px-3 py-2 text-neutral-400">
-                  {new Date(s.startedAt).toLocaleString()}
-                </td>
-                <td className="px-3 py-2 text-neutral-400">{formatSpan(s.startedAt, s.endedAt)}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
+              <tr>
+                <th className="px-3 py-2">Session</th>
+                <th className="px-3 py-2">Agents</th>
+                <th className="px-3 py-2">Traces</th>
+                <th className="px-3 py-2">Errors</th>
+                <th className="px-3 py-2">Cost</th>
+                <th className="px-3 py-2">Started</th>
+                <th className="px-3 py-2">Span</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((s) => (
+                <tr key={s.sessionId} className="border-t border-neutral-800 hover:bg-neutral-900">
+                  <td className="px-3 py-2">
+                    <Link
+                      href={`/sessions/${s.sessionId}`}
+                      className="font-mono text-brand-500 hover:underline"
+                    >
+                      {s.sessionId.slice(0, 16)}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2 text-neutral-300">{s.agentCount}</td>
+                  <td className="px-3 py-2 text-neutral-400">{s.traceCount}</td>
+                  <td
+                    className={`px-3 py-2 ${s.errorCount > 0 ? 'text-red-400' : 'text-neutral-500'}`}
+                  >
+                    {s.errorCount}
+                  </td>
+                  <td className="px-3 py-2 text-neutral-400">${s.totalCostUsd.toFixed(4)}</td>
+                  <td className="px-3 py-2 text-neutral-400">
+                    {new Date(s.startedAt).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 text-neutral-400">
+                    {formatSpan(s.startedAt, s.endedAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

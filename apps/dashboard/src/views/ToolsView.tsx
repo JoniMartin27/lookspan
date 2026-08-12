@@ -30,58 +30,60 @@ export default function ToolsView() {
           here.
         </EmptyState>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
-            <tr>
-              <th className="px-3 py-2">Tool</th>
-              <th className="px-3 py-2">Framework</th>
-              <th className="px-3 py-2">Agent</th>
-              <th className="px-3 py-2">Duration</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">When</th>
-              <th className="px-3 py-2">Trace</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((s) => (
-              <tr key={s.spanId} className="border-t border-neutral-800 hover:bg-neutral-900">
-                <td className="px-3 py-2 text-neutral-200">{s.name}</td>
-                <td className="px-3 py-2 text-neutral-400">{s.framework}</td>
-                <td className="px-3 py-2 text-neutral-400">
-                  {s.agentId ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        className="inline-block size-2 rounded-full"
-                        style={{ background: agentColor(s.agentId) }}
-                      />
-                      {s.agentId}
-                    </span>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td className="px-3 py-2 text-neutral-400">
-                  {s.durationMs !== null ? `${s.durationMs} ms` : '—'}
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadgeClass(s.status)}`}
-                  >
-                    {s.status}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-neutral-500">
-                  {new Date(s.startedAt).toLocaleTimeString()}
-                </td>
-                <td className="px-3 py-2">
-                  <Link href={`/traces/${s.traceId}`} className="text-brand-500 hover:underline">
-                    open
-                  </Link>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
+              <tr>
+                <th className="px-3 py-2">Tool</th>
+                <th className="px-3 py-2">Framework</th>
+                <th className="px-3 py-2">Agent</th>
+                <th className="px-3 py-2">Duration</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">When</th>
+                <th className="px-3 py-2">Trace</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((s) => (
+                <tr key={s.spanId} className="border-t border-neutral-800 hover:bg-neutral-900">
+                  <td className="px-3 py-2 text-neutral-200">{s.name}</td>
+                  <td className="px-3 py-2 text-neutral-400">{s.framework}</td>
+                  <td className="px-3 py-2 text-neutral-400">
+                    {s.agentId ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className="inline-block size-2 rounded-full"
+                          style={{ background: agentColor(s.agentId) }}
+                        />
+                        {s.agentId}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-neutral-400">
+                    {s.durationMs !== null ? `${s.durationMs} ms` : '—'}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${statusBadgeClass(s.status)}`}
+                    >
+                      {s.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-neutral-500">
+                    {new Date(s.startedAt).toLocaleTimeString()}
+                  </td>
+                  <td className="px-3 py-2">
+                    <Link href={`/traces/${s.traceId}`} className="text-brand-500 hover:underline">
+                      open
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

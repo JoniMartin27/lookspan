@@ -33,61 +33,65 @@ export default function RunDetail() {
           : ''}
       </p>
 
-      <table className="w-full text-sm">
-        <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
-          <tr>
-            <th className="px-3 py-2">#</th>
-            <th className="px-3 py-2">Status</th>
-            {run.judgeMetric && <th className="px-3 py-2">{run.judgeMetric}</th>}
-            <th className="px-3 py-2">Cost</th>
-            <th className="px-3 py-2">Latency</th>
-            <th className="px-3 py-2">Output</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it, i) => (
-            <tr key={it.id} className="border-t border-neutral-800 align-top">
-              <td className="px-3 py-2 text-neutral-500">{i + 1}</td>
-              <td className="px-3 py-2">
-                <span
-                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                    it.status === 'error'
-                      ? 'bg-red-500/10 text-red-400'
-                      : 'bg-emerald-500/10 text-emerald-400'
-                  }`}
-                >
-                  {it.status}
-                </span>
-              </td>
-              {run.judgeMetric && (
-                <td className="px-3 py-2 font-mono text-neutral-200">
-                  {it.score !== null ? it.score.toFixed(2) : '—'}
-                </td>
-              )}
-              <td className="px-3 py-2 text-neutral-400">
-                {it.costUsd !== null ? `$${it.costUsd.toFixed(4)}` : '—'}
-              </td>
-              <td className="px-3 py-2 text-neutral-400">
-                {it.durationMs !== null ? `${it.durationMs} ms` : '—'}
-              </td>
-              <td className="max-w-md px-3 py-2">
-                {it.status === 'error' ? (
-                  <span className="text-red-400">{it.error}</span>
-                ) : (
-                  <div>
-                    <pre className="max-h-24 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-neutral-300">
-                      {it.output}
-                    </pre>
-                    {it.rationale && (
-                      <div className="mt-1 text-[10px] italic text-neutral-500">{it.rationale}</div>
-                    )}
-                  </div>
-                )}
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
+            <tr>
+              <th className="px-3 py-2">#</th>
+              <th className="px-3 py-2">Status</th>
+              {run.judgeMetric && <th className="px-3 py-2">{run.judgeMetric}</th>}
+              <th className="px-3 py-2">Cost</th>
+              <th className="px-3 py-2">Latency</th>
+              <th className="px-3 py-2">Output</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((it, i) => (
+              <tr key={it.id} className="border-t border-neutral-800 align-top">
+                <td className="px-3 py-2 text-neutral-500">{i + 1}</td>
+                <td className="px-3 py-2">
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                      it.status === 'error'
+                        ? 'bg-red-500/10 text-red-400'
+                        : 'bg-emerald-500/10 text-emerald-400'
+                    }`}
+                  >
+                    {it.status}
+                  </span>
+                </td>
+                {run.judgeMetric && (
+                  <td className="px-3 py-2 font-mono text-neutral-200">
+                    {it.score !== null ? it.score.toFixed(2) : '—'}
+                  </td>
+                )}
+                <td className="px-3 py-2 text-neutral-400">
+                  {it.costUsd !== null ? `$${it.costUsd.toFixed(4)}` : '—'}
+                </td>
+                <td className="px-3 py-2 text-neutral-400">
+                  {it.durationMs !== null ? `${it.durationMs} ms` : '—'}
+                </td>
+                <td className="max-w-md px-3 py-2">
+                  {it.status === 'error' ? (
+                    <span className="text-red-400">{it.error}</span>
+                  ) : (
+                    <div>
+                      <pre className="max-h-24 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-neutral-300">
+                        {it.output}
+                      </pre>
+                      {it.rationale && (
+                        <div className="mt-1 text-[10px] italic text-neutral-500">
+                          {it.rationale}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

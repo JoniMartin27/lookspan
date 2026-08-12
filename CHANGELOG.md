@@ -41,6 +41,12 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **Every view scrolled sideways on a narrow window.** At 390px the page body
+  was 157px wider than the viewport on all seven views — the seven-item header
+  nav could not fit, and the data tables pushed past it too. The nav and each
+  table now scroll on their own axis, so the page itself never does. Measured
+  before and after in a real browser at 390×844; the desktop layout is
+  unchanged.
 - **The LangGraph adapter reported the model name as the provider.**
   `on_llm_end` read LangChain's `model_name` and wrote it to *both* `model` and
   `provider`, so every LangGraph user's spans were grouped under a provider
