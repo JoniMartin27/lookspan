@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+The first screen a new user sees had never been audited.
+
+### Fixed
+- **The empty dashboard failed WCAG AA.** Every accessibility pass so far ran
+  against a seeded database, so the states a new install actually shows were
+  never measured. With an empty one, `/` offered "Head to Connect to wire up
+  your agent" with *Connect* distinguished from the surrounding sentence by
+  colour alone (1.04:1 — hue only), and `/costs` rendered its `--pricing` hint
+  in a chip that declared no colour of its own and inherited `neutral-600` onto
+  the lighter chip background, landing at 4.05:1. Four of the five inline chips
+  in the dashboard were inheriting like that, one edit to a parent paragraph
+  away from the same defect; each now states its own colour.
+- **The cost charts kept the pre-Fervon grey.** Raising the neutral ramp to
+  clear AA moved `index.css` but not the colours hardcoded into recharts, so
+  all 39 axis tick labels stayed at 4.31:1. axe does not measure contrast
+  inside an `<svg>`, which is why eight clean view audits never caught it.
+  Chart chrome now lives in `lib/chartTheme.ts`, and a test asserts each value
+  still equals the token it mirrors.
+
 ## 0.5.2 — 2026-08-12
 
 The trace view answered what the model did and never what it was asked.

@@ -346,7 +346,7 @@ function TracesEmptyState({ filtered }: { filtered: boolean }) {
   return (
     <EmptyState title="No traces yet">
       Head to{' '}
-      <Link href="/connect" className="text-brand-500 hover:underline">
+      <Link href="/connect" className="text-brand-500 underline">
         Connect
       </Link>{' '}
       to wire up your agent in a couple of lines.

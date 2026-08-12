@@ -123,11 +123,11 @@ export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${ORIGIN}/v1/traces
         <p className="mb-1 font-medium text-neutral-300">Sending from another machine?</p>
         <p>
           By default Lookspan only listens on loopback. Start it with{' '}
-          <code className="rounded bg-neutral-800 px-1 py-0.5 font-mono">
+          <code className="rounded bg-neutral-800 px-1 py-0.5 font-mono text-neutral-400">
             --host 0.0.0.0 --token &lt;secret&gt;
           </code>{' '}
           and add{' '}
-          <code className="rounded bg-neutral-800 px-1 py-0.5 font-mono">
+          <code className="rounded bg-neutral-800 px-1 py-0.5 font-mono text-neutral-400">
             Authorization: Bearer &lt;secret&gt;
           </code>{' '}
           to your requests.
