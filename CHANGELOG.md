@@ -46,6 +46,15 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **The side drawers were unusable from the keyboard.** Opening *Replay &
+  judge* or a span's detail left focus behind on the button that opened it, so
+  reaching the panel meant tabbing through the whole page, Escape did nothing,
+  and neither drawer announced itself as a dialog. They now take focus on open,
+  close on Escape, hand focus back where it came from, and carry
+  `role="dialog"` with a name.
+- **Views made only of charts could not be scrolled without a mouse.** The
+  Costs page has no focusable content at all, which left its scroll container
+  unreachable by keyboard (`scrollable-region-focusable`).
 - **The dashboard failed WCAG AA on every view.** An axe-core audit found three
   problems: the forge palette's `neutral-500` and `neutral-600` sat at 4.42:1
   and 2.54:1 against the page while carrying real text (89 flagged nodes), the
