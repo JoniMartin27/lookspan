@@ -24,7 +24,8 @@
     "dev:api": "npm --workspace @lookspan/api run dev",
     "dev:dashboard": "npm --workspace @lookspan/dashboard run dev",
     "clean": "tsc --build --clean && rimraf \"packages/*/dist\" \"apps/*/dist\"",
-    "smoke:cli": "node packages/cli/scripts/bundle.mjs && node packages/cli/dist/index.js --version"
+    "smoke:cli": "node packages/cli/scripts/bundle.mjs && node packages/cli/dist/index.js --version",
+    "icons": "node scripts/make-icons.mjs"
   },
   "workspaces": [
     "packages/*",

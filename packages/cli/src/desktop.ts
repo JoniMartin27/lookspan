@@ -9,9 +9,9 @@
 // tested without touching the filesystem; `installDesktop` / `uninstallDesktop`
 // are the only parts that do I/O.
 
-import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 export const APP_NAME = 'Lookspan';
 export const APP_COMMENT = 'Local-first observability dashboard for AI agents';
@@ -27,6 +27,18 @@ export interface DesktopInput {
   cliPath: string;
   /** Flags baked into the launcher, e.g. ['--port', '3200', '--open']. */
   args: string[];
+  /**
+   * Absolute paths to the launcher icons, when they shipped with the install.
+   * Resolved by the caller (see `currentDesktopInput`) so everything that
+   * decides *what* to write stays pure and testable; a launcher without them
+   * still works, it just inherits the platform's default icon.
+   */
+  icons?: { ico?: string; png?: string };
+}
+
+/** The icon of the given kind, or null when this install has none. */
+export function iconPath(input: DesktopInput, kind: 'ico' | 'png'): string | null {
+  return input.icons?.[kind] ?? null;
 }
 
 export interface DesktopFile {
@@ -87,12 +99,14 @@ export function buildLinuxEntry(input: DesktopInput): string {
   const exec = [input.execPath, input.cliPath, ...withOpenFlag(input.args)]
     .map(shellQuote)
     .join(' ');
+  const icon = iconPath(input, 'png');
   return [
     '[Desktop Entry]',
     'Type=Application',
     `Name=${APP_NAME}`,
     `Comment=${APP_COMMENT}`,
     `Exec=${exec}`,
+    ...(icon ? [`Icon=${icon}`] : []),
     'Terminal=false',
     'Categories=Development;Monitor;',
     'StartupNotify=false',
@@ -142,6 +156,7 @@ export function buildWindowsScript(shortcutPaths: string[], input: DesktopInput)
   const args = [input.cliPath, ...withOpenFlag(input.args)]
     .map((a) => (a.includes(' ') ? `"${a}"` : a))
     .join(' ');
+  const ico = iconPath(input, 'ico');
   const lines = ['$shell = New-Object -ComObject WScript.Shell'];
   for (const [i, path] of shortcutPaths.entries()) {
     lines.push(
@@ -151,6 +166,9 @@ export function buildWindowsScript(shortcutPaths: string[], input: DesktopInput)
       `$s${i}.WorkingDirectory = ${psQuote(input.home)}`,
       `$s${i}.Description = ${psQuote(APP_COMMENT)}`,
       `$s${i}.WindowStyle = 7`,
+      // Without this the shortcut shows node.exe's icon, which reads as "some
+      // script" rather than "an app".
+      ...(ico ? [`$s${i}.IconLocation = ${psQuote(`${ico},0`)}`] : []),
       `$s${i}.Save()`,
     );
   }
@@ -247,6 +265,22 @@ async function runPowerShell(script: string): Promise<void> {
   });
 }
 
+/**
+ * Locate the shipped icons relative to the CLI entrypoint. Published layout is
+ * `dist/index.js` → `../assets`; a source checkout resolves the same way once
+ * `scripts/make-icons.mjs` has run. Missing icons are not an error — the
+ * launcher just falls back to the platform default.
+ */
+export function findIcons(cliPath: string): DesktopInput['icons'] {
+  const assets = join(dirname(cliPath), '..', 'assets');
+  const found: { ico?: string; png?: string } = {};
+  for (const kind of ['ico', 'png'] as const) {
+    const candidate = join(assets, `lookspan.${kind}`);
+    if (existsSync(candidate)) found[kind] = candidate;
+  }
+  return found;
+}
+
 /** Default input for the running process. */
 export function currentDesktopInput(cliPath: string, args: string[]): DesktopInput {
   return {
@@ -255,5 +289,6 @@ export function currentDesktopInput(cliPath: string, args: string[]): DesktopInp
     execPath: process.execPath,
     cliPath,
     args,
+    icons: findIcons(cliPath),
   };
 }

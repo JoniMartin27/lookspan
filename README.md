@@ -66,8 +66,9 @@ lookspan install-desktop          # bake in flags if you want: --port 3200 --ret
 ```
 
 That adds a **Lookspan** entry to your Desktop and Start Menu on Windows, to
-`~/Applications` on macOS, and to your app menu on Linux. Clicking it starts the
-server and opens the dashboard. `lookspan uninstall-desktop` removes it.
+`~/Applications` on macOS, and to your app menu on Linux — with the Lookspan
+icon on Windows and Linux. Clicking it starts the server and opens the
+dashboard. `lookspan uninstall-desktop` removes it.
 
 > It needs a real install — a shortcut into the `npx` cache breaks the first
 > time npm cleans it, so `install-desktop` refuses to create one.

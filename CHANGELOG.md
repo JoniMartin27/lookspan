@@ -10,6 +10,11 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   CI — only the core package even had tests. A `python SDKs` job runs ruff and
   pytest for each, and the two adapters gained suites of their own (35 tests
   covering span shape, causality, truncation, error paths and version parity).
+- **The desktop launcher ships an icon** on Windows and Linux, generated from
+  the dashboard's own favicon SVG by `npm run icons` so the two can't drift.
+  The `.ico` stores 16/24/32/48 as uncompressed DIB (PNG-compressed entries are
+  legal but the older GDI+ path can't decode them) and 128/256 as PNG. macOS
+  still uses the system default — an `.icns` bundle isn't built yet.
 - **One-click desktop launcher** — `lookspan install-desktop` registers Lookspan
   as a real desktop app: a shortcut on the Desktop and in the Start Menu on
   Windows, `~/Applications/Lookspan.app` on macOS, a `.desktop` entry on Linux.

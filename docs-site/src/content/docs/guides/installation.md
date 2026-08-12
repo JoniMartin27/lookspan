@@ -42,11 +42,15 @@ open it the way you open anything else — by clicking an icon:
 lookspan install-desktop
 ```
 
-| Platform | What it creates |
-|---|---|
-| Windows | `Lookspan.lnk` on the Desktop **and** in the Start Menu (starts minimized) |
-| macOS | `~/Applications/Lookspan.app` |
-| Linux | `~/.local/share/applications/lookspan.desktop` (appears in your app menu) |
+| Platform | What it creates | Icon |
+|---|---|---|
+| Windows | `Lookspan.lnk` on the Desktop **and** in the Start Menu (starts minimized) | yes |
+| macOS | `~/Applications/Lookspan.app` | system default |
+| Linux | `~/.local/share/applications/lookspan.desktop` (appears in your app menu) | yes |
+
+The Windows and Linux entries use the Lookspan mark, generated from the same
+SVG the dashboard uses as its favicon (`npm run icons`). macOS needs an `.icns`
+bundle, which is not built yet, so the `.app` shows the system default.
 
 Clicking it starts the server and opens the dashboard — no terminal involved.
 
