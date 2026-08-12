@@ -5,6 +5,16 @@
 The first screen a new user sees had never been audited, and "live" was not.
 
 ### Security
+- **One capital letter bypassed `--token` entirely.** Express routes
+  case-insensitively, so `/API/traces` reached the traces router — but the auth
+  guard asked `req.path.startsWith('/api')`, which does not. The guard and the
+  router disagreed about what a path was, and the request fell through the gap:
+  `GET /API/traces` returned the whole database without a token, and `POST
+  /API/ingest` accepted writes. The same held for `/API/stats`,
+  `/API/export/traces`, `/V1/traces` and any other capitalisation. The token is
+  the only protection when the server is exposed with `--host 0.0.0.0`, which
+  is the documented reason to set it. The guard now matches on the same terms
+  as the router. Token comparison is also hashed and timing-safe.
 - **Redaction failed open past its depth limit, and an ordinary OpenAI tool
   call reached it.** The scan stopped at six levels and returned whatever was
   below *untouched* — key names unchecked and secret-looking values unscrubbed,
