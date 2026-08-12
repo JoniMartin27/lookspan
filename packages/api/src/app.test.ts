@@ -530,3 +530,64 @@ describe('dashboard SPA fallback', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('CORS', () => {
+  // The browser reaches loopback even when the network cannot, so reflecting
+  // whatever origin asked let any page the user visited read the local database
+  // — and, with no token on a default install, write to it.
+  describe('by default', () => {
+    beforeEach(() => start());
+
+    it('grants nothing to an unknown origin', async () => {
+      const res = await fetch(`${base}/api/traces`, {
+        headers: { origin: 'https://evil.example' },
+      });
+      expect(res.headers.get('access-control-allow-origin')).toBeNull();
+    });
+
+    it('still answers same-origin requests normally', async () => {
+      // The dashboard is served from this very origin: locking CORS down must
+      // not break the UI, which sends no Origin header at all.
+      expect((await fetch(`${base}/api/traces`)).status).toBe(200);
+    });
+
+    it('still accepts spans from a non-browser client', async () => {
+      // Agents post from Node/Python, which do not enforce CORS. Their path
+      // must be untouched.
+      const res = await fetch(`${base}/api/ingest`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ spans: [] }),
+      });
+      expect(res.status).toBe(200);
+    });
+  });
+
+  describe('with an explicit origin', () => {
+    beforeEach(() => {
+      const db = openDatabase({ path: ':memory:' });
+      migrate(db);
+      const app = createApp({ context: createContext(db), corsOrigin: ['https://app.example'] });
+      return new Promise<void>((resolve) => {
+        server = app.listen(0, '127.0.0.1', () => {
+          base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+          resolve();
+        });
+      });
+    });
+
+    it('grants the configured origin', async () => {
+      const res = await fetch(`${base}/api/traces`, {
+        headers: { origin: 'https://app.example' },
+      });
+      expect(res.headers.get('access-control-allow-origin')).toBe('https://app.example');
+    });
+
+    it('grants nothing to any other origin', async () => {
+      const res = await fetch(`${base}/api/traces`, {
+        headers: { origin: 'https://evil.example' },
+      });
+      expect(res.headers.get('access-control-allow-origin')).toBeNull();
+    });
+  });
+});

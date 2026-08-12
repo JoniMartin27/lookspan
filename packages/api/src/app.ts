@@ -52,9 +52,16 @@ function sameToken(provided: string, expected: string): boolean {
 export function createApp(options: CreateAppOptions): Express {
   const app = express();
 
+  // No cross-origin access unless it is asked for. Reflecting whatever origin
+  // asked — the previous default — meant any page the user visited could read
+  // the whole local database from their browser, and write to it: the browser
+  // reaches loopback even when the network does not, and a default install has
+  // no token. Nothing legitimate relied on it. The dashboard is served from
+  // this same origin, the Vite dev server proxies `/api`, and agents post from
+  // Node or Python, which do not enforce CORS at all.
   app.use(
     cors({
-      origin: options.corsOrigin ?? true,
+      origin: options.corsOrigin ?? false,
       credentials: false,
     }),
   );

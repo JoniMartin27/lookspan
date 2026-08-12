@@ -112,6 +112,9 @@ Options:
                         Postgres connection string (postgres://… / postgresql://…)
       --retention <dur> Prune traces older than <dur> (e.g. 7d, 24h, 30m)
       --token <token>   Require Authorization: Bearer <token> on the API
+      --cors-origin <o> Browser origins allowed to call the API (comma-separated).
+                        Empty by default — the dashboard is same-origin and agents
+                        post from outside a browser, so nothing normally needs this.
       --pricing <file>  Load a custom model pricing table (JSON) to keep costs current
       --openai-key <k>      OpenAI key for Replay & LLM-as-judge (in-memory only)
       --anthropic-key <k>   Anthropic key for Replay & LLM-as-judge (in-memory only)
@@ -129,6 +132,7 @@ Environment:
   LOOKSPAN_DB           Same as --db (SQLite path or postgres:// URL)
   LOOKSPAN_RETENTION    Same as --retention
   LOOKSPAN_TOKEN        Same as --token
+  LOOKSPAN_CORS_ORIGIN  Same as --cors-origin
   LOOKSPAN_PRICING      Same as --pricing
   LOOKSPAN_OPENAI_API_KEY / LOOKSPAN_ANTHROPIC_API_KEY   Enable Replay & LLM-as-judge
   LOOKSPAN_INFERENCE_TIMEOUT_MS    Replay/judge provider timeout (default: 60000)
@@ -271,6 +275,7 @@ function main(): void {
     context: ctx,
     dashboardDir: dashboardDir ?? undefined,
     authToken: flags.token,
+    corsOrigin: flags.corsOrigins.length > 0 ? flags.corsOrigins : false,
   });
   const stopRetention = flags.retentionMs ? startRetention(db, flags.retentionMs) : null;
 

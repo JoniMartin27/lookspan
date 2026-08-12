@@ -10,6 +10,12 @@ export interface CliFlags {
   open: boolean;
   retentionMs: number | null;
   token: string | undefined;
+  /**
+   * Origins allowed to call the API from a browser. Empty = none, which is the
+   * default: the dashboard is served from this same origin (and the Vite dev
+   * server proxies `/api`), so nothing legitimate needs a cross-origin grant.
+   */
+  corsOrigins: string[];
   alertRules: AlertRule[];
   pricingFile: string | undefined;
   inferenceKeys: InferenceKeys;
@@ -28,6 +34,25 @@ export class FlagError extends Error {
 
 /** The environment `parseFlags` reads. Injected so it can be tested. */
 export type Env = Record<string, string | undefined>;
+
+/**
+ * Parse `--cors-origin` (comma-separated) into the list of browser origins
+ * allowed to call the API.
+ *
+ * Empty by default. Reflecting whatever origin asked meant any page the user
+ * happened to visit could read the whole local database from their browser —
+ * and write to it — because the browser reaches loopback even when the network
+ * cannot. Nothing legitimate needed it: the dashboard is same-origin and the
+ * dev server proxies `/api`, while agents post from Node or Python, which do
+ * not enforce CORS at all.
+ */
+function parseCorsOrigins(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+}
 
 function buildAlertRules(values: Record<string, unknown>, env: Env): AlertRule[] {
   const rules: AlertRule[] = [];
@@ -76,6 +101,7 @@ export function parseFlags(argv: string[], env: Env = process.env): CliFlags {
         db: { type: 'string' },
         retention: { type: 'string' },
         token: { type: 'string' },
+        'cors-origin': { type: 'string' },
         pricing: { type: 'string' },
         'openai-key': { type: 'string' },
         'anthropic-key': { type: 'string' },
@@ -114,6 +140,7 @@ export function parseFlags(argv: string[], env: Env = process.env): CliFlags {
     open: Boolean(values.open),
     retentionMs,
     token: (values.token as string) ?? env.LOOKSPAN_TOKEN ?? undefined,
+    corsOrigins: parseCorsOrigins((values['cors-origin'] as string) ?? env.LOOKSPAN_CORS_ORIGIN),
     alertRules: buildAlertRules(values, env),
     pricingFile: (values.pricing as string) ?? env.LOOKSPAN_PRICING ?? undefined,
     inferenceKeys: {
