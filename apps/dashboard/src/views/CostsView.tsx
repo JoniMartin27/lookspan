@@ -27,7 +27,6 @@ export default function CostsView() {
   const byModel = Object.entries(data.byModel).map(([name, cost]) => ({ name, cost }));
   const byProvider = Object.entries(data.byProvider).map(([name, cost]) => ({ name, cost }));
   const byAgent = Object.entries(data.byAgent)
-    .filter(([name]) => name)
     .map(([name, cost]) => ({ name, cost }))
     .sort((a, b) => b.cost - a.cost)
     .slice(0, 12);
