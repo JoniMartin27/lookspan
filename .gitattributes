@@ -1,0 +1,20 @@
+# The repo is authored and stored with LF. Without this, Git's core.autocrlf
+# rewrites the working tree to CRLF on Windows checkouts, which does not change
+# what is committed but does break the tools that read the files on disk:
+# `npm run lint` reports every file as misformatted, and Vitest fails to parse
+# `scripts/traction.mjs` at all. Both pass on Linux CI, so the failures look
+# like real regressions and are not — several sessions have been lost to it.
+* text=auto eol=lf
+
+# Binary assets: never touch these.
+*.gif  binary
+*.mp4  binary
+*.webm binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.ico  binary
+*.woff  binary
+*.woff2 binary
+*.db   binary
