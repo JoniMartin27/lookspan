@@ -410,6 +410,54 @@ describe('createApp auth token', () => {
     });
     expect(res.status).toBe(401);
   });
+
+  // Express routes case-insensitively, so `/API/traces` reached the traces
+  // router while `req.path.startsWith('/api')` said it was not an API request
+  // at all. One capital letter returned the whole database, and `POST
+  // /API/ingest` accepted writes. The guard has to agree with the router about
+  // what a path is.
+  it.each([
+    '/API/traces',
+    '/Api/traces',
+    '/aPi/traces',
+    '/API/stats',
+    '/API/sessions',
+    '/API/export/traces?format=json',
+  ])('rejects %s without a token', async (path) => {
+    expect((await fetch(`${base}${path}`)).status).toBe(401);
+  });
+
+  it.each(['/API/ingest', '/V1/traces'])('rejects writes to %s without a token', async (path) => {
+    const res = await fetch(`${base}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ spans: [], resourceSpans: [] }),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('still accepts a capitalised path when the token is right', async () => {
+    // Closing the hole must not turn a working request into a 401 for someone
+    // who was relying on Express's case-insensitive routing.
+    const res = await fetch(`${base}/API/traces`, {
+      headers: { authorization: 'Bearer secret123' },
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects a token that is a prefix of the real one', async () => {
+    // The comparison is hashed before `timingSafeEqual`, which throws on a
+    // length mismatch — a shorter token must be rejected, not crash the server.
+    const res = await fetch(`${base}/api/traces`, {
+      headers: { authorization: 'Bearer secret' },
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects an empty Bearer token', async () => {
+    const res = await fetch(`${base}/api/traces`, { headers: { authorization: 'Bearer ' } });
+    expect(res.status).toBe(401);
+  });
 });
 
 describe('dashboard SPA fallback', () => {

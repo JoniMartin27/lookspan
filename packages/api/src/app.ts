@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import type { ApiContext } from './context.js';
@@ -34,6 +35,20 @@ export interface CreateAppOptions {
   authToken?: string;
 }
 
+/**
+ * Compare two tokens without leaking their contents through timing.
+ *
+ * Hashed first so both sides are the same length whatever was sent —
+ * `timingSafeEqual` throws on a length mismatch, and the mismatch itself is
+ * information. Over a LAN this is a small margin, but it costs one hash on a
+ * path that already does far more work.
+ */
+function sameToken(provided: string, expected: string): boolean {
+  const a = createHash('sha256').update(provided).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
 export function createApp(options: CreateAppOptions): Express {
   const app = express();
 
@@ -50,13 +65,18 @@ export function createApp(options: CreateAppOptions): Express {
   if (options.authToken) {
     const token = options.authToken;
     app.use((req, res, next) => {
-      if (req.path === '/api/health') return next();
-      if (!req.path.startsWith('/api') && !req.path.startsWith('/v1')) return next();
+      // Express routes case-insensitively by default, so `/API/traces` reaches
+      // the traces router. This check has to match on the same terms or the
+      // guard and the router disagree about what a path is — `GET /API/traces`
+      // returned the whole database, and `POST /API/ingest` accepted writes.
+      const path = req.path.toLowerCase();
+      if (path === '/api/health') return next();
+      if (!path.startsWith('/api') && !path.startsWith('/v1')) return next();
       const header = req.get('authorization');
       const bearer = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
       const provided =
         bearer ?? (typeof req.query.token === 'string' ? req.query.token : undefined);
-      if (provided !== token) {
+      if (provided === undefined || !sameToken(provided, token)) {
         res.status(401).json({ error: 'unauthorized' });
         return;
       }
