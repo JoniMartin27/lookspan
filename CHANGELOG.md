@@ -4,6 +4,19 @@
 
 The first screen a new user sees had never been audited, and "live" was not.
 
+### Security
+- **Redaction failed open past its depth limit, and an ordinary OpenAI tool
+  call reached it.** The scan stopped at six levels and returned whatever was
+  below *untouched* — key names unchecked and secret-looking values unscrubbed,
+  because the walk never got there. `input.messages[0].tool_calls[0].function.arguments`
+  is exactly six levels down, so a credential passed as a tool argument was
+  stored in the clear, against a README that promised telemetry "never drags
+  secrets into the database". Verified against a running server: three of eight
+  realistic secret shapes were persisted verbatim, now none are. The scan goes
+  twelve levels deep and replaces anything beyond it rather than waving it
+  through. A unit test had pinned the old behaviour as correct, which is how it
+  survived.
+
 ### Fixed
 - **The judge graded a truncated answer without being told.** Long content is
   cut before it reaches the LLM judge — 12,000 characters of the request and

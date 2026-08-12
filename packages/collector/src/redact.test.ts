@@ -1,6 +1,6 @@
 import type { SpanInput } from '@lookspan/types';
 import { describe, expect, it } from 'vitest';
-import { REDACTED, redactObject, redactSpan } from './redact.js';
+import { REDACTED, REDACTED_DEEP, redactObject, redactSpan } from './redact.js';
 
 describe('redactObject', () => {
   it('masks values of sensitive keys', () => {
@@ -59,13 +59,59 @@ describe('redactObject', () => {
     expect(out).toEqual({ ssn: REDACTED, token: REDACTED });
   });
 
-  it('stops recursing past maxDepth', () => {
+  it('replaces a subtree past maxDepth instead of storing it unscanned', () => {
+    // This test used to assert the opposite — that `{ secret: 'x' }` came back
+    // untouched — which is how the leak survived: the scan gave up *and* waved
+    // the payload through, key names unchecked and strings unscrubbed.
+    // Depth 0 is the root; its values are visited at depth 1, so with
+    // `maxDepth: 1` the value of `a` is the first thing left unscanned.
     const out = redactObject({ a: { b: { secret: 'x' } } }, { maxDepth: 1 }) as Record<
       string,
       unknown
     >;
-    // depth 0 = root, depth 1 = a; b is at depth 2 ≥ maxDepth so it is returned as-is
-    expect(out).toEqual({ a: { b: { secret: 'x' } } });
+    expect(out).toEqual({ a: REDACTED_DEEP });
+    expect(JSON.stringify(out)).not.toContain('"x"');
+
+    // One level further down and the secret is reached and masked.
+    expect(redactObject({ a: { b: { secret: 'x' } } }, { maxDepth: 3 })).toEqual({
+      a: { b: { secret: REDACTED } },
+    });
+  });
+
+  it('scans a real OpenAI tool call all the way down', () => {
+    // `input.messages[0].tool_calls[0].function.arguments.api_key` is six
+    // levels down. With the old default of 6 the credential was stored in the
+    // clear — not an edge case, but the shape the OpenAI SDK produces.
+    const payload = {
+      messages: [
+        {
+          role: 'assistant',
+          tool_calls: [
+            {
+              type: 'function',
+              function: { name: 'call_api', arguments: { api_key: 'hunter2' } },
+            },
+          ],
+        },
+      ],
+    };
+    expect(JSON.stringify(redactObject(payload))).not.toContain('hunter2');
+  });
+
+  it('scrubs secret-looking values below the old limit too', () => {
+    // The walk bailing out early meant value scrubbing never reached these
+    // strings either, so a provider key pasted deep in a payload survived.
+    const deep = {
+      a: { b: { c: { d: { e: { f: { note: 'use sk-proj-AbCdEfGhIjKlMnOpQr1234' } } } } } },
+    };
+    expect(JSON.stringify(redactObject(deep))).not.toContain('sk-proj-');
+  });
+
+  it('keeps ordinary deep data rather than blanking it', () => {
+    // Failing closed must not cost legitimate telemetry: twelve levels covers
+    // the payloads this product exists to ingest.
+    const deep = { a: { b: { c: { d: { e: { f: { g: { note: 'todo bien' } } } } } } } };
+    expect(JSON.stringify(redactObject(deep))).toContain('todo bien');
   });
 });
 

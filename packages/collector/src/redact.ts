@@ -3,6 +3,25 @@ import type { SpanInput } from '@lookspan/types';
 export const REDACTED = '[REDACTED]';
 
 /**
+ * Stand-in for a subtree nested deeper than the scan goes.
+ *
+ * Distinct from `REDACTED` on purpose: seeing this in the dashboard means "we
+ * could not prove this was clean", not "this was a credential".
+ */
+export const REDACTED_DEEP = '[REDACTED: nested deeper than the redaction scan]';
+
+/**
+ * How deep the scan goes before it gives up.
+ *
+ * It has to stop somewhere — a hostile payload can nest arbitrarily — but the
+ * limit was 6, and a perfectly ordinary OpenAI tool call reaches it:
+ * `input.messages[0].tool_calls[0].function.arguments` is exactly six levels
+ * down, so a credential passed as a tool argument was stored in the clear.
+ * Twelve clears the payload shapes this product exists to ingest.
+ */
+const DEFAULT_MAX_DEPTH = 12;
+
+/**
  * Default set of sensitive key patterns. A key is redacted when its lowercased
  * name contains any of these substrings — so `api_key`, `X-Api-Key`,
  * `authorization`, `openai_token` and `client_secret` all match.
@@ -49,7 +68,10 @@ export interface RedactOptions {
   extraPatterns?: string[];
   /** Replace the default patterns entirely instead of extending them. */
   patterns?: string[];
-  /** Max depth to recurse into nested objects/arrays (default 6). */
+  /**
+   * Max depth to recurse into nested objects/arrays (default 12). Anything
+   * deeper is replaced with `REDACTED_DEEP` rather than stored unscanned.
+   */
   maxDepth?: number;
   /** Also scrub secret-looking substrings inside string values (default true). */
   scrubValues?: boolean;
@@ -85,7 +107,12 @@ function redactValue(
   scrub: boolean,
 ): unknown {
   if (typeof value === 'string') return scrub ? scrubSecrets(value) : value;
-  if (depth >= maxDepth || value === null || typeof value !== 'object') return value;
+  if (value === null || typeof value !== 'object') return value;
+  // Fail closed. Returning the subtree untouched meant everything below the
+  // limit was stored verbatim — key names unchecked *and* strings unscrubbed,
+  // because the walk never reached them. A scan that gives up must not also
+  // wave the payload through.
+  if (depth >= maxDepth) return REDACTED_DEEP;
 
   if (Array.isArray(value)) {
     return value.map((v) => redactValue(v, patterns, depth + 1, maxDepth, scrub));
@@ -103,7 +130,13 @@ function redactValue(
 /** Recursively redact sensitive keys (and secret-looking values) in an object. */
 export function redactObject<T>(obj: T, options: RedactOptions = {}): T {
   const patterns = compilePatterns(options);
-  return redactValue(obj, patterns, 0, options.maxDepth ?? 6, options.scrubValues !== false) as T;
+  return redactValue(
+    obj,
+    patterns,
+    0,
+    options.maxDepth ?? DEFAULT_MAX_DEPTH,
+    options.scrubValues !== false,
+  ) as T;
 }
 
 /**
