@@ -15,6 +15,32 @@ def _now() -> str:
     return datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def provider_for_model(model: str | None) -> str | None:
+    """Best-effort provider from a model id.
+
+    LangChain reports the model (`llm_output["model_name"]`) but not the vendor,
+    and Lookspan groups cost and calls by provider — so guess it from the model
+    name, the same way the dashboard's replay does, and leave it unset rather
+    than guessing wrong.
+    """
+    if not model:
+        return None
+    name = model.lower()
+    if name.startswith("claude"):
+        return "anthropic"
+    if name.startswith(("gpt-", "o1", "o3", "o4", "chatgpt", "text-embedding")):
+        return "openai"
+    if name.startswith("gemini"):
+        return "google"
+    if name.startswith(("mistral", "mixtral", "ministral")):
+        return "mistral"
+    if name.startswith(("llama", "meta-llama")):
+        return "meta"
+    if name.startswith("deepseek"):
+        return "deepseek"
+    return None
+
+
 class _SpanState:
     __slots__ = ("started_at", "input")
 
@@ -176,7 +202,7 @@ class LookspanCallbackHandler(BaseCallbackHandler):
             input_tokens=int(usage_info.get("prompt_tokens", 0) or 0),
             output_tokens=int(usage_info.get("completion_tokens", 0) or 0),
         )
-        provider = (response.llm_output or {}).get("model_name") if response.llm_output else None
+        model = (response.llm_output or {}).get("model_name") if response.llm_output else None
         text = response.generations[0][0].text if response.generations and response.generations[0] else None
         self._end_span(
             run_id,
@@ -185,8 +211,8 @@ class LookspanCallbackHandler(BaseCallbackHandler):
             "llm",
             status=SpanStatus.OK,
             output=text,
-            model=provider,
-            provider=provider,
+            model=model,
+            provider=provider_for_model(model),
             usage=usage,
         )
 

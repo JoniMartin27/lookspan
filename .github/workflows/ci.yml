@@ -8,6 +8,7 @@ on:
 
 jobs:
   ci:
+    name: node
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +18,37 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ci
+
+  python:
+    name: python SDKs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: lookspan (core)
+        working-directory: python/lookspan-core
+        run: |
+          pip install --quiet pytest "ruff==0.14.5" .
+          ruff check src tests
+          pytest -q
+
+      - name: lookspan-langgraph
+        working-directory: python/lookspan-langgraph
+        run: |
+          pip install --quiet pytest "ruff==0.14.5" ../lookspan-core .
+          ruff check src tests
+          pytest -q
+
+      # crewai itself is only imported inside `attach()`, and installing it
+      # pulls a large, slow dependency tree. Install the adapter without its
+      # deps: every span-building path is exercised with stand-in events.
+      - name: lookspan-crewai
+        working-directory: python/lookspan-crewai
+        run: |
+          pip install --quiet pytest "ruff==0.14.5" ../lookspan-core
+          pip install --quiet --no-deps .
+          ruff check src tests
+          pytest -q

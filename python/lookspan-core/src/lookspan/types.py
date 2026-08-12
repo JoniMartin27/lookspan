@@ -128,6 +128,6 @@ __all__ = [
     "SpanStatus",
     "SpanType",
     "TokenUsage",
-    "asdict",
     "_strip_none",
+    "asdict",
 ]
