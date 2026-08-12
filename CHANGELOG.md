@@ -5,6 +5,18 @@
 The first screen a new user sees had never been audited, and "live" was not.
 
 ### Fixed
+- **A dataset run skipped items without saying so.** A run covers the first 100
+  items; the panel said "Runs up to 100 items synchronously" — the same
+  sentence whether the dataset held five items or five hundred — and the button
+  offered to run *all* of them. A 150-item dataset came back `100/100 ok`,
+  which reads as a clean sweep, with fifty items never evaluated and no sign
+  they existed. In the one feature whose job is telling you whether your agent
+  still works, that is the worst possible place to round down quietly. The
+  button now reads `Run 100 of 150`, a warning names how many will be left out,
+  and a finished run is tagged with how many of the dataset's items it missed.
+  The cap moved to `@lookspan/types` so the server and the dashboard cannot
+  disagree about it — the same move `DEFAULT_EXPORT_LIMIT` made, for the same
+  reason.
 - **The live stream was connected and ignored.** The header promised the
   dashboard "updates in real time", and the server did its part — one
   `span.ingested` per stored span, one `trace.updated` per affected trace — but
