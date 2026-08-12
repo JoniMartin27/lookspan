@@ -7,7 +7,12 @@ interface Migration {
   up: string;
 }
 
-const MIGRATIONS: Migration[] = [
+/**
+ * Exported so the migration suite can walk them one at a time and check what
+ * happens to a database that already holds somebody's traces. Not part of the
+ * package's public surface — use `migrate()`.
+ */
+export const MIGRATIONS: Migration[] = [
   {
     version: 1,
     name: 'initial_schema',
