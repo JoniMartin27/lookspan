@@ -41,6 +41,14 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **`npm run ci` could not pass on a Windows checkout.** The repo had no
+  `.gitattributes`, so Git's `core.autocrlf` rewrote the working tree to CRLF —
+  which does not change what is committed, but does break the tools that read
+  the files: Biome reported all 163 files as misformatted and Vitest could not
+  parse `scripts/traction.mjs` at all, hiding 23 tests. Linux CI passed
+  throughout, so both looked like real regressions and neither was. A
+  `.gitattributes` pins the working tree to LF: locally, lint goes from 54
+  errors to 0 and the suite from 280 to 303 passing tests.
 - **Every view scrolled sideways on a narrow window.** At 390px the page body
   was 157px wider than the viewport on all seven views — the seven-item header
   nav could not fit, and the data tables pushed past it too. The nav and each
