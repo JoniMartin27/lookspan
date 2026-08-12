@@ -63,3 +63,6 @@ temp/
 *.tgz
 packages/cli/public/
 python/*/uv.lock
+
+# Demo recording scratch (scripts/record-demo.mjs)
+.demo-rec/
