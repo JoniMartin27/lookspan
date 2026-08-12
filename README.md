@@ -304,10 +304,19 @@ LOOKSPAN_TOKEN=my-token npx lookspan --host 0.0.0.0
 # /api/* and /v1/* then require Authorization: Bearer my-token (/api/health is exempt).
 ```
 
-The collector also **redacts** values of credential-looking keys
-(`authorization`, `api_key`, `token`, `secret`, `password`, `cookie`…) from
-`input`/`attributes` before persisting, so telemetry never drags secrets into
-the database.
+The collector also **redacts** before persisting, so telemetry does not drag
+secrets into the database:
+
+- values of credential-looking keys (`authorization`, `api_key`, `token`,
+  `secret`, `password`, `cookie`…) in `input` and `attributes`;
+- secret-*looking* values wherever they appear — including in `output` — for
+  provider keys, GitHub and Slack tokens, AWS access key ids and JWTs, so a key
+  pasted into a prompt is caught even under an innocent key name.
+
+The scan walks twelve levels deep, which covers the nesting real agent payloads
+reach (an OpenAI tool call puts its arguments six levels down). Anything deeper
+is replaced wholesale rather than stored unscanned: if the scan cannot prove a
+subtree is clean, it does not keep it.
 
 ---
 
