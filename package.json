@@ -15,7 +15,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "fix": "biome check --write .",
-    "ci": "npm run typecheck && npm run lint && npm test && npm run build",
+    "ci": "npm run typecheck && npm run lint && npm test && npm run build && npm run smoke:cli",
     "migrate": "npm --workspace @lookspan/storage run migrate",
     "demo:seed": "node scripts/seed-demo.mjs",
     "demo:record": "node scripts/record-demo.mjs",
@@ -23,7 +23,8 @@
     "dev": "concurrently -n api,dashboard -c blue,magenta \"npm run dev:api\" \"npm run dev:dashboard\"",
     "dev:api": "npm --workspace @lookspan/api run dev",
     "dev:dashboard": "npm --workspace @lookspan/dashboard run dev",
-    "clean": "tsc --build --clean && rimraf \"packages/*/dist\" \"apps/*/dist\""
+    "clean": "tsc --build --clean && rimraf \"packages/*/dist\" \"apps/*/dist\"",
+    "smoke:cli": "node packages/cli/scripts/bundle.mjs && node packages/cli/dist/index.js --version"
   },
   "workspaces": [
     "packages/*",
