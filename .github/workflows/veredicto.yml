@@ -29,3 +29,6 @@ jobs:
       - uses: JoniMartin27/veredicto@v0
         with:
           mode: warn
+        env:
+          # Sin esto el reporter no puede publicar el comentario fijo en el PR.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
