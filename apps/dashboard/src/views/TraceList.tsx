@@ -1,4 +1,4 @@
-import type { StatsSummary, TraceListItem } from '@lookspan/types';
+import { DEFAULT_EXPORT_LIMIT, type StatsSummary, type TraceListItem } from '@lookspan/types';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
@@ -75,6 +75,7 @@ export default function TraceList() {
           disabled={allItems.length === 0}
           framework={framework || undefined}
           status={status || undefined}
+          totalTraces={stats.data?.totalTraces}
         />
       </div>
 
@@ -267,12 +268,15 @@ function ExportMenu({
   disabled,
   framework,
   status,
+  totalTraces,
 }: {
   disabled: boolean;
   framework: string | undefined;
   status: string | undefined;
+  totalTraces: number | undefined;
 }) {
   const [open, setOpen] = useState(false);
+  const capped = (totalTraces ?? 0) > DEFAULT_EXPORT_LIMIT;
   const link = (fmt: 'csv' | 'json') => api.exportTracesUrl(fmt, { framework, status });
   const linkCls =
     'block px-3 py-1.5 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100';
@@ -303,6 +307,15 @@ function ExportMenu({
             <a href={link('json')} download className={linkCls} onClick={() => setOpen(false)}>
               JSON
             </a>
+            {capped && (
+              // The server caps an export at DEFAULT_EXPORT_LIMIT traces and says so in
+              // the filename, but by then the file is already on disk. Say it
+              // here, before the click.
+              <p className="border-t border-neutral-800 px-3 py-2 text-[11px] text-amber-400">
+                Exports the newest {DEFAULT_EXPORT_LIMIT.toLocaleString()} of{' '}
+                {totalTraces?.toLocaleString()} traces.
+              </p>
+            )}
           </div>
         </>
       )}

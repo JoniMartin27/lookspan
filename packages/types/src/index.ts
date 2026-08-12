@@ -1,6 +1,7 @@
 export * from './alert.js';
 export * from './cost.js';
 export * from './dataset.js';
+export * from './export.js';
 export * from './framework.js';
 export * from './ingest.js';
 export * from './replay.js';

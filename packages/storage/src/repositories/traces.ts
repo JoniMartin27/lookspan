@@ -1,4 +1,10 @@
-import type { SessionSummary, Trace, TraceListItem } from '@lookspan/types';
+import {
+  DEFAULT_EXPORT_LIMIT,
+  MAX_EXPORT_LIMIT,
+  type SessionSummary,
+  type Trace,
+  type TraceListItem,
+} from '@lookspan/types';
 import type { LookspanDatabase } from '../database.js';
 import type { TraceRow } from '../schema.js';
 import { rowToTrace, rowToTraceListItem } from './mappers.js';
@@ -28,7 +34,6 @@ export interface ExportTracesResult {
 }
 
 /** Hard upper bound on a single export, regardless of the requested limit. */
-const EXPORT_MAX_LIMIT = 10_000;
 
 export class TracesRepository {
   constructor(private readonly db: LookspanDatabase) {}
@@ -72,13 +77,13 @@ export class TracesRepository {
    * `trace_id` tie-break so an exported file reads like a chronological log and
    * is byte-for-byte reproducible (important for audit/hash integrity).
    *
-   * The limit is clamped to {@link EXPORT_MAX_LIMIT} to keep a single export
+   * The limit is clamped to {@link MAX_EXPORT_LIMIT} to keep a single export
    * bounded; pass a higher `limit` to widen it. Truncation is reported
    * explicitly via {@link ExportTracesResult.truncated} (computed from a
    * `COUNT(*)` over the same filters) so callers never silently drop rows.
    */
   export(options: ExportTracesOptions = {}): ExportTracesResult {
-    const limit = Math.min(options.limit ?? 1000, EXPORT_MAX_LIMIT);
+    const limit = Math.min(options.limit ?? DEFAULT_EXPORT_LIMIT, MAX_EXPORT_LIMIT);
     const where: string[] = [];
     const params: Record<string, unknown> = { limit };
 
