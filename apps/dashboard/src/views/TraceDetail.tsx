@@ -6,6 +6,7 @@ import { Link, useParams } from 'wouter';
 import { api } from '../api/client.ts';
 import { agentColor } from '../lib/agentColor.ts';
 import { diffLines } from '../lib/diff.ts';
+import { promptPreview, toMessages, tracePrompt } from '../lib/prompt.ts';
 import { useDrawer } from '../lib/useDrawer.ts';
 
 export default function TraceDetail() {
@@ -25,6 +26,10 @@ export default function TraceDetail() {
     () => buildGraph(data?.spans ?? [], selectedId),
     [data?.spans, selectedId],
   );
+  // What set this trace off. Without it the header states what the model did
+  // and never what it was asked — the reply with the question torn off.
+  const prompt = useMemo(() => tracePrompt(data?.spans ?? []), [data?.spans]);
+  const missingPrompt = !prompt && (data?.spans ?? []).some((s) => s.type === 'llm_call');
 
   if (isLoading) return <div className="p-8 text-neutral-400">Loading trace…</div>;
   if (error) return <div className="p-8 text-red-400">Error: {(error as Error).message}</div>;
@@ -68,6 +73,31 @@ export default function TraceDetail() {
               </>
             )}
           </p>
+          {prompt && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowLab(false);
+                setSelectedId(prompt.spanId);
+              }}
+              title={`${
+                prompt.fromRoot ? 'Prompt of this trace' : 'Prompt of its first LLM call'
+              } — click to open the span\n\n${prompt.text}`}
+              className="mt-1.5 flex max-w-3xl items-start gap-2 rounded border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-left hover:border-brand-500"
+            >
+              <span className="mt-px shrink-0 text-[10px] uppercase tracking-wider text-neutral-500">
+                prompt
+              </span>
+              <span className="line-clamp-2 text-xs text-neutral-300">
+                {promptPreview(prompt.text)}
+              </span>
+            </button>
+          )}
+          {missingPrompt && (
+            <p className="mt-1.5 text-[11px] text-neutral-600">
+              No prompt captured — the producer didn't record the request.
+            </p>
+          )}
         </div>
         {agentIds.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
@@ -358,59 +388,6 @@ function SpanDrawer({ span, onClose }: { span: Span; onClose: () => void }) {
   );
 }
 
-interface ChatMessage {
-  role: string;
-  text: string;
-}
-
-function partsToText(content: unknown): string {
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((p) => {
-        if (typeof p === 'string') return p;
-        if (p && typeof p === 'object') {
-          const o = p as { text?: unknown; type?: unknown };
-          if (typeof o.text === 'string') return o.text;
-          if (typeof o.type === 'string') return `「${o.type}」`;
-        }
-        return '';
-      })
-      .filter(Boolean)
-      .join('\n');
-  }
-  return '';
-}
-
-/** Pull a readable list of chat turns out of a stored request `input`. */
-function toMessages(input: Record<string, unknown> | null | undefined): ChatMessage[] | null {
-  if (!input || typeof input !== 'object') return null;
-  const out: ChatMessage[] = [];
-  if (typeof input.system === 'string' && input.system) {
-    out.push({ role: 'system', text: input.system });
-  }
-  const msgs = input.messages;
-  if (!Array.isArray(msgs)) return out.length > 0 ? out : null;
-  for (const m of msgs) {
-    if (!m || typeof m !== 'object') continue;
-    const mm = m as { role?: unknown; content?: unknown; tool_calls?: unknown };
-    const role = typeof mm.role === 'string' ? mm.role : 'user';
-    let text = partsToText(mm.content);
-    if (Array.isArray(mm.tool_calls)) {
-      const calls = mm.tool_calls
-        .map((c) => {
-          const fn = (c as { function?: { name?: unknown; arguments?: unknown } }).function;
-          return fn?.name ? `🔧 ${String(fn.name)}(${String(fn.arguments ?? '')})` : '';
-        })
-        .filter(Boolean)
-        .join('\n');
-      text = [text, calls].filter(Boolean).join('\n');
-    }
-    out.push({ role, text });
-  }
-  return out;
-}
-
 const ROLE_STYLE: Record<string, string> = {
   system: 'border-neutral-700 bg-neutral-800/40 text-neutral-400',
   user: 'border-sky-500/30 bg-sky-500/5 text-neutral-200',
@@ -477,6 +454,9 @@ function Conversation({
           // biome-ignore lint/suspicious/noArrayIndexKey: chat turns are a static, ordered list
           <Bubble key={`${m.role}-${i}`} who={m.role} text={m.text} />
         ))}
+        {/* An input we can't read as chat (tool arguments, an id) still goes on
+            screen: dropping it left the reply with nothing that caused it. */}
+        {!messages && input && <Json label="Input" value={input} />}
         {output && <Bubble who="assistant" text={output} reply />}
       </div>
     </div>
