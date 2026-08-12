@@ -18,6 +18,7 @@ an empty default means the feature is off until you set it.
 | `--db <path\|url>` | `LOOKSPAN_DB` | `~/.lookspan/lookspan.db` | SQLite database file (created if missing) **or** a Postgres connection string (`postgres://…` / `postgresql://…`). See [Postgres](#postgres). |
 | `--retention <dur>` | `LOOKSPAN_RETENTION` | _(none)_ | Prune traces older than `<dur>` (`7d`, `24h`, `30m`). Runs on startup, then at most hourly. Unset = keep everything. |
 | `--token <token>` | `LOOKSPAN_TOKEN` | _(none)_ | Require `Authorization: Bearer <token>` on `/api/*` and `/v1/*` (`/api/health` is exempt). Unset = no auth. |
+| `--cors-origin <o>` | `LOOKSPAN_CORS_ORIGIN` | _(none)_ | Browser origins allowed to call the API, comma-separated. Empty means no cross-origin access: the dashboard is served from this same origin and agents post from outside a browser, so nothing normally needs it. Only set it if a browser app on another origin must reach the API — and remember a granted origin can read everything Lookspan has stored. |
 | `--pricing <file>` | `LOOKSPAN_PRICING` | _(built-in table)_ | Load a custom model pricing table (JSON) to keep cost math current. |
 | `--open` | — | `false` | Open the dashboard in your browser on startup. |
 | — | `LOOKSPAN_DASHBOARD_DIR` | _(auto-detected)_ | Override the path to the built dashboard assets. Normally found automatically. |

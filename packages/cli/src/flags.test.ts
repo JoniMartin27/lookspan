@@ -132,3 +132,44 @@ describe('unknown input', () => {
     expect(() => parse(['posicional'])).toThrow(FlagError);
   });
 });
+
+describe('--cors-origin', () => {
+  // Reflecting whatever origin asked meant any page the user visited could read
+  // the whole local database from their browser. Empty is the safe default;
+  // the flag exists so a genuine cross-origin caller can still opt in.
+  it('allows no origin by default', () => {
+    expect(parseFlags([], {}).corsOrigins).toEqual([]);
+  });
+
+  it('takes a single origin', () => {
+    expect(parseFlags(['--cors-origin', 'https://app.example'], {}).corsOrigins).toEqual([
+      'https://app.example',
+    ]);
+  });
+
+  it('takes a comma-separated list and trims it', () => {
+    expect(
+      parseFlags(['--cors-origin', 'https://a.example, https://b.example'], {}).corsOrigins,
+    ).toEqual(['https://a.example', 'https://b.example']);
+  });
+
+  it('reads the environment variable', () => {
+    expect(parseFlags([], { LOOKSPAN_CORS_ORIGIN: 'https://c.example' }).corsOrigins).toEqual([
+      'https://c.example',
+    ]);
+  });
+
+  it('the flag wins over the environment', () => {
+    const flags = parseFlags(['--cors-origin', 'https://flag.example'], {
+      LOOKSPAN_CORS_ORIGIN: 'https://env.example',
+    });
+    expect(flags.corsOrigins).toEqual(['https://flag.example']);
+  });
+
+  it('an empty or comma-only value grants nothing', () => {
+    // A blank value must not become an origin named "" — cors would treat a
+    // falsy entry inconsistently and the intent is plainly "none".
+    expect(parseFlags(['--cors-origin', ''], {}).corsOrigins).toEqual([]);
+    expect(parseFlags(['--cors-origin', ' , , '], {}).corsOrigins).toEqual([]);
+  });
+});

@@ -5,6 +5,17 @@
 The first screen a new user sees had never been audited, and "live" was not.
 
 ### Security
+- **Any website you visited could read your local database.** CORS reflected
+  whatever origin asked, so a page on an unrelated site could `fetch` the API
+  from your browser — which reaches loopback even when the network does not —
+  and a default install has no token. Reproduced in a real browser: a page
+  served from another origin read the traces back, and `POST /api/ingest`
+  accepted spans it wrote. Nothing legitimate depended on the reflection: the
+  dashboard is served from the same origin, the Vite dev server proxies
+  `/api`, and agents post from Node or Python, which do not enforce CORS at
+  all. The default is now no cross-origin access, with a new `--cors-origin`
+  (`LOOKSPAN_CORS_ORIGIN`) to grant specific origins — there was previously no
+  way to configure it from the CLI at all.
 - **One capital letter bypassed `--token` entirely.** Express routes
   case-insensitively, so `/API/traces` reached the traces router — but the auth
   guard asked `req.path.startsWith('/api')`, which does not. The guard and the
