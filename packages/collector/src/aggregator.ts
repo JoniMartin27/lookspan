@@ -32,10 +32,15 @@ interface AggregateRow {
   cached_input_tokens: number;
   reasoning_tokens: number;
   cost_usd: number;
+  parent_trace_id: string | null;
+}
+
+/** The span a trace takes its identity from: its root, or its earliest span. */
+interface IdentityRow {
+  name: string;
   framework: string;
   agent_id: string | null;
   session_id: string | null;
-  parent_trace_id: string | null;
 }
 
 export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | null {
@@ -53,9 +58,6 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
         COALESCE(SUM(cached_input_tokens), 0) as cached_input_tokens,
         COALESCE(SUM(reasoning_tokens), 0) as reasoning_tokens,
         COALESCE(SUM(cost_usd), 0) as cost_usd,
-        framework,
-        agent_id,
-        session_id,
         MAX(parent_trace_id) as parent_trace_id
       FROM spans
       WHERE trace_id = ?
@@ -66,11 +68,35 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
 
   if (!agg || agg.span_count === 0) return null;
 
-  const root = db
-    .prepare('SELECT name FROM spans WHERE trace_id = ? AND parent_span_id IS NULL LIMIT 1')
-    .get(traceId) as { name: string } | undefined;
+  // A span tree closes its root LAST, so a trace legitimately spends time with
+  // only children in the database. Until the root lands, the earliest span is
+  // the best name available — but the moment it does land it must win, which is
+  // why this is recomputed (and re-persisted) on every ingest.
+  //
+  // ORDER BY makes both queries deterministic: a bare LIMIT 1 let SQLite pick
+  // any row, so a trace with two roots could rename itself between ingests.
+  //
+  // name/framework/agent/session come from HERE and not from the aggregate:
+  // they used to be bare columns under a `GROUP BY trace_id`, which SQLite
+  // tolerates (arbitrary row) and Postgres does not — on the Postgres driver
+  // they came back NULL every time, and only the placeholder row hid it.
+  const IDENTITY = 'name, framework, agent_id, session_id';
+  const identity =
+    (db
+      .prepare(
+        `SELECT ${IDENTITY} FROM spans
+         WHERE trace_id = ? AND parent_span_id IS NULL
+         ORDER BY started_at, span_id LIMIT 1`,
+      )
+      .get(traceId) as IdentityRow | undefined) ??
+    (db
+      .prepare(
+        `SELECT ${IDENTITY} FROM spans
+         WHERE trace_id = ? ORDER BY started_at, span_id LIMIT 1`,
+      )
+      .get(traceId) as IdentityRow | undefined);
 
-  const rootName = root?.name ?? 'unknown';
+  const rootName = identity?.name ?? 'unknown';
 
   const startedAt = agg.min_started;
   const endedAt = agg.max_ended;
@@ -96,9 +122,9 @@ export function recomputeTrace(db: LookspanDatabase, traceId: string): Trace | n
   const trace: Trace = {
     traceId,
     rootName,
-    framework: agg.framework as FrameworkName,
-    agentId: agg.agent_id,
-    sessionId: agg.session_id,
+    framework: identity?.framework as FrameworkName,
+    agentId: identity?.agent_id ?? null,
+    sessionId: identity?.session_id ?? null,
     parentTraceId: agg.parent_trace_id,
     startedAt,
     endedAt,
