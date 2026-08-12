@@ -283,8 +283,40 @@ function main(): void {
     });
   }
 
+  const url = `http://${flags.host}:${flags.port}`;
+
+  /**
+   * On Windows the `listen` callback runs *before* the `error` event, so a
+   * second instance on a busy port announced "Lookspan running" and then
+   * exited silently with code 0. Double-clicking the desktop icon twice did
+   * exactly that: a window flashed claiming success and vanished.
+   *
+   * Deferring one tick and checking `listening` means the banner only appears
+   * when the port really is ours.
+   */
   const server = app.listen(flags.port, flags.host, () => {
-    const url = `http://${flags.host}:${flags.port}`;
+    setImmediate(() => {
+      if (!server.listening) return;
+      announce();
+    });
+  });
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(
+        `\n[lookspan] port ${flags.port} is already in use — Lookspan may be running there already.` +
+          `\n           Open ${url}, or start this one elsewhere with --port <port>.\n`,
+      );
+      process.exit(1);
+    }
+    if (err.code === 'EACCES') {
+      console.error(`\n[lookspan] not allowed to bind ${flags.host}:${flags.port}.\n`);
+      process.exit(1);
+    }
+    throw err;
+  });
+
+  function announce(): void {
     console.log(`\n  Lookspan running at ${url}`);
     console.log(`  Database: ${describeDb(flags.db)}`);
     if (flags.retentionMs) {
@@ -315,7 +347,7 @@ function main(): void {
     if (flags.open) {
       void openInBrowser(url);
     }
-  });
+  }
 
   const shutdown = (signal: string) => {
     console.log(`\n[lookspan] received ${signal}, shutting down`);
