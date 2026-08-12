@@ -1,4 +1,5 @@
 export * from './database.js';
+export { LOCAL_DAY_FN, localDay } from './local-day.js';
 export * from './migrations.js';
 export { AlertsRepository } from './repositories/alerts.js';
 export { CostsRepository } from './repositories/costs.js';

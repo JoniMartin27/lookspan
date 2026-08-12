@@ -7,6 +7,7 @@
 import type { Span, Trace } from '@lookspan/types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type LookspanDatabase, migrate, openDatabase } from '../index.js';
+import { localDay } from '../local-day.js';
 import { CostsRepository } from '../repositories/costs.js';
 import { DatasetsRepository, RunsRepository } from '../repositories/datasets.js';
 import { ReplaysRepository } from '../repositories/replays.js';
@@ -279,6 +280,11 @@ describe('StatsRepository on Postgres', () => {
 
     repo.delete('p1');
     const byDay = new StatsRepository(db).summary().byDay;
+    // Buckets are the *machine's* day now, so the expected value is derived
+    // rather than hardcoded. The seed sits at 10:00Z, which is the same
+    // calendar day everywhere between UTC-10 and UTC+13 — but stating the
+    // dependency beats leaving it as a future mystery in some CI region.
+    expect(byDay[0]?.day).toBe(localDay('2026-06-01T10:00:00Z'));
     expect(byDay[0]?.day).toBe('2026-06-01');
   });
 });

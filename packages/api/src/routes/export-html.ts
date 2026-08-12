@@ -1,3 +1,4 @@
+import { localDay } from '@lookspan/storage';
 import type { Trace } from '@lookspan/types';
 
 /** Provenance block shared by JSON and HTML audit exports. */
@@ -158,7 +159,9 @@ export function renderHtmlReport(
   // (a) traces per day
   const perDay = new Map<string, number>();
   for (const t of traces) {
-    const day = t.startedAt.slice(0, 10);
+    // Same reason as the stats rollup: slicing the ISO string gives the UTC
+    // date, so a 01:30 trace in Madrid was charted under the previous day.
+    const day = localDay(t.startedAt) ?? t.startedAt.slice(0, 10);
     perDay.set(day, (perDay.get(day) ?? 0) + 1);
   }
   const perDayData: BarDatum[] = [...perDay.entries()]
