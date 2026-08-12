@@ -1,0 +1,34 @@
+# Veredicto — WARN mode.
+#
+# Anota el PR con todo lo que encuentra (tests borrados, .skip, asserts
+# tautológicos, mocks circulares, umbrales de cobertura bajados, CI desarmado…)
+# pero NUNCA falla el check, así que no puede bloquear un merge.
+# Para hacerlo bloqueante: cambia `mode: warn` por `mode: block`.
+#
+# https://github.com/JoniMartin27/veredicto
+
+name: Veredicto
+
+on:
+  pull_request:
+
+# Mínimo privilegio: leer el código y escribir anotaciones.
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  veredicto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # hace falta el historial completo para diffear base..head
+
+      - uses: JoniMartin27/veredicto@v0
+        with:
+          mode: warn
+        env:
+          # Sin esto el reporter no puede publicar el comentario fijo en el PR.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

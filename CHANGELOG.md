@@ -22,6 +22,12 @@ The trace view answered what the model did and never what it was asked.
   and an input with no readable text at all (`{"prompt_id": "chat"}`), which is
   now shown raw rather than thrown away. Identifiers (`prompt_id`, `runId`) are
   never mistaken for a prompt.
+- **Starting on a busy port claimed success and exited silently.** On Windows
+  the listen callback runs before the error event, so a second instance printed
+  Lookspan running at … and then exited with code 0. Double-clicking the
+  desktop icon a second time did exactly that: a console window flashed saying
+  it had started, and vanished. It now reports the port is taken, points at
+  where Lookspan already is, and exits non-zero.
 
 ## 0.5.1 — 2026-08-12
 
