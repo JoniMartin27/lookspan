@@ -25,6 +25,16 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **The published CLI could not start.** Adding the Postgres driver made
+  `pg-mem` a runtime dependency of `@lookspan/storage`, and the release bundler
+  inlined it — but `pg-mem` ships a webpack CJS bundle that calls
+  `require('crypto')` at load time, which cannot work inside the bundler's ESM
+  output. Any release cut from `main` would have thrown `Dynamic require of
+  "crypto" is not supported` before printing a line. `pg-mem` is now external
+  (and a real dependency of the `lookspan` package), which also drops the
+  bundle from 1.8 MB to 363 kB. A new `npm run smoke:cli` step builds the
+  publishable artifact and runs it, so `npm run ci` fails if this ever
+  regresses.
 - **Cancelled trace status** — the collector now derives a `cancelled` status
   instead of always reporting `ok`, and the dashboard shows it with a neutral
   colour (not success green).

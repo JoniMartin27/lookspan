@@ -39,7 +39,13 @@ await build({
   // The provider SDKs are lazy-imported by the replay/judge feature; keeping
   // them external means they're installed alongside the CLI but never loaded
   // unless those endpoints are used.
-  external: ['better-sqlite3', 'express', 'cors', 'openai', '@anthropic-ai/sdk'],
+  //
+  // `pg-mem` (the Postgres driver's engine) MUST stay external too: it ships a
+  // webpack CJS bundle that calls `require('crypto')` at load time, and esbuild
+  // cannot make a dynamic require work inside ESM output. Inlining it makes the
+  // published CLI throw `Dynamic require of "crypto" is not supported` before
+  // it prints a single line. `npm run smoke:cli` guards this.
+  external: ['better-sqlite3', 'express', 'cors', 'openai', '@anthropic-ai/sdk', 'pg-mem'],
   logLevel: 'info',
 });
 
