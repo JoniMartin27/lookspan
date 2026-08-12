@@ -1,5 +1,6 @@
 import type { Trace } from '@lookspan/types';
 import { describe, expect, it } from 'vitest';
+import { CSV_COLUMNS, toCsvRow } from './export.js';
 import { type ExportProvenance, renderHtmlReport } from './export-html.js';
 
 function trace(over: Partial<Trace> = {}): Trace {
@@ -102,5 +103,82 @@ describe('renderHtmlReport', () => {
     const html = renderHtmlReport(evil, rowsFor(evil), columns, provenance);
     expect(html).not.toContain('<script>alert(1)</script>');
     expect(html).toContain('&lt;script&gt;');
+  });
+
+  /**
+   * The report is a file that leaves the machine: it gets downloaded, archived
+   * and opened, sometimes by somebody who was not there when it was made. An
+   * agent does not control what a user types at it, so any of these fields can
+   * carry whatever a prompt put in them.
+   *
+   * The check above only ever covered `traceId`. Attacking the running server
+   * with five payloads and opening the report in a browser showed the escaping
+   * is correct today — nothing executed, no `<img>`, no `<svg onload>` — so
+   * this is here to keep it that way when a column is added.
+   */
+  describe('escaping covers every text field the table renders', () => {
+    const PAYLOADS = [
+      ['a script tag', '<script>window.PWNED=1</script>'],
+      ['an attribute break-out', '"><img src=x onerror="window.PWNED=1">'],
+      ['a single-quote break-out', "'><svg onload='window.PWNED=1'>"],
+      ['a bare closing tag', '</td></tr><script>window.PWNED=1</script>'],
+    ] as const;
+
+    const TEXT_FIELDS = [
+      'traceId',
+      'rootName',
+      'framework',
+      'agentId',
+      'sessionId',
+      'parentTraceId',
+      'status',
+    ] as const;
+
+    /** Rows built the way the export route builds them — all seventeen columns. */
+    const realRows = (ts: Trace[]) => ts.map(toCsvRow) as Record<string, unknown>[];
+
+    for (const field of TEXT_FIELDS) {
+      for (const [label, payload] of PAYLOADS) {
+        it(`${field} — ${label}`, () => {
+          const evil = [trace({ [field]: payload } as Partial<Trace>)];
+          const html = renderHtmlReport(evil, realRows(evil), CSV_COLUMNS, provenance);
+          expect(html, `${field} rendered ${label} unescaped`).not.toContain(payload);
+          // And the value is not simply dropped: an audit report that quietly
+          // omits a field is its own kind of wrong.
+          expect(html, `${field} was not rendered at all`).toContain('&lt;');
+        });
+      }
+    }
+
+    it('escapes quotes, even though nothing depends on it yet', () => {
+      // No trace-derived value is currently interpolated into an attribute —
+      // the only attribute built from a variable is the charts' `aria-label`,
+      // and those titles are hardcoded. So removing the `"` → `&quot;` rule
+      // leaves every other assertion here green: verified, the mutant lives.
+      //
+      // It stops being harmless the moment a field moves into an attribute, at
+      // which point `" onmouseover=…` needs no `<` at all. Pinned so that the
+      // rule cannot be dropped as dead weight on the way there.
+      const evil = [trace({ rootName: 'say "hello" now' })];
+      const html = renderHtmlReport(evil, realRows(evil), CSV_COLUMNS, provenance);
+      expect(html).toContain('&quot;');
+      expect(html).not.toContain('say "hello" now');
+    });
+
+    it('escapes the provenance block too', () => {
+      // `filters` comes from the query string, so it is caller-controlled.
+      const html = renderHtmlReport([], [], columns, {
+        ...provenance,
+        filters: { framework: '<script>window.PWNED=1</script>' },
+      });
+      expect(html).not.toContain('<script>window.PWNED=1</script>');
+    });
+
+    it('renders no script tag of its own', () => {
+      // The report is meant to be self-contained and inert; if it ever grows a
+      // legitimate `<script>`, the assertions above stop being sufficient.
+      const evil = [trace({ rootName: 'x' })];
+      expect(renderHtmlReport(evil, rowsFor(evil), columns, provenance)).not.toContain('<script');
+    });
   });
 });

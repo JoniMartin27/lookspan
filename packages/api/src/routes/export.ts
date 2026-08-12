@@ -8,7 +8,14 @@ import { parseLimit } from './query.js';
 import { LOOKSPAN_VERSION } from './version.js';
 
 /** Columns emitted (in order) when exporting traces as CSV. */
-const CSV_COLUMNS = [
+/**
+ * The columns the CSV and the HTML report both render.
+ *
+ * Exported so the report's tests can exercise the real set: they used to pass
+ * four of these seventeen, which meant most fields were never rendered — and
+ * an escaping check cannot cover a field that is not on the page.
+ */
+export const CSV_COLUMNS = [
   'traceId',
   'rootName',
   'framework',
@@ -29,7 +36,7 @@ const CSV_COLUMNS = [
 ] as const;
 
 /** Flatten a Trace into the flat record the CSV columns expect. */
-function toCsvRow(t: Trace): Record<(typeof CSV_COLUMNS)[number], unknown> {
+export function toCsvRow(t: Trace): Record<(typeof CSV_COLUMNS)[number], unknown> {
   return {
     traceId: t.traceId,
     rootName: t.rootName,
