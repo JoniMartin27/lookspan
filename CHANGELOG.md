@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **A truncated export said so only where nobody looks.** With more traces than
+  the export cap, the file quietly contained the newest 1000 — the headers, the
+  JSON body and the HTML report all said so, but the CSV did not and neither did
+  the dashboard. The export menu now warns before the download, and a truncated
+  file names itself , because the
+  filename is the one thing that travels with it to a spreadsheet.
+- **The driver-level  took any statement.** Its argument is
+  interpolated into a PRAGMA that SQLite runs verbatim. Every caller passes a
+  literal, so nothing external reached it, but both drivers now accept only the
+  schema-version pragma and  refuses anything that is not a
+  plain non-negative integer.
+
 ## 0.5.0 — 2026-08-12
 
 The release that makes the published package match the repo: it also carries

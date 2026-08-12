@@ -133,10 +133,19 @@ export function createExportRouter(ctx: ApiContext): Router {
     res.setHeader('X-Lookspan-Export-Truncated', truncated ? 'true' : 'false');
     res.setHeader('X-Lookspan-Export-Sha256', sha256);
     res.setHeader('X-Lookspan-Export-Count', String(traces.length));
+    res.setHeader('X-Lookspan-Export-Total', String(totalAvailable));
+
+    // A truncated export says so in its own filename. Headers are honest but
+    // invisible, and the CSV body cannot carry a note without breaking the
+    // parsers it exists to feed — so the one thing that travels with the file
+    // to a spreadsheet or an auditor's folder is its name.
+    const suffix = truncated ? `-${traces.length}-of-${totalAvailable}` : '';
+    const attachment = (ext: string) =>
+      `attachment; filename="lookspan-traces-${stamp}${suffix}.${ext}"`;
 
     if (format === 'json') {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="lookspan-traces-${stamp}.json"`);
+      res.setHeader('Content-Disposition', attachment('json'));
       res.json({
         ...provenance,
         raw,
@@ -148,13 +157,13 @@ export function createExportRouter(ctx: ApiContext): Router {
     if (format === 'html') {
       const html = renderHtmlReport(traces, rows, CSV_COLUMNS, provenance);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="lookspan-traces-${stamp}.html"`);
+      res.setHeader('Content-Disposition', attachment('html'));
       res.send(html);
       return;
     }
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="lookspan-traces-${stamp}.csv"`);
+    res.setHeader('Content-Disposition', attachment('csv'));
     res.send(csv);
   });
 

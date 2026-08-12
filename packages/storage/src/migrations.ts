@@ -213,6 +213,11 @@ export function getCurrentSchemaVersion(db: LookspanDatabase): number {
 }
 
 export function setSchemaVersion(db: LookspanDatabase, version: number): void {
+  // Interpolated into a PRAGMA, so refuse anything that is not a plain
+  // non-negative integer even though every caller passes a literal today.
+  if (!Number.isSafeInteger(version) || version < 0) {
+    throw new Error(`invalid schema version: ${version}`);
+  }
   db.pragma(`user_version = ${version}`);
 }
 

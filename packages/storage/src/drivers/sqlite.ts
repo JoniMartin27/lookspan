@@ -55,7 +55,27 @@ export class SqliteDriver implements SqlDriver {
     return this.db.transaction(fn) as (...args: A) => R;
   };
 
+  /**
+   * Only the schema-version pragma is allowed through this interface.
+   *
+   * The argument is interpolated into a PRAGMA statement, which `better-sqlite3`
+   * runs verbatim — and PRAGMA can read metadata, change database behaviour and,
+   * on some builds, load extensions. Every caller today passes a literal
+   * (`migrations.ts` is the only one), so nothing external reaches it, but the
+   * method is exported on a driver interface and a future caller might be less
+   * careful. The Postgres driver already accepts exactly these two shapes, so
+   * whitelisting here also keeps the two drivers honest about being equivalent.
+   *
+   * Connection pragmas (WAL, synchronous, foreign_keys) are set in the
+   * constructor against the underlying handle and never come through here.
+   */
   pragma(source: string, options?: { simple?: boolean }): unknown {
+    const allowed = /^\s*user_version\s*(=\s*\d+\s*)?$/i.test(source);
+    if (!allowed) {
+      throw new Error(
+        `refusing to run pragma "${source}": only user_version is allowed through the driver`,
+      );
+    }
     return this.db.pragma(source, options);
   }
 
