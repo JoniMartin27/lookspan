@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Starting on a busy port claimed success and exited silently.** On Windows
+  the listen callback runs before the error event, so a second instance printed
+  Lookspan running at … and then exited with code 0. Double-clicking the
+  desktop icon a second time did exactly that: a console window flashed saying
+  it had started, and vanished. It now reports the port is taken, points at
+  where Lookspan already is, and exits non-zero.
+
 ## 0.5.1 — 2026-08-12
 
 Three bugs that showed up in real use, one of them noisy enough to make the
