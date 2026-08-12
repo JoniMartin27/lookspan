@@ -1,22 +1,24 @@
 # Publishing
 
-Lookspan ships **three npm packages** and **three PyPI packages**. Internal
+Lookspan ships **five npm packages** and **three PyPI packages**. Internal
 packages (`@lookspan/api`, `collector`, `storage`, `events`) are *not* published
 — they are bundled into the `lookspan` CLI by `scripts/bundle.mjs`.
 
-All packages are at version **0.1.0**. Bump versions together before a release.
+Every package moves in lockstep; the npm packages are at **0.5.2**. Bump them
+together (including the `@lookspan/*` ranges the SDKs depend on and
+`package-lock.json`) before a release.
 
 ## npm (run from the repo root)
 
 Build everything first, then publish in dependency order:
 
 ```bash
-npm run build
+npm run ci
 
 # 1. types — depended on by the MCP SDK
 npm publish -w @lookspan/types        # public scoped pkg (publishConfig set)
 
-# 2. MCP SDK — depends on @lookspan/types@^0.1.0
+# 2. MCP SDK — depends on @lookspan/types
 npm publish -w @lookspan/mcp
 
 # 3. Drop-in SDKs — depend on @lookspan/mcp + @lookspan/types
@@ -28,18 +30,33 @@ npm publish -w @lookspan/anthropic
 npm publish -w lookspan               # unscoped → `npx lookspan`
 ```
 
-Verify before publishing: `npm run release:cli` produces `lookspan-0.1.0.tgz`;
+With 2FA on the account every one of those needs a fresh code: append
+`--otp=123456`. The five publishes take under a minute, but a code lasts 30
+seconds — read a new one for each.
+
+Verify before publishing: `npm run release:cli` produces `lookspan-<version>.tgz`;
 `npm pack -w @lookspan/mcp` / `-w @lookspan/types` produce clean tarballs.
 A clean-install smoke test:
 
 ```bash
 mkdir /tmp/ls-test && cd /tmp/ls-test && npm init -y
-npm install /path/to/lookspan-0.1.0.tgz
+npm install /path/to/lookspan-<version>.tgz
 npx lookspan            # → http://127.0.0.1:3100 serves the dashboard
 ```
 
 > First publish of a scoped package needs `--access public` (already set via
 > `publishConfig.access`). Requires `npm login` + 2FA.
+
+## Gotchas paid for
+
+- **`packages/cli/public/` shadows the dashboard.** `bundle.mjs` copies
+  `apps/dashboard/dist` there; while it exists the CLI serves that copy, so a
+  rebuilt dashboard appears not to change. `rm -rf packages/cli/public` when
+  developing.
+- **`packages/cli/dist/index.js` is left as the esbuild bundle** after a
+  publish, and `tsc --build` will not rewrite it if the CLI sources did not
+  change — a stale bundle serves old routes. Force it:
+  `rm -rf packages/cli/dist packages/cli/*.tsbuildinfo && npx tsc --build --force packages/cli`.
 
 ## PyPI (run from each package dir)
 

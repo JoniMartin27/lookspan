@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/types",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Shared TypeScript types for Lookspan: Span, Trace, Run, IngestPayload.",
   "type": "module",
   "main": "./dist/index.js",
