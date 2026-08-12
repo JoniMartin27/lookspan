@@ -13,6 +13,23 @@ const BASE = process.env.BASE_PATH ?? '/lookspan';
 
 const GITHUB = 'https://github.com/JoniMartin27/lookspan';
 
+// Starlight emits og:title/description and `twitter:card=summary_large_image`
+// but no image, so every shared link rendered an empty card that had promised a
+// big one. Open Graph needs an absolute url, hence the site+base prefix.
+// The file is `npm run og` output, copied into public/.
+const OG_IMAGE = `${SITE}${BASE}/og-cover.png`;
+const socialCard = [
+  { property: 'og:image', content: OG_IMAGE },
+  { property: 'og:image:type', content: 'image/png' },
+  { property: 'og:image:width', content: '1200' },
+  { property: 'og:image:height', content: '630' },
+  {
+    property: 'og:image:alt',
+    content: 'Lookspan — local-first observability for AI agents',
+  },
+  { name: 'twitter:image', content: OG_IMAGE },
+].map((attrs) => ({ tag: /** @type {const} */ ('meta'), attrs }));
+
 export default defineConfig({
   site: SITE,
   base: BASE,
@@ -24,6 +41,7 @@ export default defineConfig({
         'Local-first observability dashboard for AI agents. MCP-native. See every span your agents emit.',
       logo: { src: './src/assets/logo.svg', replacesTitle: false },
       favicon: '/favicon.svg',
+      head: socialCard,
       social: { github: GITHUB },
       editLink: {
         baseUrl: `${GITHUB}/edit/main/docs-site/`,

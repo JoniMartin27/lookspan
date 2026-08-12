@@ -46,6 +46,12 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **Every shared link rendered an empty preview card.** The landing pointed
+  `og:image` at an SVG with a relative path — no platform renders SVG in a link
+  preview, and scrapers do not resolve relative urls — and the live docs site
+  declared `twitter:card=summary_large_image` while shipping no image at all.
+  Both now point at a 1200×630 PNG at an absolute url, rasterized from the
+  existing SVG master by `npm run og`.
 - **Every write to a Postgres-backed Lookspan failed.** Ingesting a span wraps
   `SpansRepository.insertMany` — itself transactional — inside the collector's
   transaction, and the Postgres driver emitted a `SAVEPOINT` for the inner

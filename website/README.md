@@ -15,7 +15,21 @@ website/
 ├── main.js         # i18n, copiar al portapapeles, tabs de código, menú móvil, reveal on scroll
 ├── i18n.js         # Diccionario de traducciones (es / en)
 ├── favicon.svg     # Marca (waterfall de spans)
-└── og-cover.svg    # Imagen Open Graph / Twitter (1200×630)
+├── og-cover.svg    # Maestro editable de la portada Open Graph (1200×630)
+└── og-cover.png    # Lo que consumen las redes — generado con `npm run og`
+```
+
+## La portada Open Graph
+
+`og-cover.svg` es el maestro que se edita, pero **ninguna red social renderiza
+un SVG en la tarjeta de enlace** — X, LinkedIn, Slack, Discord y Facebook
+quieren PNG o JPEG. Por eso `index.html` apunta al PNG, y con URL **absoluta**:
+los scrapers no resuelven rutas relativas.
+
+Tras tocar el SVG, regenera el PNG:
+
+```bash
+npm run og
 ```
 
 ## Ver en local
