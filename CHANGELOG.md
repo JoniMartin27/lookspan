@@ -46,6 +46,14 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **The docs site's "send your first span" curl did not parse.** An extra brace
+  in `guides/getting-started` and `reference/http-api` — the very first command
+  a new reader runs — while the READMEs carried the correct version, so the two
+  copies had silently drifted. A test now parses every ```json block and every
+  `curl -d` body across the READMEs, `docs/` and the docs site, so CI catches
+  the next drift. The CLI reference also gained the `install-desktop` /
+  `uninstall-desktop` commands it was missing, and its Postgres note now
+  matches the honest one in `docs/CONFIGURATION.md`.
 - **Every shared link rendered an empty preview card.** The landing pointed
   `og:image` at an SVG with a relative path — no platform renders SVG in a link
   preview, and scrapers do not resolve relative urls — and the live docs site
