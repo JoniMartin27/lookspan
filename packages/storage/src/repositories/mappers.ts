@@ -1,5 +1,5 @@
-import type { Span, Trace, TraceListItem } from '@lookspan/types';
-import { FrameworkName, SpanStatus, SpanType } from '@lookspan/types';
+import type { FrameworkLabel, Span, Trace, TraceListItem } from '@lookspan/types';
+import { SpanStatus, SpanType } from '@lookspan/types';
 import type { SpanRow, TraceRow } from '../schema.js';
 
 function parseJson<T>(value: string | null): T | null {
@@ -13,7 +13,6 @@ function parseJson<T>(value: string | null): T | null {
 
 const SPAN_TYPES = new Set<string>(Object.values(SpanType));
 const SPAN_STATUSES = new Set<string>(Object.values(SpanStatus));
-const FRAMEWORK_NAMES = new Set<string>(Object.values(FrameworkName));
 
 /**
  * Validate an enum value read from the database. A raw `as SpanType` cast lies
@@ -36,8 +35,20 @@ function coerceEnum<T extends string>(
 const toSpanType = (v: string) => coerceEnum<SpanType>(v, SPAN_TYPES, SpanType.Custom, 'span.type');
 const toSpanStatus = (v: string) =>
   coerceEnum<SpanStatus>(v, SPAN_STATUSES, SpanStatus.Error, 'span.status');
-const toFramework = (v: string) =>
-  coerceEnum<FrameworkName>(v, FRAMEWORK_NAMES, FrameworkName.Custom, 'span.framework');
+
+/**
+ * `framework` is an open label, so it comes back exactly as it went in.
+ *
+ * It used to be checked against the known-names enum: ingest accepts any
+ * non-empty string, so a span from a producer Lookspan had not heard of — say
+ * `inferbench` — was stored happily and then rewritten to `custom` on the way
+ * out, with a warning logged *per row*. That misreported the data and buried
+ * the console under thousands of identical lines on every listing.
+ *
+ * `type` and `status` stay validated: those are closed enums the rest of the
+ * code branches on.
+ */
+const toFramework = (v: string): FrameworkLabel => v;
 
 export function rowToTrace(row: TraceRow): Trace {
   return {

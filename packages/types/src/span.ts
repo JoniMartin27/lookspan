@@ -1,5 +1,5 @@
 import type { TokenUsage } from './cost.js';
-import type { FrameworkName } from './framework.js';
+import type { FrameworkLabel } from './framework.js';
 
 export const SpanType = {
   AgentStep: 'agent_step',
@@ -30,7 +30,7 @@ export interface SpanInput {
   startedAt: string;
   endedAt: string | null;
   status: SpanStatus;
-  framework: FrameworkName;
+  framework: FrameworkLabel;
   agentId?: string | null;
   sessionId?: string | null;
   /** Trace that spawned this one (cross-agent handoff). Lets the session view

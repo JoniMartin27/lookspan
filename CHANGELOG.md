@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Fixed
+- **Spans from an unrecognised framework were rewritten and logged on every
+  read.** Ingest accepts any non-empty string for a spans framework, but
+  reading checked it against a closed enum: a trace exported from a producer
+  Lookspan did not know by name came back as , and each row logged
+  a warning. A live instance receiving from  filled its console
+  with thousands of identical lines while quietly mislabelling every one of
+  those traces. The label now round-trips untouched, and the dashboards
+  framework filter offers whatever actually appears in the data instead of a
+  fixed list.  and  stay validated: those are closed enums the
+  code branches on.
+
 ### Added
 - **An out-of-range port is refused instead of crashing.**  used
   to reach  and fail with an obscure error; the CLI now says what is
