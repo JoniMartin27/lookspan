@@ -85,29 +85,31 @@ export default function TraceList() {
       ) : items.length === 0 ? (
         <TracesEmptyState filtered={allItems.length > 0} />
       ) : (
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
-            <tr>
-              <th className="px-3 py-2">Name</th>
-              <th className="px-3 py-2">Agent</th>
-              <th className="px-3 py-2">Started</th>
-              <th className="px-3 py-2">Latency</th>
-              <th className="px-3 py-2">Cost</th>
-              <th className="px-3 py-2">Spans</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((t) => (
-              <Row
-                key={t.traceId}
-                t={t}
-                maxDur={maxDur}
-                maxCost={maxCost}
-                slow={(t.durationMs ?? 0) > p95}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
+              <tr>
+                <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Agent</th>
+                <th className="px-3 py-2">Started</th>
+                <th className="px-3 py-2">Latency</th>
+                <th className="px-3 py-2">Cost</th>
+                <th className="px-3 py-2">Spans</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((t) => (
+                <Row
+                  key={t.traceId}
+                  t={t}
+                  maxDur={maxDur}
+                  maxCost={maxCost}
+                  slow={(t.durationMs ?? 0) > p95}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {!search && hasNextPage && (

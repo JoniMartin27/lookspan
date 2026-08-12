@@ -26,36 +26,38 @@ export default function AlertsView() {
           </code>
         </EmptyState>
       ) : (
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
-            <tr>
-              <th className="px-3 py-2">When</th>
-              <th className="px-3 py-2">Condition</th>
-              <th className="px-3 py-2">Message</th>
-              <th className="px-3 py-2">Trace</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((a) => (
-              <tr key={a.id} className="border-t border-neutral-800 hover:bg-neutral-900">
-                <td className="px-3 py-2 text-neutral-400">
-                  {new Date(a.createdAt).toLocaleString()}
-                </td>
-                <td className="px-3 py-2">
-                  <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
-                    {a.condition}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-neutral-200">{a.message}</td>
-                <td className="px-3 py-2">
-                  <Link href={`/traces/${a.traceId}`} className="text-brand-500 hover:underline">
-                    {a.traceId}
-                  </Link>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wider text-neutral-500">
+              <tr>
+                <th className="px-3 py-2">When</th>
+                <th className="px-3 py-2">Condition</th>
+                <th className="px-3 py-2">Message</th>
+                <th className="px-3 py-2">Trace</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((a) => (
+                <tr key={a.id} className="border-t border-neutral-800 hover:bg-neutral-900">
+                  <td className="px-3 py-2 text-neutral-400">
+                    {new Date(a.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
+                      {a.condition}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-neutral-200">{a.message}</td>
+                  <td className="px-3 py-2">
+                    <Link href={`/traces/${a.traceId}`} className="text-brand-500 hover:underline">
+                      {a.traceId}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

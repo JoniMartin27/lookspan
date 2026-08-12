@@ -33,12 +33,14 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-neutral-800 px-6 py-3">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+      {/* The seven nav items are wider than a phone. Let the nav scroll on its
+          own axis so the page body never scrolls sideways. */}
+      <header className="flex items-center justify-between gap-3 border-b border-neutral-800 px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
+          <Link href="/" className="shrink-0 text-lg font-semibold tracking-tight">
             <span className="text-brand-500">●</span> Lookspan
           </Link>
-          <nav className="flex gap-4 text-sm text-neutral-400">
+          <nav className="flex gap-4 overflow-x-auto whitespace-nowrap text-sm text-neutral-400">
             <NavLink href="/" active={location === '/'}>
               Traces
             </NavLink>
@@ -66,7 +68,7 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
         </div>
         <div
-          className="flex items-center gap-2 text-xs text-neutral-500"
+          className="flex shrink-0 items-center gap-2 text-xs text-neutral-500"
           role="status"
           title={
             connected
