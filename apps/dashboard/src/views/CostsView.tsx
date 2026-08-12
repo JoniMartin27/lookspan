@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { api } from '../api/client.ts';
+import { CHART } from '../lib/chartTheme.ts';
 
 export default function CostsView() {
   const { data, isLoading, error } = useQuery({
@@ -56,7 +57,10 @@ export default function CostsView() {
           <p className="mt-1 text-xs text-neutral-600">
             No billable cost yet — your models are priced at $0 or aren't in the pricing table. Add
             prices with{' '}
-            <code className="rounded bg-neutral-800 px-1 py-0.5 font-mono">--pricing</code>.
+            <code className="rounded bg-neutral-800 px-1 py-0.5 font-mono text-neutral-400">
+              --pricing
+            </code>
+            .
           </p>
         )}
       </div>
@@ -148,13 +152,19 @@ function Chart({ data }: { data: { name: string; cost: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#2c211b" />
-        <XAxis dataKey="name" stroke="#857567" fontSize={12} />
-        <YAxis stroke="#857567" fontSize={12} />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} />
+        {/* `stroke` also colours the tick labels, so it has to track
+            --color-neutral-500. The pre-Fervon #857567 left them at 4.31:1. */}
+        <XAxis dataKey="name" stroke={CHART.axis} fontSize={12} />
+        <YAxis stroke={CHART.axis} fontSize={12} />
         <Tooltip
-          contentStyle={{ background: '#1a1310', border: '1px solid #3d2f26', fontSize: 12 }}
+          contentStyle={{
+            background: CHART.tooltipBg,
+            border: `1px solid ${CHART.tooltipBorder}`,
+            fontSize: 12,
+          }}
         />
-        <Bar dataKey="cost" fill="#ff6a00" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="cost" fill={CHART.bar} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

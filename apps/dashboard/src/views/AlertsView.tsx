@@ -21,7 +21,7 @@ export default function AlertsView() {
       {items.length === 0 ? (
         <EmptyState title="No alerts">
           Start the server with alert rules, e.g.{' '}
-          <code className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-xs">
+          <code className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-xs text-neutral-400">
             npx lookspan --alert-error --alert-cost 0.50
           </code>
         </EmptyState>

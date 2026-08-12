@@ -904,7 +904,7 @@ function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void 
           </div>
           <p className="mt-1 text-[10px] text-neutral-600">
             Captures this trace's prompt (and output as the reference) into a{' '}
-            <Link href="/datasets" className="text-brand-500 hover:underline">
+            <Link href="/datasets" className="text-brand-500 underline">
               dataset
             </Link>
             .
