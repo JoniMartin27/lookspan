@@ -31,14 +31,14 @@ jobs:
       - name: lookspan (core)
         working-directory: python/lookspan-core
         run: |
-          pip install --quiet pytest ruff .
+          pip install --quiet pytest "ruff==0.14.5" .
           ruff check src tests
           pytest -q
 
       - name: lookspan-langgraph
         working-directory: python/lookspan-langgraph
         run: |
-          pip install --quiet pytest ruff ../lookspan-core .
+          pip install --quiet pytest "ruff==0.14.5" ../lookspan-core .
           ruff check src tests
           pytest -q
 
@@ -48,7 +48,7 @@ jobs:
       - name: lookspan-crewai
         working-directory: python/lookspan-crewai
         run: |
-          pip install --quiet pytest ruff ../lookspan-core
+          pip install --quiet pytest "ruff==0.14.5" ../lookspan-core
           pip install --quiet --no-deps .
           ruff check src tests
           pytest -q
