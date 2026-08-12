@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/storage",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Storage layer for Lookspan: schema, migrations, repositories. SQLite by default, optional Postgres.",
   "type": "module",

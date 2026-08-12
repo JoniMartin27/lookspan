@@ -1,48 +1,69 @@
 # Changelog
 
-## Unreleased
+## 0.5.1 — 2026-08-12
+
+Three bugs that showed up in real use, one of them noisy enough to make the
+console unreadable.
 
 ### Fixed
-- **Spans from an unrecognised framework were rewritten and logged on every
-  read.** Ingest accepts any non-empty string for a spans framework, but
-  reading checked it against a closed enum: a trace exported from a producer
-  Lookspan did not know by name came back as , and each row logged
-  a warning. A live instance receiving from  filled its console
-  with thousands of identical lines while quietly mislabelling every one of
-  those traces. The label now round-trips untouched, and the dashboards
-  framework filter offers whatever actually appears in the data instead of a
-  fixed list.  and  stay validated: those are closed enums the
-  code branches on.
+- **Deep links 404'd on reload.** Opening a trace by its URL, refreshing, or
+  following a bookmark returned `{"error":"not_found"}` — only `/` worked, and
+  only because `express.static` served it rather than the SPA fallback. The
+  fallback asked for an absolute path without a `root`, so `send` applied its
+  default `dotfiles: 'ignore'` to *every* segment: any directory with a dot in
+  it turned `index.html` into a 404. That is the normal case, not the exotic
+  one — `npm i -g` lands under `~/.local`, `~/.nvm` or `~/.volta` on much of
+  Linux. Measured on a Raspberry Pi with lookspan in
+  `~/.local/lib/node_modules`: `/` 200, `/traces/:id` and `/connect` 404.
+- **The trace list named a trace after one of its children.** A span tree
+  closes its root *last*, so every trace spends a while in the database with
+  children and no root. The placeholder row was seeded from whichever span
+  arrived first, and the upsert never revisited `root_name`, `started_at`,
+  `framework`, `agent_id` or `session_id` — while the comment above it claimed
+  the opposite. A 26-second turn showed up in the list under a child's name,
+  starting a second late, permanently. Only visible when the spans don't fit in
+  one batch, which is why short traces looked fine. It also uncovered a latent
+  Postgres bug: those columns were selected bare under a `GROUP BY`, which
+  SQLite tolerates and Postgres does not.
+- **Spans from an unrecognised framework were rewritten, and logged on every
+  read.** Ingest accepts any non-empty string for a span's `framework` — the
+  whole point is to receive from whatever produces spans — but the read path
+  checked it against a closed enum. A trace from a producer Lookspan did not
+  know by name came back as `custom`, and every row logged a warning. A live
+  instance receiving from `inferbench` filled its console with thousands of
+  identical lines while quietly mislabelling every one of those traces, which
+  were then impossible to filter because the dashboard's filter list was
+  hardcoded. The label now round-trips untouched and the filter offers whatever
+  appears in the data. `type` and `status` stay validated: those are closed
+  enums the code branches on.
+- **A truncated export said so only where nobody looks.** With more traces than
+  the export cap, the file quietly contained the newest 1000 — the headers, the
+  JSON body and the HTML report all said so, but the CSV did not and neither
+  did the dashboard. The export menu now warns before the download, and a
+  truncated file names itself `lookspan-traces-<stamp>-1000-of-20001.csv`,
+  because the filename is the one thing that travels with it to a spreadsheet.
+- **The driver-level `pragma()` took any statement.** Its argument is
+  interpolated into a PRAGMA that SQLite runs verbatim. Every caller passes a
+  literal, so nothing external reached it, but both drivers now accept only the
+  schema-version pragma and `setSchemaVersion` refuses anything that is not a
+  plain non-negative integer.
 
 ### Added
-- **An out-of-range port is refused instead of crashing.**  used
-  to reach  and fail with an obscure error; the CLI now says what is
-  wrong.
+- **An out-of-range port is refused instead of crashing.** `--port 99999` used
+  to reach `listen()` and fail with an obscure error; the CLI now says what is
+  wrong. `LOOKSPAN_PORT` gets the same check, which it previously skipped.
 
 ### Changed
-- **The CLI flag layer moved out of the entrypoint** so it can be tested.
-   calls  at module scope, so importing it started a server
-  and the parsing had never been exercised; it also called  from
-  inside the parser. Parsing now lives in , takes its environment as
-  an argument and throws instead of exiting. 21 tests.
 - **Startup is about a third faster.** The Postgres engine was imported at
   module scope, and the driver picker imports that file — so every SQLite user,
   which is everyone by default, loaded and executed 2 MB of pg-mem for a driver
   they never selected. Measured cold start of the published package: 293 ms
   down to 203 ms. It now loads only when a `postgres://` target is opened.
-
-### Fixed
-- **A truncated export said so only where nobody looks.** With more traces than
-  the export cap, the file quietly contained the newest 1000 — the headers, the
-  JSON body and the HTML report all said so, but the CSV did not and neither did
-  the dashboard. The export menu now warns before the download, and a truncated
-  file names itself , because the
-  filename is the one thing that travels with it to a spreadsheet.
-- **The driver-level  took any statement.** Its argument is
-  interpolated into a PRAGMA that SQLite runs verbatim. Every caller passes a
-  literal, so nothing external reached it, but both drivers now accept only the
-  schema-version pragma and  refuses anything that is not a
-  plain non-negative integer.
+- **The CLI flag layer moved out of the entrypoint** so it can be tested.
+  `index.ts` calls `main()` at module scope, so importing it started a server
+  and the parsing had never been exercised; it also called `process.exit` from
+  inside the parser. Parsing now lives in `flags.ts`, takes its environment as
+  an argument and throws instead of exiting. 21 tests.
 
 ## 0.5.0 — 2026-08-12
 
