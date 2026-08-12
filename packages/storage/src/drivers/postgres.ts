@@ -1,6 +1,28 @@
-import { DataType, type IMemoryDb, newDb } from 'pg-mem';
+import { createRequire } from 'node:module';
+import type { DataType as DataTypeEnum, IMemoryDb } from 'pg-mem';
 import { translateStatement } from './translate.js';
 import type { RunResult, SqlDriver, SqlStatement } from './types.js';
+
+/**
+ * Load pg-mem only when a Postgres target is actually opened.
+ *
+ * It was imported at module scope, and `database.ts` imports this file to
+ * decide which driver to build — so every SQLite user paid for it. Measured at
+ * ~93 ms of a ~293 ms cold start, about a third of startup, plus 2 MB of code
+ * parsed and executed for a driver almost nobody selects. Less code loaded is
+ * also less that can go wrong.
+ *
+ * `require` rather than `await import` because the whole storage layer is
+ * synchronous by design; pg-mem ships CommonJS, so this works and stays sync.
+ */
+let cache: { newDb: typeof import('pg-mem').newDb; DataType: typeof DataTypeEnum } | null = null;
+function pgMem() {
+  if (!cache) {
+    const mod = createRequire(import.meta.url)('pg-mem') as typeof import('pg-mem');
+    cache = { newDb: mod.newDb, DataType: mod.DataType };
+  }
+  return cache;
+}
 
 /**
  * Postgres driver for Lookspan.
@@ -56,7 +78,7 @@ export class PostgresDriver implements SqlDriver {
   private depth = 0;
 
   constructor(_options: PostgresDriverOptions) {
-    this.mem = newDb();
+    this.mem = pgMem().newDb();
     this.registerHelpers();
   }
 
@@ -66,6 +88,7 @@ export class PostgresDriver implements SqlDriver {
    * and a timestamp default natively; these shims keep parity in-process.
    */
   private registerHelpers(): void {
+    const { DataType } = pgMem();
     const pub = this.mem.public;
     // ISO-8601 UTC timestamp, matching SQLite's strftime default format.
     pub.registerFunction({
