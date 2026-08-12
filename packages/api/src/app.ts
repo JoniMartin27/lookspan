@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import type { ApiContext } from './context.js';
@@ -90,12 +89,19 @@ export function createApp(options: CreateAppOptions): Express {
   });
 
   if (options.dashboardDir) {
-    const indexHtml = join(options.dashboardDir, 'index.html');
-    app.use(express.static(options.dashboardDir));
+    const dashboardRoot = options.dashboardDir;
+    app.use(express.static(dashboardRoot));
     // SPA fallback: serve index.html for client-side routes (GET/HEAD only).
+    //
+    // The file is addressed as `index.html` *relative to an explicit `root`*,
+    // not as one absolute path. Express 5 hands an absolute `path` to `send`
+    // with the request's own URL still in play and the send stream resolves it
+    // to nothing — every deep link (`/traces/:id`, `/sessions`, `/connect`)
+    // 404s on hard refresh even though the file is right there. Only `/` used
+    // to work, because `express.static` served that one before the fallback.
     app.use((req, res, next) => {
       if (req.method !== 'GET' && req.method !== 'HEAD') return next();
-      res.sendFile(indexHtml, (err) => {
+      res.sendFile('index.html', { root: dashboardRoot }, (err) => {
         if (err) next();
       });
     });

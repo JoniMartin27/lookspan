@@ -1,5 +1,8 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { migrate, openDatabase } from '@lookspan/storage';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
@@ -406,5 +409,76 @@ describe('createApp auth token', () => {
       body: JSON.stringify({ resourceSpans: [] }),
     });
     expect(res.status).toBe(401);
+  });
+});
+
+describe('dashboard SPA fallback', () => {
+  let dashboardDir: string;
+
+  beforeEach(async () => {
+    // Un `dist/` de mentira, pero de VERDAD en disco: el fallo que esto cubre
+    // solo aparece cuando `send` resuelve una ruta real.
+    //
+    // Y el directorio empieza por PUNTO a propósito. Ese es justo el caso que
+    // se rompía: `npm i -g` instala bajo `~/.local`, `~/.nvm` o `~/.volta` en
+    // media Linux, y `send` sin `root` mira TODOS los tramos de la ruta
+    // absoluta y aplica su `dotfiles: 'ignore'` — así que un `.algo` en medio
+    // convertía el index.html en un 404 aunque el fichero estuviera ahí.
+    dashboardDir = await mkdtemp(join(tmpdir(), '.lookspan-dash-'));
+    await writeFile(join(dashboardDir, 'index.html'), '<!doctype html><title>Lookspan</title>');
+    await writeFile(join(dashboardDir, 'app.js'), 'export const x = 1;\n');
+    const db = openDatabase({ path: ':memory:' });
+    migrate(db);
+    const app = createApp({ context: createContext(db), dashboardDir });
+    await new Promise<void>((resolve) => {
+      server = app.listen(0, '127.0.0.1', () => {
+        const { port } = server.address() as AddressInfo;
+        base = `http://127.0.0.1:${port}`;
+        resolve();
+      });
+    });
+  });
+
+  afterEach(async () => {
+    await rm(dashboardDir, { recursive: true, force: true });
+  });
+
+  it('serves the app shell at the root', async () => {
+    const res = await fetch(`${base}/`);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain('Lookspan');
+  });
+
+  // El caso que se rompió: `/` funcionaba (lo servía express.static) y todo lo
+  // demás daba 404, así que abrir una traza por enlace o recargar la página la
+  // dejaba en blanco.
+  it.each([
+    '/traces/tr_abc123',
+    '/sessions',
+    '/sessions/voz@2026-08-12',
+    '/connect',
+    '/costs',
+  ])('serves the app shell on a hard request to %s', async (path) => {
+    const res = await fetch(`${base}${path}`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/html');
+    expect(await res.text()).toContain('Lookspan');
+  });
+
+  it('still serves real static assets instead of the shell', async () => {
+    const res = await fetch(`${base}/app.js`);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain('export const x');
+  });
+
+  it('keeps unknown /api routes as JSON 404s, never the shell', async () => {
+    const res = await fetch(`${base}/api/nope`);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'not_found' });
+  });
+
+  it('does not answer non-GET requests with the shell', async () => {
+    const res = await fetch(`${base}/traces/tr_abc123`, { method: 'DELETE' });
+    expect(res.status).toBe(404);
   });
 });
