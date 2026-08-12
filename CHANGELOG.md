@@ -46,6 +46,13 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **Four more documents still oversold the Postgres driver.** Correcting the
+  "same features" claim once per file was not working — it had already been
+  fixed in three places across two releases and kept resurfacing. A test now
+  asserts that any document telling you to point `--db` at Postgres also says
+  what that is *not*; it found two files on its first run that a manual sweep
+  had missed. The roadmap's published-version list was stale too (it still said
+  v0.1.0) and it never mentioned the desktop launcher.
 - **The docs site's "send your first span" curl did not parse.** An extra brace
   in `guides/getting-started` and `reference/http-api` — the very first command
   a new reader runs — while the READMEs carried the correct version, so the two
