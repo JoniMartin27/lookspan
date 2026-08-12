@@ -66,12 +66,14 @@ export function validateSpan(span: unknown, index: number): SpanInput {
 }
 
 export function validatePayload(payload: unknown): IngestPayload {
+  // Typed so the HTTP layer can tell "the caller sent nonsense" (retrying will
+  // not help — 400) apart from "we failed to store it" (retrying will — 500).
   if (!payload || typeof payload !== 'object') {
-    throw new Error('payload must be an object');
+    throw new IngestValidationError('payload must be an object', -1);
   }
   const p = payload as Record<string, unknown>;
   if (!Array.isArray(p.spans)) {
-    throw new Error('payload.spans must be an array');
+    throw new IngestValidationError('payload.spans must be an array', -1);
   }
   return p as unknown as IngestPayload;
 }

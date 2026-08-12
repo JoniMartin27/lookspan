@@ -64,15 +64,23 @@ function buildAlertRules(values: Record<string, unknown>): AlertRule[] {
   return rules;
 }
 
-/** Human-readable DB target for startup logs, with any Postgres password redacted. */
+/**
+ * Human-readable DB target for startup logs, with any Postgres password
+ * redacted.
+ *
+ * The Postgres line says *in-process* out loud. The driver runs an embedded
+ * Postgres engine and never dials the host in the URL, so printing the
+ * connection string on its own reads as "connected to your server" — and the
+ * data is gone on restart.
+ */
 function describeDb(target: string): string {
   if (!isPostgresTarget(target)) return target;
   try {
     const url = new URL(target);
     if (url.password) url.password = '***';
-    return `${url.toString()} (postgres)`;
+    return `${url.toString()} (postgres, in-process — not persisted to that server)`;
   } catch {
-    return 'postgres';
+    return 'postgres (in-process — not persisted to a server)';
   }
 }
 

@@ -160,3 +160,54 @@ describe('Collector.ingest', () => {
     expect(new TracesRepository(db).getById('tr_1')).toBeNull(); // nothing persisted
   });
 });
+
+describe('ingest on the Postgres driver', () => {
+  // The bug this covers: `insertMany` opens its own transaction, so the
+  // collector's seed-and-insert wrapper nests one. The Postgres driver used to
+  // emit a SAVEPOINT for the inner block, which pg-mem cannot even parse — so
+  // *every* write to a Postgres-backed Lookspan failed with a 400 that blamed
+  // the caller's payload. The parity suite missed it because it only ever
+  // called repositories at the top level, never inside a transaction.
+  let pg: LookspanDatabase;
+  let pgCollector: Collector;
+
+  beforeEach(() => {
+    pg = openDatabase({ path: 'postgres://lookspan:lookspan@localhost:5432/lookspan_test' });
+    migrate(pg);
+    pgCollector = new Collector({ db: pg });
+  });
+  afterEach(() => pg.close());
+
+  it('accepts a span and aggregates its trace', () => {
+    const res = pgCollector.ingest({ spans: [span()] });
+
+    expect(res.rejected).toBe(0);
+    expect(res.accepted).toBe(1);
+    const trace = new TracesRepository(pg).getById('tr_1');
+    expect(trace).not.toBeNull();
+    expect(trace?.spanCount).toBe(1);
+  });
+
+  it('accepts a multi-span batch', () => {
+    const res = pgCollector.ingest({
+      spans: [span({ spanId: 'a' }), span({ spanId: 'b' }), span({ spanId: 'c' })],
+    });
+
+    expect(res.accepted).toBe(3);
+    expect(new TracesRepository(pg).getById('tr_1')?.spanCount).toBe(3);
+  });
+
+  it('upserts a repeated span id instead of duplicating it, same as SQLite', () => {
+    pgCollector.ingest({ spans: [span({ spanId: 'dup', name: 'primero' })] });
+    pgCollector.ingest({ spans: [span({ spanId: 'dup', name: 'segundo' })] });
+
+    const sqlite = new Collector({ db });
+    sqlite.ingest({ spans: [span({ spanId: 'dup', name: 'primero' })] });
+    sqlite.ingest({ spans: [span({ spanId: 'dup', name: 'segundo' })] });
+
+    expect(new TracesRepository(pg).getById('tr_1')?.spanCount).toBe(1);
+    expect(new TracesRepository(pg).getById('tr_1')?.spanCount).toBe(
+      new TracesRepository(db).getById('tr_1')?.spanCount,
+    );
+  });
+});

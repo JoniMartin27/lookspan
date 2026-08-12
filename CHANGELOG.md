@@ -46,6 +46,25 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **Every write to a Postgres-backed Lookspan failed.** Ingesting a span wraps
+  `SpansRepository.insertMany` — itself transactional — inside the collector's
+  transaction, and the Postgres driver emitted a `SAVEPOINT` for the inner
+  block. pg-mem cannot parse `SAVEPOINT`, so the insert threw; the HTTP layer
+  then reported the storage failure as `400 invalid_payload`, blaming the
+  caller's data. Nested blocks now join the outermost one.
+- **The Postgres driver had no transactional atomicity at all.** `BEGIN` /
+  `COMMIT` / `ROLLBACK` sent through pg-mem's query interface are parsed and
+  ignored — a rollback left its rows in place. Outermost blocks are now
+  bracketed with `mem.backup()` and restored on failure, which is both correct
+  and effectively free (0.03 ms to snapshot a 20 000-row table).
+- **A failed ingest no longer returns 400.** Only a malformed payload is the
+  caller's fault; a storage error now returns `500 ingest_failed`. Exporters
+  treat 4xx as "do not retry", so the old behaviour silently dropped batches
+  that a retry would have saved.
+- **The docs oversold Postgres.** The README said "same schema, same features";
+  in fact the driver runs an embedded engine, never contacts the host in the
+  connection string, and loses its data on restart. The README, its Spanish
+  twin and the startup line now say so.
 - **The rest of the views got the same phone treatment** as the trace list: a
   consistent `p-4` on small screens, and the Overview's five stat tiles packed
   three-across instead of stacking into three rows — 509px down to 333px before
