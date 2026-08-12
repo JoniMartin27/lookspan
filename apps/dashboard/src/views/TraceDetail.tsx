@@ -6,6 +6,7 @@ import { Link, useParams } from 'wouter';
 import { api } from '../api/client.ts';
 import { agentColor } from '../lib/agentColor.ts';
 import { diffLines } from '../lib/diff.ts';
+import { useDrawer } from '../lib/useDrawer.ts';
 
 export default function TraceDetail() {
   const params = useParams<{ id: string }>();
@@ -292,8 +293,15 @@ const TYPE_LABEL: Record<string, string> = {
 
 /** Slide-over panel with the full detail of the clicked span. */
 function SpanDrawer({ span, onClose }: { span: Span; onClose: () => void }) {
+  const ref = useDrawer<HTMLElement>(onClose);
   return (
-    <aside className="absolute right-0 top-0 flex h-full w-96 max-w-[90%] flex-col overflow-auto border-l border-neutral-800 bg-neutral-950/95 backdrop-blur">
+    <aside
+      ref={ref}
+      tabIndex={-1}
+      role="dialog"
+      aria-label={`Span detail: ${span.name}`}
+      className="absolute right-0 top-0 flex h-full w-96 max-w-[90%] flex-col overflow-auto border-l border-neutral-800 bg-neutral-950/95 backdrop-blur focus:outline-none"
+    >
       <div className="flex items-start justify-between gap-2 border-b border-neutral-800 p-4">
         <div>
           <div className="flex items-center gap-2">
@@ -764,6 +772,7 @@ function ReplayOutput({ original, output }: { original: string | null; output: s
 
 /** Right-side panel: re-run the prompt against a model, or score it with an LLM judge. */
 function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void }) {
+  const ref = useDrawer<HTMLElement>(onClose);
   const qc = useQueryClient();
   const [model, setModel] = useState('');
   const [metric, setMetric] = useState('quality');
@@ -808,7 +817,13 @@ function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void 
   const items = replays.data?.items ?? [];
 
   return (
-    <aside className="absolute right-0 top-0 flex h-full w-96 max-w-[90%] flex-col overflow-auto border-l border-neutral-800 bg-neutral-950/95 backdrop-blur">
+    <aside
+      ref={ref}
+      tabIndex={-1}
+      role="dialog"
+      aria-label="Replay & judge"
+      className="absolute right-0 top-0 flex h-full w-96 max-w-[90%] flex-col overflow-auto border-l border-neutral-800 bg-neutral-950/95 backdrop-blur focus:outline-none"
+    >
       <div className="flex items-center justify-between border-b border-neutral-800 p-4">
         <h2 className="text-sm font-semibold text-neutral-100">Replay &amp; judge</h2>
         <button

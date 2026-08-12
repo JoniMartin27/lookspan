@@ -85,7 +85,17 @@ export default function Layout({ children }: LayoutProps) {
           {connected ? 'live' : 'offline'}
         </div>
       </header>
-      <main className="flex-1 overflow-auto">{children}</main>
+      {/* Focusable so the keyboard can scroll it. Views like Costs are nothing
+          but charts — no focusable content at all — which left their scroll
+          area unreachable without a mouse. */}
+      {/* biome-ignore lint/a11y/noNoninteractiveTabindex: this is the page's
+          scroll container, and WCAG 2.1.1 needs it operable by keyboard. Views
+          like Costs are nothing but charts — no focusable content at all — so
+          without a tab stop here their content cannot be scrolled without a
+          mouse. axe flags exactly this as `scrollable-region-focusable`. */}
+      <main tabIndex={0} className="flex-1 overflow-auto">
+        {children}
+      </main>
 
       <footer className="border-t border-neutral-800 px-6 py-2 text-right text-[11px] text-neutral-500">
         Part of{' '}
