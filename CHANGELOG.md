@@ -5,6 +5,14 @@
 The first screen a new user sees had never been audited, and "live" was not.
 
 ### Fixed
+- **The cost breakdowns did not add up to the total beside them.** Each one
+  dropped rows where its dimension was NULL, and a CrewAI span carries no
+  `provider` at all — its adapter never sets one. Measured against a running
+  server: `total` said $0.021 while "By provider" summed to $0.0135, so 36% of
+  the bill was missing from the chart with nothing on screen to say so. The
+  same held for model and agent. Unattributable spend now gets an
+  `(unattributed)` bucket — the label the session view already used — instead
+  of the floor, and the bucket only appears when there is money in it.
 - **A night's spend was charted on the previous day.** Traces carry UTC
   timestamps and the per-day rollups bucketed them by slicing the first ten
   characters off that string — the UTC date. On a machine at UTC+2, every trace

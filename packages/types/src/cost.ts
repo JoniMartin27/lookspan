@@ -38,3 +38,16 @@ export interface CostBreakdown {
    */
   reasoningByModel: Record<string, number>;
 }
+
+/**
+ * Bucket for spend that carries no provider, model or agent.
+ *
+ * The cost breakdowns used to drop those rows with `IS NOT NULL`, so the
+ * charts quietly failed to add up to the total they sat next to: a CrewAI
+ * trace has no `provider` at all, and 36% of a measured bill went missing from
+ * "By provider" without a mark. Money that is not attributable is still money.
+ *
+ * The same string the session view already uses for agents, so a reader meets
+ * one label rather than two.
+ */
+export const UNATTRIBUTED = '(unattributed)';
