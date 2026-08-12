@@ -17,12 +17,19 @@ npm run dev          # API on :3100, dashboard on :5173
 Run the full pipeline — it must be green:
 
 ```bash
-npm run ci           # typecheck + lint + test + build
+npm run ci           # typecheck + lint + test + build + smoke-test the published bundle
 ```
+
+The Python SDKs under `python/` have their own suites and run as a separate CI
+job; see the Development section of the README.
 
 - **Tests**: add Vitest tests for new logic (`*.test.ts` next to the source).
 - **Format/lint**: Biome. Run `npm run fix` to auto-format.
 - **Commits**: conventional-ish prefixes (`feat:`, `fix:`, `docs:`, `test:`…).
+- **Line endings**: the repo is LF everywhere, pinned by `.gitattributes`. If
+  you cloned before that existed and lint suddenly flags every file, refresh
+  your working tree with `git rm --cached -r . && git reset --hard` — it
+  rewrites line endings on disk without changing a single commit.
 
 ## Project layout
 
