@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+- **Startup is about a third faster.** The Postgres engine was imported at
+  module scope, and the driver picker imports that file — so every SQLite user,
+  which is everyone by default, loaded and executed 2 MB of pg-mem for a driver
+  they never selected. Measured cold start of the published package: 293 ms
+  down to 203 ms. It now loads only when a `postgres://` target is opened.
+
 ### Fixed
 - **A truncated export said so only where nobody looks.** With more traces than
   the export cap, the file quietly contained the newest 1000 — the headers, the
