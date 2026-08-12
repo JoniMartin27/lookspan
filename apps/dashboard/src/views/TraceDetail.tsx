@@ -49,7 +49,7 @@ export default function TraceDetail() {
                 {' · '}
                 <Link
                   href={`/sessions/${data.trace.sessionId}`}
-                  className="text-brand-500 hover:underline"
+                  className="text-brand-500 underline underline-offset-2"
                 >
                   view session
                 </Link>
@@ -60,7 +60,7 @@ export default function TraceDetail() {
                 {' · '}
                 <Link
                   href={`/traces/${data.trace.parentTraceId}`}
-                  className="text-brand-500 hover:underline"
+                  className="text-brand-500 underline underline-offset-2"
                 >
                   spawned by ↑
                 </Link>

@@ -46,6 +46,13 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **The dashboard failed WCAG AA on every view.** An axe-core audit found three
+  problems: the forge palette's `neutral-500` and `neutral-600` sat at 4.42:1
+  and 2.54:1 against the page while carrying real text (89 flagged nodes), the
+  framework and status filters had no accessible name at all, and three links
+  were distinguishable from surrounding text by colour alone. All eight views
+  are now clean, and a palette test reads the tokens straight out of
+  `index.css` so a future theme change cannot quietly drop below AA again.
 - **Four more documents still oversold the Postgres driver.** Correcting the
   "same features" claim once per file was not working — it had already been
   fixed in three places across two releases and kept resurfacing. A test now
