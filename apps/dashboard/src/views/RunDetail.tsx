@@ -18,7 +18,7 @@ export default function RunDetail() {
   const { run, items } = data;
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <Link href={`/datasets/${run.datasetId}`} className="text-sm text-brand-500 hover:underline">
         ← Dataset
       </Link>

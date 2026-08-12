@@ -24,7 +24,7 @@ export default function SessionDetail() {
   const { session, traces } = data;
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h1 className="text-xl font-semibold">Session</h1>
       <p className="mb-4 font-mono text-xs text-neutral-500">{session.sessionId}</p>
 

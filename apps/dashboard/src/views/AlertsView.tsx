@@ -16,7 +16,7 @@ export default function AlertsView() {
   const items = data?.items ?? [];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h1 className="mb-4 text-xl font-semibold">Alerts</h1>
       {items.length === 0 ? (
         <EmptyState title="No alerts">

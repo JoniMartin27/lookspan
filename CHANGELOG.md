@@ -46,6 +46,10 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **The rest of the views got the same phone treatment** as the trace list: a
+  consistent `p-4` on small screens, and the Overview's five stat tiles packed
+  three-across instead of stacking into three rows — 509px down to 333px before
+  the first chart. Desktop is unchanged everywhere.
 - **The trace list wasted half a phone screen on chrome.** At 390px, 427 of the
   844 available pixels went to the header, the health strip and the filter row
   before a single trace was visible. The health tiles now sit in one row on

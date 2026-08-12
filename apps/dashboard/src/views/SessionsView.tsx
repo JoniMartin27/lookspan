@@ -16,7 +16,7 @@ export default function SessionsView() {
   const items = data?.items ?? [];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h1 className="mb-1 text-xl font-semibold">Sessions</h1>
       <p className="mb-4 text-sm text-neutral-500">
         A session groups the traces that ran together — useful to see a whole multi-agent run.
