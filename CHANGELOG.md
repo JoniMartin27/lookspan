@@ -2,9 +2,19 @@
 
 ## Unreleased
 
-The first screen a new user sees had never been audited.
+The first screen a new user sees had never been audited, and "live" was not.
 
 ### Fixed
+- **The live stream was connected and ignored.** The header promised the
+  dashboard "updates in real time", and the server did its part — one
+  `span.ingested` per stored span, one `trace.updated` per affected trace — but
+  the client only ever read those events to raise alert toasts. Everything else
+  waited on its own `refetchInterval`, so a trace took **7.4 seconds** to
+  appear on an open page, and would have taken just as long with the stream
+  switched off. Data events now refresh the views, collapsed into at most one
+  refresh per 700 ms window so a busy agent cannot turn the dashboard into a
+  denial of service against its own API. Measured in a browser: **7,449 ms →
+  384 ms**, and a 2,000-span burst at 1,028 spans/s costs the page 8 requests.
 - **The empty dashboard failed WCAG AA.** Every accessibility pass so far ran
   against a seeded database, so the states a new install actually shows were
   never measured. With an empty one, `/` offered "Head to Connect to wire up

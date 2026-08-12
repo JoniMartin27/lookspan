@@ -1,7 +1,9 @@
 import type { Alert } from '@lookspan/types';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useStream } from '../hooks/useStream.ts';
+import { DATA_EVENTS, initialRefreshState, planRefresh, refreshRan } from '../lib/liveRefresh.ts';
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,7 +21,39 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, []);
 
+  // The stream told us data changed, but nothing acted on it: every view
+  // waited for its own `refetchInterval`, so a trace took up to 10 seconds to
+  // appear while the header promised real-time updates. Refresh on the event
+  // instead, collapsing bursts so a busy agent can't spam the API.
+  const queryClient = useQueryClient();
+  const refreshState = useRef(initialRefreshState);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    },
+    [],
+  );
+
+  const onDataChanged = useCallback(() => {
+    const plan = planRefresh(refreshState.current, Date.now());
+    refreshState.current = plan.state;
+    if (plan.run) {
+      void queryClient.invalidateQueries();
+      return;
+    }
+    if (plan.scheduleIn === null) return; // a trailing refresh already covers it
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null;
+      refreshState.current = refreshRan(Date.now());
+      void queryClient.invalidateQueries();
+    }, plan.scheduleIn);
+  }, [queryClient]);
+
   const { connected } = useStream((event) => {
+    if (DATA_EVENTS.has(event.type)) onDataChanged();
+
     if (event.type !== 'alert.triggered') return;
     const alert = event.alert as Alert;
     const id = nextId.current++;
