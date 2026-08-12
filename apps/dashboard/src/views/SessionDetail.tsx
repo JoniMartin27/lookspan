@@ -287,9 +287,9 @@ function DelegationGraph({ traces }: { traces: TraceListItem[] }) {
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
         style: {
-          background: t?.status === 'error' ? '#2a1416' : '#18181b',
-          color: '#f5f5f5',
-          border: '1px solid #3f3f46',
+          background: t?.status === 'error' ? '#2a1416' : '#1a1310',
+          color: '#efe7dc',
+          border: '1px solid #3d2f26',
           borderLeft: `4px solid ${accent}`,
           borderRadius: 8,
           padding: '6px 10px',
@@ -303,7 +303,7 @@ function DelegationGraph({ traces }: { traces: TraceListItem[] }) {
       source: t.parentTraceId as string,
       target: t.traceId,
       animated: true,
-      style: { stroke: '#52525b' },
+      style: { stroke: '#5f5044' },
     }));
     return { nodes, edges, hasLinks: true };
   }, [traces]);
@@ -323,7 +323,7 @@ function DelegationGraph({ traces }: { traces: TraceListItem[] }) {
           onNodeClick={(_, n) => navigate(`/traces/${n.id}`)}
           proOptions={{ hideAttribution: true }}
         >
-          <Background gap={16} size={1} color="#27272a" />
+          <Background gap={16} size={1} color="#2c211b" />
           <Controls showInteractive={false} />
         </ReactFlow>
       </div>

@@ -146,13 +146,13 @@ function Chart({ data }: { data: { name: string; cost: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-        <XAxis dataKey="name" stroke="#71717a" fontSize={12} />
-        <YAxis stroke="#71717a" fontSize={12} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#2c211b" />
+        <XAxis dataKey="name" stroke="#857567" fontSize={12} />
+        <YAxis stroke="#857567" fontSize={12} />
         <Tooltip
-          contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', fontSize: 12 }}
+          contentStyle={{ background: '#1a1310', border: '1px solid #3d2f26', fontSize: 12 }}
         />
-        <Bar dataKey="cost" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="cost" fill="#ff6a00" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

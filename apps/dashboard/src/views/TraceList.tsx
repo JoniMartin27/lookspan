@@ -170,7 +170,7 @@ function Row({
   slow: boolean;
 }) {
   const accent =
-    t.status === 'error' ? '#b91c1c' : t.status === 'cancelled' ? '#52525b' : agentColor(t.agentId);
+    t.status === 'error' ? '#b91c1c' : t.status === 'cancelled' ? '#5f5044' : agentColor(t.agentId);
   return (
     <tr className="border-t border-neutral-800 hover:bg-neutral-900">
       <td className="py-2 pr-3 pl-3" style={{ boxShadow: `inset 3px 0 0 ${accent}` }}>
@@ -199,11 +199,11 @@ function Row({
         <MiniBar
           text={fmtMs(t.durationMs)}
           frac={(t.durationMs ?? 0) / maxDur}
-          color={slow ? '#f59e0b' : '#3f8cff'}
+          color={slow ? '#ffb02e' : '#5bc8d8'}
         />
       </td>
       <td className="px-3 py-2">
-        <MiniBar text={`$${t.costUsd.toFixed(4)}`} frac={t.costUsd / maxCost} color="#8b5cf6" />
+        <MiniBar text={`$${t.costUsd.toFixed(4)}`} frac={t.costUsd / maxCost} color="#ffb02e" />
       </td>
       <td className="px-3 py-2 text-neutral-400 tabular-nums">{t.spanCount}</td>
     </tr>

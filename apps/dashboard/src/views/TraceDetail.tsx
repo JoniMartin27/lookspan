@@ -139,7 +139,7 @@ export default function TraceDetail() {
             onPaneClick={() => setSelectedId(null)}
             proOptions={{ hideAttribution: true }}
           >
-            <Background gap={16} size={1} color="#27272a" />
+            <Background gap={16} size={1} color="#2c211b" />
             <Controls showInteractive={false} />
           </ReactFlow>
         )}
@@ -603,7 +603,7 @@ function Scores({ traceId, scores }: { traceId: string; scores: Score[] }) {
             <button
               type="submit"
               disabled={!canSubmit || mutation.isPending}
-              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+              className="rounded bg-brand-500 px-2 py-1 text-xs font-medium text-ink disabled:opacity-40"
             >
               Add
             </button>
@@ -843,7 +843,7 @@ function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void 
               type="button"
               onClick={() => replayM.mutate()}
               disabled={replayM.isPending}
-              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+              className="rounded bg-brand-500 px-2 py-1 text-xs font-medium text-ink disabled:opacity-40"
             >
               {replayM.isPending ? 'Running…' : 'Run'}
             </button>
@@ -868,7 +868,7 @@ function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void 
               type="button"
               onClick={() => judgeM.mutate()}
               disabled={judgeM.isPending}
-              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+              className="rounded bg-brand-500 px-2 py-1 text-xs font-medium text-ink disabled:opacity-40"
             >
               {judgeM.isPending ? 'Judging…' : 'Score'}
             </button>
@@ -902,7 +902,7 @@ function LabDrawer({ traceId, onClose }: { traceId: string; onClose: () => void 
               type="button"
               onClick={() => addToDatasetM.mutate()}
               disabled={!datasetId || addToDatasetM.isPending}
-              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-40"
+              className="rounded bg-brand-500 px-2 py-1 text-xs font-medium text-ink disabled:opacity-40"
             >
               {added ? 'Added ✓' : 'Add'}
             </button>
@@ -1002,9 +1002,9 @@ function buildGraph(spans: Span[], selectedId: string | null): { nodes: Node[]; 
       sourcePosition: Position.Right,
       targetPosition: Position.Left,
       style: {
-        background: isError ? '#2a1416' : '#18181b',
-        color: '#f5f5f5',
-        border: `1px solid ${isSelected ? accent : isError ? '#7f1d1d' : '#3f3f46'}`,
+        background: isError ? '#2a1416' : '#1a1310',
+        color: '#efe7dc',
+        border: `1px solid ${isSelected ? accent : isError ? '#7f1d1d' : '#3d2f26'}`,
         borderLeft: `4px solid ${accent}`,
         borderRadius: 8,
         padding: '6px 10px',
@@ -1022,7 +1022,7 @@ function buildGraph(spans: Span[], selectedId: string | null): { nodes: Node[]; 
       source: s.parentSpanId as string,
       target: s.spanId,
       animated: s.status === 'ok',
-      style: { stroke: '#3f3f46' },
+      style: { stroke: '#3d2f26' },
     }));
 
   return { nodes, edges };

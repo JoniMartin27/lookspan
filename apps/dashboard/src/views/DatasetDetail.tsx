@@ -76,7 +76,7 @@ export default function DatasetDetail() {
           <button
             type="submit"
             disabled={!model.trim() || runM.isPending || items.length === 0}
-            className="rounded bg-brand-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-40"
+            className="rounded bg-brand-500 px-3 py-1 text-sm font-medium text-ink disabled:opacity-40"
           >
             {runM.isPending ? `Running ${items.length} items…` : 'Run'}
           </button>
@@ -207,7 +207,7 @@ function AddItemForm({ datasetId }: { datasetId: string }) {
         <button
           type="submit"
           disabled={!input.trim() || addM.isPending}
-          className="rounded bg-brand-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+          className="rounded bg-brand-500 px-3 py-1 text-xs font-medium text-ink disabled:opacity-40"
         >
           {addM.isPending ? 'Adding…' : 'Add item'}
         </button>

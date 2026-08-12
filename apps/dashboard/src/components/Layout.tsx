@@ -85,6 +85,18 @@ export default function Layout({ children }: LayoutProps) {
       </header>
       <main className="flex-1 overflow-auto">{children}</main>
 
+      <footer className="border-t border-neutral-800 px-6 py-2 text-right text-[11px] text-neutral-500">
+        Part of{' '}
+        <a
+          href="https://fervon.dev"
+          target="_blank"
+          rel="noreferrer"
+          className="text-neutral-400 hover:text-brand-500"
+        >
+          Fervon
+        </a>
+      </footer>
+
       <section
         className="pointer-events-none fixed bottom-4 right-4 flex w-80 flex-col gap-2"
         aria-live="assertive"
