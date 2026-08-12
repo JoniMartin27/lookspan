@@ -320,8 +320,19 @@ git clone https://github.com/JoniMartin27/lookspan.git
 cd lookspan
 npm install
 npm run dev        # API on :3100, dashboard with hot-reload on :5173
-npm run ci         # typecheck + lint + test + build
+npm run ci         # typecheck + lint + test + build + smoke-test the published bundle
 ```
+
+The Python SDKs are separate packages with their own test suites (CI runs all
+three):
+
+```bash
+cd python/lookspan-core && pip install pytest . && pytest -q
+```
+
+`lookspan-crewai` installs with `--no-deps` for tests — CrewAI itself is only
+imported inside `attach()`, so the span-building paths are covered with stand-in
+events instead of a heavy dependency tree.
 
 Contributions welcome — see [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 Release process in [docs/PUBLISHING.md](docs/PUBLISHING.md). Security policy: [SECURITY.md](SECURITY.md).

@@ -5,6 +5,11 @@
 Merged on `main` since 0.4.1; not yet cut as a release.
 
 ### Added
+- **CI now tests the Python SDKs.** All three (`lookspan`, `lookspan-langgraph`,
+  `lookspan-crewai`) are published to PyPI, and none of them had ever run in
+  CI — only the core package even had tests. A `python SDKs` job runs ruff and
+  pytest for each, and the two adapters gained suites of their own (35 tests
+  covering span shape, causality, truncation, error paths and version parity).
 - **One-click desktop launcher** — `lookspan install-desktop` registers Lookspan
   as a real desktop app: a shortcut on the Desktop and in the Start Menu on
   Windows, `~/Applications/Lookspan.app` on macOS, a `.desktop` entry on Linux.
@@ -36,6 +41,15 @@ Merged on `main` since 0.4.1; not yet cut as a release.
   hover); accessible live-stream status + alert toasts.
 
 ### Fixed
+- **The LangGraph adapter reported the model name as the provider.**
+  `on_llm_end` read LangChain's `model_name` and wrote it to *both* `model` and
+  `provider`, so every LangGraph user's spans were grouped under a provider
+  called `gpt-4o`. The provider is now inferred from the model id, and left
+  unset when it can't be told rather than guessed wrong.
+- **`lookspan-langgraph` and `lookspan-crewai` reported `__version__ ==
+  "0.0.1"`** while shipping as 0.1.1 on PyPI — the fix applied to the core SDK
+  never reached the two adapters. Both now match their `pyproject.toml`, and a
+  test in each package asserts the two agree so they cannot drift again.
 - **The published CLI could not start.** Adding the Postgres driver made
   `pg-mem` a runtime dependency of `@lookspan/storage`, and the release bundler
   inlined it — but `pg-mem` ships a webpack CJS bundle that calls
