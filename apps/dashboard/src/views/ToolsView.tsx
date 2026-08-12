@@ -18,7 +18,7 @@ export default function ToolsView() {
   const items = data?.items ?? [];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h1 className="mb-1 text-xl font-semibold">Tools</h1>
       <p className="mb-4 text-sm text-neutral-500">
         Recent tool calls across all traces — your agents' MCP &amp; framework tool usage at a

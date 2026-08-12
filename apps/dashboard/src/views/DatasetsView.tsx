@@ -25,7 +25,7 @@ export default function DatasetsView() {
   const items = data?.items ?? [];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h1 className="mb-1 text-xl font-semibold">Datasets</h1>
       <p className="mb-4 text-sm text-neutral-500">
         Collect prompts into a test set, then run them against a model and score each output — your

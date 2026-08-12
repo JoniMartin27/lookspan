@@ -37,7 +37,7 @@ export default function CostsView() {
   const byDay = (stats?.byDay ?? []).map((d) => ({ name: d.day.slice(5), cost: d.costUsd }));
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
       <div>
         <h1 className="mb-1 text-xl font-semibold">Overview</h1>
         <p className="text-sm text-neutral-500">
@@ -62,7 +62,7 @@ export default function CostsView() {
       </div>
 
       {stats && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
           <Stat label="Traces" value={stats.totalTraces.toLocaleString()} />
           <Stat
             label="Error rate"
@@ -120,9 +120,11 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: 'go
   const valueColor =
     tone === 'bad' ? 'text-red-400' : tone === 'good' ? 'text-emerald-400' : 'text-neutral-100';
   return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-      <div className="text-xs uppercase tracking-wider text-neutral-500">{label}</div>
-      <div className={`mt-1 font-mono text-2xl ${valueColor}`}>{value}</div>
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-2 sm:p-4">
+      <div className="truncate text-[10px] uppercase tracking-wider text-neutral-500 sm:text-xs">
+        {label}
+      </div>
+      <div className={`mt-1 font-mono text-base sm:text-2xl ${valueColor}`}>{value}</div>
     </div>
   );
 }

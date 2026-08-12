@@ -35,7 +35,7 @@ export default function DatasetDetail() {
   const { dataset, items, runs } = data;
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="mb-1 flex items-center gap-2">
         <Link href="/datasets" className="text-sm text-brand-500 hover:underline">
           ← Datasets
