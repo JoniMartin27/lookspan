@@ -1,11 +1,39 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
+/* Fervon brand identity (fervon.dev) — carbon + ember/amber forge palette.
+   The landing (website/) and this dashboard share one visual language.
+
+   `neutral-*` is remapped from Tailwind's cold grey to warm carbon so every
+   existing `bg-neutral-900` / `border-neutral-800` picks up the forge tone
+   without touching the views. */
 @theme {
-  --color-brand-50: #f5f3ff;
-  --color-brand-500: #8b5cf6;
-  --color-brand-600: #7c3aed;
-  --color-brand-700: #6d28d9;
+  /* Brand ramp: ember #ff6a00 → brasa #e0480f, amber #ffb02e as the
+     secondary accent (lookspan's product colour within Fervon). */
+  --color-brand-50: #fff3e6;
+  --color-brand-400: #ffb02e;
+  --color-brand-500: #ff6a00;
+  --color-brand-600: #e0480f;
+  --color-brand-700: #b3380b;
+
+  /* Ink for text sitting ON an ember fill — white on ember only reaches
+     2.9:1, this reaches 6.2:1. */
+  --color-ink: #2a1402;
+
+  /* Warm carbon greys (Fervon: carbon #0e0b0a, card #1a1310, line #2c211b,
+     ash #a89a8e, bone #efe7dc). */
+  --color-neutral-50: #f7f2ec;
+  --color-neutral-100: #efe7dc;
+  --color-neutral-200: #ded3c7;
+  --color-neutral-300: #c8bbad;
+  --color-neutral-400: #a89a8e;
+  --color-neutral-500: #857567;
+  --color-neutral-600: #5f5044;
+  --color-neutral-700: #3d2f26;
+  --color-neutral-800: #2c211b;
+  --color-neutral-900: #1a1310;
+  --color-neutral-950: #0e0b0a;
+
   --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
@@ -28,16 +56,16 @@ body {
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
 }
 .react-flow__controls-button {
-  background: #1f1f23;
-  border-bottom: 1px solid #3f3f46;
+  background: #1a1310;
+  border-bottom: 1px solid #3d2f26;
 }
 .react-flow__controls-button:hover {
-  background: #2a2a30;
+  background: #2c211b;
 }
 .react-flow__controls-button svg {
-  fill: #e5e5e5;
+  fill: #efe7dc;
 }
 .react-flow__attribution {
   background: transparent;
-  color: #52525b;
+  color: #5f5044;
 }

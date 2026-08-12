@@ -1,12 +1,24 @@
-/* Lookspan docs theme — purple accent matching the dashboard + landing. */
+/* Lookspan docs theme — Fervon forge identity (fervon.dev): carbon surfaces,
+   ember/amber accent. Matches the dashboard and the landing. */
 :root {
-  --sl-color-accent-low: #1e1633;
-  --sl-color-accent: #8b5cf6;
-  --sl-color-accent-high: #c4b5fd;
+  --sl-color-accent-low: #3a1c07;
+  --sl-color-accent: #ff6a00;
+  --sl-color-accent-high: #ffb02e;
+
+  /* Warm carbon greys (dark theme). */
+  --sl-color-white: #f7f2ec;
+  --sl-color-gray-1: #efe7dc;
+  --sl-color-gray-2: #c8bbad;
+  --sl-color-gray-3: #a89a8e;
+  --sl-color-gray-4: #5f5044;
+  --sl-color-gray-5: #3d2f26;
+  --sl-color-gray-6: #1a1310;
+  --sl-color-gray-7: #16110e;
+  --sl-color-black: #0e0b0a;
 }
 
 :root[data-theme='light'] {
-  --sl-color-accent-low: #ede9fe;
-  --sl-color-accent: #7c3aed;
-  --sl-color-accent-high: #4c1d95;
+  --sl-color-accent-low: #ffe9d5;
+  --sl-color-accent: #b3380b;
+  --sl-color-accent-high: #7a2607;
 }

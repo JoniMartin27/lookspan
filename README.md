@@ -312,7 +312,7 @@ MIT — Copyright (c) 2026 Jonathan Martin. See [LICENSE](LICENSE).
 
 ---
 
-Lookspan is part of [**Fervon**](https://fervon.dev), the studio behind a portfolio of open-source developer tools (Trace, InferBench, ClaudeScope, Launchpad and more). The Fervon brand identity is being rolled out to the landing — see the `feat/fervon-theme` branch.
+Lookspan is part of [**Fervon**](https://fervon.dev), the studio behind a portfolio of open-source developer tools (Trace, InferBench, ClaudeScope, Launchpad and more). The Fervon forge identity — carbon surfaces, ember/amber accents — is applied across the landing, the dashboard and the docs site.
 
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/68538989-d9f3-4e22-8316-573ac6febd6b)
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jonimartin27-lookspan-badge.png)](https://mseep.ai/app/jonimartin27-lookspan)
