@@ -56,3 +56,31 @@ export interface RunItem {
   rationale: string | null;
   createdAt: string;
 }
+
+/**
+ * How many items a single dataset run covers.
+ *
+ * A run is synchronous — it calls the provider once per item and answers on the
+ * same request — so it has to stop somewhere. Shared with the dashboard so the
+ * cap can be stated *before* the run: a 150-item dataset that reports
+ * "100/100 ok" reads as a clean sweep, and the fifty items that never ran are
+ * exactly the ones nobody would think to look for.
+ */
+export const MAX_DATASET_RUN_ITEMS = 100;
+
+/** What a run over `itemCount` items will actually do. */
+export interface RunCoverage {
+  /** Items the run will cover. */
+  willRun: number;
+  /** Items the run will leave out. */
+  skipped: number;
+  /** True when the dataset is larger than a run can cover. */
+  capped: boolean;
+}
+
+/** Resolve how much of a dataset a single run covers. */
+export function runCoverage(itemCount: number, cap: number = MAX_DATASET_RUN_ITEMS): RunCoverage {
+  const total = Number.isFinite(itemCount) && itemCount > 0 ? Math.floor(itemCount) : 0;
+  const willRun = Math.min(total, cap);
+  return { willRun, skipped: total - willRun, capped: total > cap };
+}

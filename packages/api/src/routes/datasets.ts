@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { computeCostUsd } from '@lookspan/collector';
-import type { DatasetItemInput, RunStatus } from '@lookspan/types';
+import {
+  type DatasetItemInput,
+  MAX_DATASET_RUN_ITEMS,
+  type RunStatus,
+  runCoverage,
+} from '@lookspan/types';
 import { Router } from 'express';
 import type { ApiContext } from '../context.js';
 import {
@@ -18,7 +23,9 @@ import {
   runJudge,
 } from '../inference/provider.js';
 
-const MAX_ITEMS_PER_RUN = 100;
+// The cap lives in @lookspan/types so the dashboard can state it before the
+// run rather than after — same reason DEFAULT_EXPORT_LIMIT moved there.
+const MAX_ITEMS_PER_RUN = MAX_DATASET_RUN_ITEMS;
 
 function coerceItem(raw: unknown): DatasetItemInput | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -184,7 +191,8 @@ export function createDatasetsRouter(ctx: ApiContext): Router {
         : `Rate the overall ${metric} of the assistant's response to the user's request.`;
     const judgeModel = defaultJudgeModel(provider);
 
-    const items = allItems.slice(0, MAX_ITEMS_PER_RUN);
+    const coverage = runCoverage(allItems.length, MAX_ITEMS_PER_RUN);
+    const items = allItems.slice(0, coverage.willRun);
     const run = ctx.runs.create(
       {
         datasetId: id,
@@ -280,7 +288,10 @@ export function createDatasetsRouter(ctx: ApiContext): Router {
     res.status(201).json({
       run: ctx.runs.get(run.id),
       items: ctx.runs.listItems(run.id),
-      truncated: allItems.length > items.length ? allItems.length - items.length : 0,
+      truncated: coverage.skipped,
+      // The dataset size, so a caller can say "100 of 150" without a second
+      // request. `run.itemCount` is the capped number and reads as the total.
+      totalItems: allItems.length,
     });
   });
 

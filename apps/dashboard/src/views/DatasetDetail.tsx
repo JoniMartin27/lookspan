@@ -1,4 +1,4 @@
-import type { Run, RunItem } from '@lookspan/types';
+import { MAX_DATASET_RUN_ITEMS, type Run, type RunItem, runCoverage } from '@lookspan/types';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'wouter';
@@ -33,6 +33,9 @@ export default function DatasetDetail() {
   if (!data) return <div className="p-8 text-neutral-400">Not found.</div>;
 
   const { dataset, items, runs } = data;
+  // A run stops at the cap. Saying so only in the abstract ("up to 100") left a
+  // 150-item dataset reporting "100/100 ok", which reads as a clean sweep.
+  const coverage = runCoverage(items.length);
 
   return (
     <div className="p-4 sm:p-6">
@@ -78,12 +81,22 @@ export default function DatasetDetail() {
             disabled={!model.trim() || runM.isPending || items.length === 0}
             className="rounded bg-brand-500 px-3 py-1 text-sm font-medium text-ink disabled:opacity-40"
           >
-            {runM.isPending ? `Running ${items.length} items…` : 'Run'}
+            {runM.isPending
+              ? `Running ${coverage.willRun} items…`
+              : coverage.capped
+                ? `Run ${coverage.willRun} of ${items.length}`
+                : 'Run'}
           </button>
         </form>
         {err && <p className="mt-2 text-xs text-red-400">{err}</p>}
+        {coverage.capped && (
+          <p className="mt-2 text-xs text-amber-400">
+            {`This dataset has ${items.length} items and a run covers the first ${MAX_DATASET_RUN_ITEMS}. The remaining ${coverage.skipped} will not be evaluated.`}
+          </p>
+        )}
         <p className="mt-1 text-[11px] text-neutral-600">
-          Needs a provider key on the server. Runs up to 100 items synchronously.
+          Needs a provider key on the server. Runs up to {MAX_DATASET_RUN_ITEMS} items
+          synchronously.
         </p>
       </section>
 
@@ -94,7 +107,7 @@ export default function DatasetDetail() {
         ) : (
           <div className="space-y-1.5">
             {runs.map((r) => (
-              <RunRow key={r.id} run={r} />
+              <RunRow key={r.id} run={r} datasetItemCount={items.length} />
             ))}
           </div>
         )}
@@ -397,7 +410,10 @@ function CompareTile({
   );
 }
 
-function RunRow({ run }: { run: Run }) {
+function RunRow({ run, datasetItemCount }: { run: Run; datasetItemCount: number }) {
+  // `run.itemCount` is what the run covered, not what the dataset holds. On a
+  // capped run the two differ, and "100/100 ok" alone reads as a clean sweep.
+  const missed = Math.max(0, datasetItemCount - run.itemCount);
   return (
     <Link
       href={`/runs/${run.id}`}
@@ -418,6 +434,11 @@ function RunRow({ run }: { run: Run }) {
       <span className="text-neutral-400">
         {run.okCount}/{run.itemCount} ok
       </span>
+      {missed > 0 && (
+        <span className="text-amber-400" title={`${missed} of the dataset's items were not run`}>
+          {missed} not run
+        </span>
+      )}
       {run.avgScore !== null && (
         <span className="text-neutral-400">
           avg {run.judgeMetric ?? 'score'}:{' '}
