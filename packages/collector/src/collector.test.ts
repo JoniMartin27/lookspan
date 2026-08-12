@@ -161,6 +161,62 @@ describe('Collector.ingest', () => {
   });
 });
 
+describe('a trace whose root span lands last', () => {
+  // Un árbol de spans cierra la raíz al FINAL: mientras el turno sigue vivo, en
+  // la base solo hay hijos. Si lo que se guardó entonces no se vuelve a
+  // escribir, la traza se queda con el nombre y la hora de arranque de un hijo
+  // para siempre — y eso es lo primero que se ve en la lista.
+  const hijo = () =>
+    span({
+      spanId: 'sp_hijo',
+      parentSpanId: 'sp_raiz',
+      name: 'cerebro · qwen3-1.7b',
+      startedAt: '2026-06-01T10:00:01Z',
+      endedAt: '2026-06-01T10:00:05Z',
+      agentId: 'raspi-cerebro',
+    });
+  const raiz = () =>
+    span({
+      spanId: 'sp_raiz',
+      parentSpanId: null,
+      type: 'agent_step',
+      name: 'turno',
+      startedAt: '2026-06-01T10:00:00Z',
+      endedAt: '2026-06-01T10:00:06Z',
+      agentId: 'raspi-voz',
+    });
+
+  it('names the trace after the root once it arrives, in a later batch', () => {
+    collector.ingest({ spans: [hijo()] });
+    // Con solo hijos, el más temprano es el mejor nombre disponible.
+    expect(new TracesRepository(db).getById('tr_1')?.rootName).toBe('cerebro · qwen3-1.7b');
+
+    collector.ingest({ spans: [raiz()] });
+    const trace = new TracesRepository(db).getById('tr_1');
+    expect(trace?.rootName).toBe('turno');
+    expect(trace?.startedAt).toBe('2026-06-01T10:00:00Z');
+    expect(trace?.agentId).toBe('raspi-voz');
+    expect(trace?.spanCount).toBe(2);
+  });
+
+  it('gives the same answer as when both spans llegan en un solo lote', () => {
+    collector.ingest({ spans: [hijo()] });
+    collector.ingest({ spans: [raiz()] });
+    const porPartes = new TracesRepository(db).getById('tr_1');
+
+    const db2 = openDatabase({ path: ':memory:' });
+    migrate(db2);
+    new Collector({ db: db2 }).ingest({ spans: [hijo(), raiz()] });
+    const deGolpe = new TracesRepository(db2).getById('tr_1');
+    db2.close();
+
+    expect(porPartes?.rootName).toBe(deGolpe?.rootName);
+    expect(porPartes?.startedAt).toBe(deGolpe?.startedAt);
+    expect(porPartes?.agentId).toBe(deGolpe?.agentId);
+    expect(porPartes?.durationMs).toBe(deGolpe?.durationMs);
+  });
+});
+
 describe('ingest on the Postgres driver', () => {
   // The bug this covers: `insertMany` opens its own transaction, so the
   // collector's seed-and-insert wrapper nests one. The Postgres driver used to
@@ -195,6 +251,19 @@ describe('ingest on the Postgres driver', () => {
 
     expect(res.accepted).toBe(3);
     expect(new TracesRepository(pg).getById('tr_1')?.spanCount).toBe(3);
+  });
+
+  // framework/agent/session salian de columnas sueltas bajo un GROUP BY:
+  // SQLite lo tolera (fila arbitraria) y Postgres no — aqui volvian NULL
+  // siempre, y solo lo tapaba la fila de relleno que ya traia el valor bueno.
+  it('keeps framework, agent and session on the Postgres driver too', () => {
+    pgCollector.ingest({
+      spans: [span({ agentId: 'raspi-voz', sessionId: 'voz@2026-06-01', framework: 'mcp' })],
+    });
+    const trace = new TracesRepository(pg).getById('tr_1');
+    expect(trace?.framework).toBe('mcp');
+    expect(trace?.agentId).toBe('raspi-voz');
+    expect(trace?.sessionId).toBe('voz@2026-06-01');
   });
 
   it('upserts a repeated span id instead of duplicating it, same as SQLite', () => {

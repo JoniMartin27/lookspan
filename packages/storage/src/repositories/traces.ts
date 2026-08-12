@@ -147,6 +147,17 @@ export class TracesRepository {
       )
       ON CONFLICT(trace_id) DO UPDATE SET
         parent_trace_id = COALESCE(excluded.parent_trace_id, traces.parent_trace_id),
+        -- These five used to be write-once, seeded from whatever span of the
+        -- trace arrived first. A span tree closes its root LAST, so the row
+        -- kept a CHILD's name and a child's start time for good: the list
+        -- showed "cerebro · qwen3" where the trace was a "turno". They are
+        -- recomputed from every span on each ingest, so they must be written
+        -- back too.
+        root_name = excluded.root_name,
+        framework = excluded.framework,
+        agent_id = excluded.agent_id,
+        session_id = excluded.session_id,
+        started_at = excluded.started_at,
         ended_at = excluded.ended_at,
         duration_ms = excluded.duration_ms,
         status = excluded.status,
