@@ -1,5 +1,6 @@
 import type { LatencyPercentiles, StatsSummary } from '@lookspan/types';
 import type { LookspanDatabase } from '../database.js';
+import { LOCAL_DAY_FN } from '../local-day.js';
 
 export interface StatsQueryOptions {
   since?: string;
@@ -34,7 +35,9 @@ export class StatsRepository {
 
     const byDay = this.db
       .prepare(
-        `SELECT substr(started_at, 1, 10) AS day, COUNT(*) AS traces, COALESCE(SUM(cost_usd), 0) AS cost
+        // Grouped by the *machine's* day, not the UTC one. Slicing the ISO
+        // string bucketed a 01:30 trace in Madrid under the previous date.
+        `SELECT ${LOCAL_DAY_FN}(started_at) AS day, COUNT(*) AS traces, COALESCE(SUM(cost_usd), 0) AS cost
          FROM traces ${whereSql}
          GROUP BY day
          ORDER BY day`,

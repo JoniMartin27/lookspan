@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 import type { DataType as DataTypeEnum, IMemoryDb } from 'pg-mem';
+import { LOCAL_DAY_FN, localDay } from '../local-day.js';
 import { translateStatement } from './translate.js';
 import type { RunResult, SqlDriver, SqlStatement } from './types.js';
 
@@ -104,6 +105,14 @@ export class PostgresDriver implements SqlDriver {
       returns: DataType.text,
       implementation: (s: string | null, from: number, count: number) =>
         s == null ? null : String(s).substr(from - 1, count),
+    });
+    // Shared with the SQLite driver so the repositories can write one query.
+    // See `local-day.ts` for why the conversion happens in JavaScript.
+    pub.registerFunction({
+      name: LOCAL_DAY_FN,
+      args: [DataType.text],
+      returns: DataType.text,
+      implementation: (ts: string | null) => localDay(ts),
     });
   }
 

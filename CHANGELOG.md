@@ -4,6 +4,18 @@
 
 The first screen a new user sees had never been audited, and "live" was not.
 
+### Fixed
+- **A night's spend was charted on the previous day.** Traces carry UTC
+  timestamps and the per-day rollups bucketed them by slicing the first ten
+  characters off that string — the UTC date. On a machine at UTC+2, every trace
+  between midnight and 02:00 local was counted under yesterday, in a chart
+  called "Cost per day". Measured: a trace at 01:30 on the 13th appeared on the
+  12th. Lookspan runs on your own machine, so the buckets are now your days.
+  The conversion is registered as a SQL function in both drivers rather than
+  written as dialect SQL, so the repositories keep one query — and doing it in
+  JavaScript gets DST and half-hour offsets right for free. The HTML audit
+  report was slicing the same string and is fixed with it.
+
 ### Security
 - **A rebound domain walked straight past the CORS fix.** Closing CORS stops a
   page on another origin from reading the API; it does nothing about DNS

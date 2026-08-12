@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
+import { LOCAL_DAY_FN, localDay } from '../local-day.js';
 import type { RunResult, SqlDriver, SqlStatement } from './types.js';
 
 export interface SqliteDriverOptions {
@@ -33,6 +34,9 @@ export class SqliteDriver implements SqlDriver {
     this.db.pragma('foreign_keys = ON');
     this.db.pragma('temp_store = MEMORY');
     this.db.pragma('mmap_size = 268435456');
+    // Shared with the Postgres driver so the repositories can write one query.
+    // See `local-day.ts` for why the conversion happens in JavaScript.
+    this.db.function(LOCAL_DAY_FN, { deterministic: false }, (ts: unknown) => localDay(ts));
   }
 
   prepare(sql: string): SqlStatement {
