@@ -1,0 +1,29 @@
+---
+// Wraps Starlight's default footer (prev/next links, edit link, last-updated)
+// and appends the studio attribution. Every docs page carries it, so the site
+// states who builds Lookspan instead of leaving it anonymous.
+// The route data arrives as props and must be forwarded: the stock footer
+// spreads them into Pagination, which destructures `pagination`. The generated
+// 404 route has none, so the default footer is skipped there.
+import Default from '@astrojs/starlight/components/Footer.astro';
+
+const hasPagination = Boolean(Astro.props?.pagination);
+---
+
+{hasPagination && <Default {...Astro.props} />}
+
+<p class="studio-note">
+  Lookspan is part of <a href="https://fervon.dev">Fervon</a>, the autonomous
+  software studio of Jonathan Martín — local-first developer tools built by
+  fleets of AI agents.
+</p>
+
+<style>
+  .studio-note {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--sl-color-hairline);
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+</style>
