@@ -6,6 +6,7 @@
 
 [![CI](https://github.com/JoniMartin27/lookspan/actions/workflows/ci.yml/badge.svg)](https://github.com/JoniMartin27/lookspan/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/lookspan)](https://www.npmjs.com/package/lookspan)
+[![homepage](https://img.shields.io/badge/homepage-fervon.dev%2Flookspan-FF6A00)](https://fervon.dev/lookspan/)
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 

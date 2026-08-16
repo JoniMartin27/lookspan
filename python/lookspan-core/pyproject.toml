@@ -36,7 +36,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JoniMartin27/lookspan"
+Homepage = "https://fervon.dev/lookspan/"
+Repository = "https://github.com/JoniMartin27/lookspan"
 Issues = "https://github.com/JoniMartin27/lookspan/issues"
 Source = "https://github.com/JoniMartin27/lookspan"
 
