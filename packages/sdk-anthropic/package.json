@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/anthropic",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Drop-in tracing for the Anthropic SDK — wrap your client in one line and every message call becomes a Lookspan span.",
   "type": "module",
   "main": "./dist/index.js",

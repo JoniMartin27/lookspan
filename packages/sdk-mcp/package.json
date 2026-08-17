@@ -1,6 +1,6 @@
 {
   "name": "@lookspan/mcp",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Lookspan SDK for MCP — wraps any MCP client to emit spans for each tool call.",
   "type": "module",
   "main": "./dist/index.js",
