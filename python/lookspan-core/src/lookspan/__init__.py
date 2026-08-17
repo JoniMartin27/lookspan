@@ -11,7 +11,7 @@ from lookspan.types import (
     TokenUsage,
 )
 
-__version__ = "0.1.1"
+__version__ = "0.5.3"
 __all__ = [
     "Framework",
     "HttpSpanExporter",

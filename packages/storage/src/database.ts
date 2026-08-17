@@ -1,5 +1,6 @@
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
+import { ExternalPostgresDriver } from './drivers/external-postgres.js';
 import { isPostgresConnectionString, PostgresDriver } from './drivers/postgres.js';
 import { SqliteDriver } from './drivers/sqlite.js';
 import type { SqlDriver } from './drivers/types.js';
@@ -7,8 +8,8 @@ import type { SqlDriver } from './drivers/types.js';
 /**
  * The synchronous database handle used throughout Lookspan. Historically this
  * was better-sqlite3's `Database`; it is now the dialect-agnostic
- * {@link SqlDriver}, satisfied by both the SQLite (default) and Postgres
- * drivers. Repositories are unchanged.
+ * {@link SqlDriver}, satisfied by both the SQLite (default) and external
+ * Postgres drivers. Repositories are unchanged.
  */
 export type LookspanDatabase = SqlDriver;
 
@@ -22,6 +23,10 @@ export interface OpenDatabaseOptions {
   path?: string;
   readonly?: boolean;
   fileMustExist?: boolean;
+  /** Use the in-memory dialect harness only for tests; production defaults to the wire client. */
+  postgresMode?: 'external' | 'memory';
+  /** Worker wait bound, exposed for deterministic driver tests. */
+  postgresTimeoutMs?: number;
 }
 
 export function defaultDatabasePath(): string {
@@ -37,7 +42,13 @@ export function openDatabase(options: OpenDatabaseOptions = {}): LookspanDatabas
   const path = options.path ?? defaultDatabasePath();
 
   if (isPostgresConnectionString(path)) {
-    const driver = new PostgresDriver({ connectionString: path });
+    const driver =
+      options.postgresMode === 'memory'
+        ? new PostgresDriver({ connectionString: path })
+        : new ExternalPostgresDriver({
+            connectionString: path,
+            timeoutMs: options.postgresTimeoutMs,
+          });
     driver.ensureMeta();
     return driver;
   }

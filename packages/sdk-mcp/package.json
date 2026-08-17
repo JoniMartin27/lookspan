@@ -20,7 +20,7 @@
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@lookspan/types": "^0.5.2"
+    "@lookspan/types": "^0.5.3"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": ">=1.0.0"

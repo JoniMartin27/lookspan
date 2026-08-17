@@ -39,10 +39,12 @@ trace id all its tool calls share, and a `flush()` helper.
 | `sessionId` | `string` | — | Group related agents into a [session](/lookspan/guides/sessions-and-causality/). |
 | `traceId` | `string` | auto | Reuse a trace id (e.g. to join an existing trace). |
 | `rootSpanId` | `string` | — | Parent span for the tool calls (nests them under a step). |
+| `captureContent` | `boolean` | `false` | Capture tool arguments and results. Enable only when they are safe to persist. |
 | `attributes` | `Record<string, unknown>` | — | Extra attributes stamped on every span. |
 
 Each tool call becomes a span named `mcp.tool.<toolName>` of type `tool_call`,
-with the call arguments captured as `input` and the result as `output`.
+with call arguments and results omitted by default. Set `captureContent: true`
+when they are safe to persist.
 
 ## `HttpSpanExporter` options
 

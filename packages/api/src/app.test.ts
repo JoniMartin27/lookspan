@@ -392,8 +392,15 @@ describe('createApp auth token', () => {
     expect(res.status).toBe(200);
   });
 
-  it('accepts a token via query string', async () => {
-    expect((await fetch(`${base}/api/traces?token=secret123`)).status).toBe(200);
+  it('rejects tokens supplied in query strings', async () => {
+    expect((await fetch(`${base}/api/traces?token=secret123`)).status).toBe(401);
+  });
+
+  it('accepts the dashboard auth cookie without exposing a token in the URL', async () => {
+    const res = await fetch(`${base}/api/traces`, {
+      headers: { cookie: 'lookspan_auth=secret123' },
+    });
+    expect(res.status).toBe(200);
   });
 
   it('rejects a wrong token', async () => {

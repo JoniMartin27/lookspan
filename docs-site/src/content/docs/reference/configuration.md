@@ -17,10 +17,10 @@ off until you set it.
 | Flag | Env var | Default | What it does |
 |---|---|---|---|
 | `-p, --port <port>` | `LOOKSPAN_PORT` | `3100` | Port the ingest API + dashboard listen on. |
-| `--host <host>` | `LOOKSPAN_HOST` | `127.0.0.1` | Address to bind. Use `0.0.0.0` to expose on your LAN (see Security). |
+| `--host <host>` | `LOOKSPAN_HOST` | `127.0.0.1` | Address to bind. Use `0.0.0.0` to expose on your LAN; non-loopback binds require `--token` / `LOOKSPAN_TOKEN` (see Security). |
 | `--db <path\|url>` | `LOOKSPAN_DB` | `~/.lookspan/lookspan.db` | SQLite file (created if missing) **or** a Postgres connection string (`postgres://…`). See [Postgres](#postgres). |
 | `--retention <dur>` | `LOOKSPAN_RETENTION` | _(none)_ | Prune traces older than `<dur>` (`7d`, `24h`, `30m`). Runs on startup, then at most hourly. |
-| `--token <token>` | `LOOKSPAN_TOKEN` | _(none)_ | Require `Authorization: Bearer <token>` on `/api/*` and `/v1/*` (`/api/health` is exempt). |
+| `--token <token>` | `LOOKSPAN_TOKEN` | _(none)_ | Require `Authorization: Bearer <token>` (or the dashboard cookie) on `/api/*` and `/v1/*` (`/api/health` is exempt). |
 | `--pricing <file>` | `LOOKSPAN_PRICING` | _(built-in table)_ | Load a custom model [pricing table](/lookspan/guides/pricing-and-cost/) (JSON). |
 | `--open` | — | `false` | Open the dashboard in your browser on startup. |
 | — | `LOOKSPAN_DASHBOARD_DIR` | _(auto-detected)_ | Override the path to the built dashboard assets. |
@@ -87,19 +87,20 @@ LOOKSPAN_DB=postgresql://lookspan:secret@db.internal:5432/lookspan npx lookspan
 LOOKSPAN_DB=postgres://lookspan:secret@db.internal:5432/lookspan npm run migrate
 ```
 
-Both drivers implement the **same repository interfaces** and the **same schema
-and migrations**, so the API surface behaves identically regardless of backend.
+Both drivers implement the **same repository interfaces**, schema and migrations
+(currently v1–v7) for the supported repository operations. The external driver
+uses a real PostgreSQL server; the API contract is shared, while backend-specific
+SQL and operational characteristics remain the driver's responsibility.
 The connection string selects the driver and is parsed for logging, with the
 password redacted in startup output.
 
-> The Postgres driver runs queries through an **embedded** engine (`pg-mem`),
-> which keeps the repositories synchronous while giving genuine
-> Postgres-dialect, schema and migration parity (verified in CI).
+> The Postgres driver connects to the configured external server through a
+> worker-backed `pg` client. The synchronous repository interface is preserved,
+> while transactions use the same PostgreSQL connection and real server-side
+> `BEGIN`/`COMMIT`/`ROLLBACK` semantics. Data survives Lookspan restarts under
+> the server's own durability and backup policy.
 >
-> **Nothing is written to the server in your connection string.** The host is
-> never dialled, and the data lives in the process and is gone when it exits —
-> the startup line says so. Use this path to validate Postgres-targeted
-> schemas, migrations and SQL, not to keep data. Persistence to an external
-> Postgres *server* over the wire is a planned follow-up.
+> The in-memory `pg-mem` dialect harness is internal to the repository tests;
+> production `postgres://` traffic never uses it.
 >
 > To stay on SQLite, do nothing — it remains the default.

@@ -8,10 +8,9 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 
 - [x] **`npx lookspan` works for real** — CLI bundles the dashboard + inlines the
       internal `@lookspan/*` deps; verified from a clean `npm pack` install.
-- [x] **SDKs published** — `lookspan` (CLI), `@lookspan/mcp`, `@lookspan/types`,
-      `@lookspan/openai` and `@lookspan/anthropic` on npm (v0.4.1);
-      `lookspan` / `lookspan-langgraph` / `lookspan-crewai` on PyPI (v0.1.1).
-      ⚠️ `main` is well ahead of both — see "Human-gated steps".
+- [x] **SDK release metadata aligned** — the TypeScript packages share the npm
+      workspace version; the Python packages share that version in source and
+      are ready for the separately gated PyPI release.
 - [x] **One-click desktop launcher** — `lookspan install-desktop` registers
       Lookspan as a real desktop app (Desktop + Start Menu on Windows,
       `~/Applications` on macOS, an app-menu entry on Linux), with its own icon
@@ -47,17 +46,16 @@ best 5-minute experience for JS/TS and Model Context Protocol developers.
 - [x] **Replay / diff** — `POST /api/traces/:id/replay` re-runs a trace's captured
       prompt against the same or another model and shows a cost/latency/output diff
       in the trace's **Replay & judge** panel. (Capturing prompts requires the SDK's
-      `captureContent`, on by default; secrets are scrubbed server-side.)
+      `captureContent`, off by default; secrets are scrubbed server-side.)
 - [x] **Datasets & experiments** — collect prompts into a test set (seed from a
       trace or by hand), run the whole set against a model in batch, and score each
       output with the judge — aggregate cost/latency/score per run. `/datasets` +
-      `/runs/:id` in the dashboard; SQLite migration v6.
-- [x] **Postgres driver (dialect parity)** — a `postgres://…` URL for `--db` /
-      `LOOKSPAN_DB` selects a driver backed by an **embedded** Postgres engine:
-      same schema, same migrations, same SQL dialect, so a Postgres-targeted
-      deployment can be validated without a server. It does **not** connect to
-      the host in the URL and its data does not survive a restart — see below.
-      SQLite stays the local-first default; a per-batch span cap already guards
+      `/runs/:id` in the dashboard; SQLite migration v7.
+- [x] **External Postgres persistence** — a `postgres://…` URL for `--db` /
+      `LOOKSPAN_DB` connects to the configured PostgreSQL server through a
+      worker-backed `pg` client. The same schema, migrations, SQL translation,
+      repository interface and transactions are shared with SQLite. SQLite
+      stays the local-first default; a per-batch span cap already guards
       against floods. (Sampling still open.)
 
 ## Review hardening (done in 0.1.1)
@@ -73,18 +71,13 @@ pagination · API + Python tests · unified versions.
 
 ## Still open
 
-- **Persist to an external Postgres server** over the wire (async `pg` client).
-  The driver boundary (`packages/storage/src/drivers/`) is the seam this plugs
-  into; the `SqlDriver` interface, SQL translation and migration parity are
-  already in place.
 - **Sampling** for high-volume ingest.
 - **macOS launcher icon** — the `.app` uses the system default; it needs an
   `.icns` bundle.
 
 ## Human-gated steps (not automatable here)
 
-- `npm publish` / PyPI upload (needs maintainer auth + 2FA). **`main` currently
-  carries a lot that is not published**, including a fix for a release bundle
-  that could not start at all and one for a Postgres driver that rejected every
-  write.
+- npm publish / PyPI upload still needs maintainer credentials. CI now validates
+  the packaged npm artifact and the repository keeps npm/PyPI source versions
+  aligned so a tag can be released without a silent version split.
 - Launch posts (Show HN, r/LocalLLaMA, MCP community, dev.to).

@@ -38,7 +38,7 @@ export interface CreateAppOptions {
   dashboardDir?: string;
   /**
    * When set, every API/OTLP request (except `/api/health` and the dashboard
-   * assets) must present `Authorization: Bearer <token>` or `?token=<token>`.
+   * assets) must present `Authorization: Bearer <token>` or the dashboard auth cookie.
    * Intended for when the server is exposed beyond loopback. Unset = open,
    * which is fine on the default `127.0.0.1` bind.
    */
@@ -57,6 +57,20 @@ function sameToken(provided: string, expected: string): boolean {
   const a = createHash('sha256').update(provided).digest();
   const b = createHash('sha256').update(expected).digest();
   return timingSafeEqual(a, b);
+}
+
+function cookieToken(header: string | undefined): string | undefined {
+  if (!header) return undefined;
+  for (const part of header.split(';')) {
+    const [name, ...value] = part.trim().split('=');
+    if (name !== 'lookspan_auth' || value.length === 0) continue;
+    try {
+      return decodeURIComponent(value.join('='));
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -105,11 +119,31 @@ export function createApp(options: CreateAppOptions): Express {
       if (!path.startsWith('/api') && !path.startsWith('/v1')) return next();
       const header = req.get('authorization');
       const bearer = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
-      const provided =
-        bearer ?? (typeof req.query.token === 'string' ? req.query.token : undefined);
+      const provided = bearer ?? cookieToken(req.get('cookie'));
       if (provided === undefined || !sameToken(provided, token)) {
         res.status(401).json({ error: 'unauthorized' });
         return;
+      }
+      next();
+    });
+  }
+
+  // The dashboard is same-origin, so a short-lived HttpOnly cookie lets its
+  // fetch calls authenticate without putting the bearer token into JavaScript
+  // or every API URL. Agents should continue using Authorization headers.
+  if (options.authToken && options.dashboardDir) {
+    app.use((req, res, next) => {
+      const secureRequest =
+        req.secure || (req.get('x-forwarded-proto')?.split(',')[0] ?? '').trim() === 'https';
+      if (
+        secureRequest &&
+        !req.path.toLowerCase().startsWith('/api') &&
+        !req.path.toLowerCase().startsWith('/v1')
+      ) {
+        res.setHeader(
+          'Set-Cookie',
+          `lookspan_auth=${encodeURIComponent(options.authToken as string)}; Path=/; HttpOnly; SameSite=Strict; Secure`,
+        );
       }
       next();
     });

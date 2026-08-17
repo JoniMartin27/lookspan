@@ -15,7 +15,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "fix": "biome check --write .",
-    "ci": "npm run typecheck && npm run lint && npm test && npm run build && npm run smoke:cli",
+    "ci": "npm run typecheck && npm run lint && npm test && npm run build && npm run smoke:cli && npm run smoke:pack",
     "migrate": "npm --workspace @lookspan/storage run migrate",
     "demo:seed": "node scripts/seed-demo.mjs",
     "demo:record": "node scripts/record-demo.mjs",
@@ -25,6 +25,7 @@
     "dev:dashboard": "npm --workspace @lookspan/dashboard run dev",
     "clean": "tsc --build --clean && rimraf \"packages/*/dist\" \"apps/*/dist\"",
     "smoke:cli": "node packages/cli/scripts/bundle.mjs && node packages/cli/dist/index.js --version",
+    "smoke:pack": "node scripts/smoke-pack.mjs",
     "icons": "node scripts/make-icons.mjs",
     "og": "node scripts/make-og.mjs"
   },

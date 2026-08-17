@@ -26,7 +26,7 @@ function pgMem() {
 }
 
 /**
- * Postgres driver for Lookspan.
+ * In-memory Postgres dialect driver for tests.
  *
  * It is backed by an in-process Postgres engine (`pg-mem`) that parses and
  * executes real Postgres SQL synchronously. This is what lets us keep the
@@ -34,10 +34,9 @@ function pgMem() {
  * schema / migration parity — verified in CI with zero external server.
  *
  * A connection string is accepted and validated so the surface matches a real
- * deployment (`--db postgres://…`). Persisting to / reading from an external
- * Postgres *server* additionally requires the async `pg` wire client and is a
- * documented follow-up (see docs/CONFIGURATION.md → "Postgres"); the driver
- * boundary here is exactly the seam that follow-up plugs into.
+ * deployment. Production `postgres://…` targets use ExternalPostgresDriver;
+ * this class is selected only with `postgresMode: 'memory'` so parity tests
+ * can run without a database service.
  */
 
 const INSERT_RE = /^\s*INSERT\s+INTO\b/i;

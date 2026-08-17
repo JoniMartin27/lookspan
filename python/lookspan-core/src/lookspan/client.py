@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 
 from lookspan.exporter import HttpSpanExporter, SpanExporter
@@ -18,8 +19,10 @@ class LookspanClient:
         *,
         exporter: SpanExporter | None = None,
         source: str = "lookspan-python",
+        capture_content: bool = False,
     ) -> None:
         self._exporter = exporter or HttpSpanExporter(endpoint=endpoint, source=source)
+        self._capture_content = capture_content
 
     @staticmethod
     def now() -> str:
@@ -34,10 +37,15 @@ class LookspanClient:
         return new_span_id()
 
     def send(self, spans: list[Span]) -> None:
-        self._exporter.send(spans)
+        self._exporter.send([self._prepare_span(span) for span in spans])
 
     def emit(self, span: Span) -> None:
-        self._exporter.send([span])
+        self._exporter.send([self._prepare_span(span)])
+
+    def _prepare_span(self, span: Span) -> Span:
+        if self._capture_content:
+            return span
+        return replace(span, input=None, output=None)
 
     def flush(self) -> None:
         self._exporter.flush()

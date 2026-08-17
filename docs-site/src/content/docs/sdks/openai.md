@@ -55,9 +55,9 @@ const openai = observeOpenAI(new OpenAI(), {
 });
 ```
 
-To keep prompts and replies out of Lookspan (which also disables Replay &
-judge for these spans):
+Content is omitted by default. To enable Replay & judge for spans whose prompts
+and replies are safe to persist, opt in explicitly:
 
 ```typescript
-const openai = observeOpenAI(new OpenAI(), { captureContent: false });
+const openai = observeOpenAI(new OpenAI(), { captureContent: true });
 ```

@@ -1,5 +1,4 @@
 import type { LookspanDatabase } from './database.js';
-import { openDatabase } from './database.js';
 
 interface Migration {
   version: number;
@@ -227,29 +226,40 @@ export function setSchemaVersion(db: LookspanDatabase, version: number): void {
 }
 
 export function migrate(db: LookspanDatabase): { applied: number[]; current: number } {
-  const current = getCurrentSchemaVersion(db);
-  const pending = MIGRATIONS.filter((m) => m.version > current).sort(
-    (a, b) => a.version - b.version,
-  );
-  const applied: number[] = [];
-
-  for (const m of pending) {
-    db.transaction(() => {
-      db.exec(m.up);
-      setSchemaVersion(db, m.version);
-    })();
-    applied.push(m.version);
+  // SQLite serializes writers itself. PostgreSQL needs an explicit session
+  // lock so two Lookspan processes cannot both observe the same old version
+  // and race on non-idempotent ALTER TABLE migrations.
+  const postgresLock = db.dialect === 'postgres';
+  let lockAcquired = false;
+  if (postgresLock) {
+    try {
+      db.exec('SELECT pg_advisory_lock(874231905)');
+      lockAcquired = true;
+    } catch (error) {
+      // pg-mem intentionally implements only a subset of native functions;
+      // the real external driver must still fail loudly for other errors.
+      if (!(error instanceof Error) || !/pg_advisory_lock.*does not exist/i.test(error.message)) {
+        throw error;
+      }
+    }
   }
+  try {
+    const current = getCurrentSchemaVersion(db);
+    const pending = MIGRATIONS.filter((m) => m.version > current).sort(
+      (a, b) => a.version - b.version,
+    );
+    const applied: number[] = [];
 
-  return { applied, current: getCurrentSchemaVersion(db) };
-}
+    for (const m of pending) {
+      db.transaction(() => {
+        db.exec(m.up);
+        setSchemaVersion(db, m.version);
+      })();
+      applied.push(m.version);
+    }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  // Honor LOOKSPAN_DB so `npm run migrate` can target Postgres too.
-  const db = openDatabase({ path: process.env.LOOKSPAN_DB });
-  const result = migrate(db);
-  console.log(
-    `[lookspan/storage] migrations applied: ${result.applied.length === 0 ? 'none' : result.applied.join(', ')} (schema v${result.current})`,
-  );
-  db.close();
+    return { applied, current: getCurrentSchemaVersion(db) };
+  } finally {
+    if (lockAcquired) db.exec('SELECT pg_advisory_unlock(874231905)');
+  }
 }

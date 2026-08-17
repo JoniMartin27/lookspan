@@ -3,8 +3,9 @@
  *
  * The repositories were originally written directly against better-sqlite3's
  * synchronous API. This interface captures exactly the surface they use so we
- * can back it with either SQLite (the default) or Postgres without touching a
- * single repository or any of the synchronous callers in the API/collector.
+ * can back it with either SQLite (the default) or an external Postgres server
+ * without touching a single repository or any of the synchronous callers in
+ * the API/collector.
  *
  * Param binding mirrors better-sqlite3: a statement accepts either a single
  * object of named params (`@name` placeholders) OR positional args (`?`

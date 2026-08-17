@@ -17,6 +17,8 @@ export interface InstrumentOptions {
   sessionId?: string;
   traceId?: string;
   rootSpanId?: string;
+  /** Capture tool arguments and results. Default: false. */
+  captureContent?: boolean;
   attributes?: Record<string, unknown>;
 }
 
@@ -32,6 +34,7 @@ export function wrapMcpClient<T extends MinimalMcpClient>(
 ): InstrumentedClient<T> {
   const traceId = options.traceId ?? newTraceId();
   const exporter = options.exporter;
+  const captureContent = options.captureContent === true;
 
   const originalCallTool = client.callTool.bind(client);
 
@@ -53,7 +56,7 @@ export function wrapMcpClient<T extends MinimalMcpClient>(
       framework: FrameworkName.Mcp,
       agentId: options.agentId ?? null,
       sessionId: options.sessionId ?? null,
-      input: { name: params.name, arguments: params.arguments ?? {} },
+      input: captureContent ? { name: params.name, arguments: params.arguments ?? {} } : null,
       attributes: options.attributes ?? null,
     };
 
@@ -63,7 +66,11 @@ export function wrapMcpClient<T extends MinimalMcpClient>(
         ...baseSpan,
         endedAt: new Date().toISOString(),
         status: SpanStatus.Ok,
-        output: typeof result === 'string' ? result : safeStringify(result),
+        output: captureContent
+          ? typeof result === 'string'
+            ? result
+            : safeStringify(result)
+          : null,
         error: null,
       };
       void exporter.send([span]);

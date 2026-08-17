@@ -1,6 +1,6 @@
 ---
 title: "Lookspan: open-source Langfuse & LangSmith alternative"
-description: "Lookspan is a local-first, open-source LLM observability alternative to Langfuse & LangSmith. Run npx lookspan — zero infra, your data never leaves your machine."
+description: "Lookspan is a local-first, open-source LLM observability alternative to Langfuse & LangSmith. Run npx lookspan — zero infra with local SQLite by default."
 ---
 
 Looking for an **open-source, local-first alternative to Langfuse or LangSmith** — one that doesn't ask for an account, an API key, or for your production traces to be shipped to someone else's cloud? That's exactly the gap Lookspan fills.
@@ -20,7 +20,7 @@ It is *not* a hosted, multi-tenant production platform with prompt management an
 | License | **MIT (open source)** | Open source (MIT core) | Proprietary | Open source (ELv2) | Open source (Apache-2) |
 | Get started | **`npx lookspan` — zero infra** | Docker + Postgres (+ ClickHouse self-host) | Cloud account / SaaS | `pip install arize-phoenix` | Cloud, or self-host via Docker |
 | Default storage | **local SQLite** (optional Postgres) | Postgres + ClickHouse | their cloud | local / in-memory | their cloud / ClickHouse + Postgres |
-| Where your data lives | **never leaves your machine** (by default) | self-host or their cloud | their cloud (self-host on Enterprise) | local or Arize cloud | proxy/cloud or self-host |
+| Where your data lives | **stays on your machine with local SQLite** (external Postgres is optional) | self-host or their cloud | their cloud (self-host on Enterprise) | local or Arize cloud | proxy/cloud or self-host |
 | Primary language focus | **TypeScript/JS + MCP** | Python & JS | Python & JS | **Python** (RAG/evals) | language-agnostic (proxy) |
 | Integration style | drop-in SDK · MCP wrapper · OTLP receiver · plain HTTP | SDK / OTel | SDK (LangChain-native) | OTel-native | **proxy / gateway** + async logging |
 | Eval loop | **replay-vs-model diff, LLM-as-judge & datasets built in** | evals + datasets | evals + datasets | evals / experiments | scores / evals |

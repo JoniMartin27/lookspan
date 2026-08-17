@@ -87,8 +87,8 @@ dashboard. `lookspan uninstall-desktop` la quita.
 - **Replay y juez LLM** — reejecuta el prompt capturado de una traza contra el mismo modelo u otro y compara coste/latencia/salida, o deja que un modelo juez puntúe la respuesta de 0 a 1. Requiere una clave de proveedor (por entorno, solo en memoria).
 - **Datasets y experimentos** — junta prompts en un conjunto de pruebas (desde una traza o a mano), ejecuta todo el set contra un modelo en batch y puntúa cada salida con el juez — coste/latencia/score agregados por run.
 - **Exportación y auditoría** — descarga el conjunto de trazas como CSV (apto para hojas de cálculo, UTF-8 BOM, a prueba de inyección de fórmulas), JSON (solo metadatos por defecto; `?raw=1` incluye atributos) o un informe de auditoría HTML imprimible y autocontenido (`format=html`) con procedencia, tarjetas de resumen y gráficos SVG. `GET /api/export/traces?format=csv|json|html`; respeta los filtros activos de framework/estado/sesión. Cada respuesta lleva procedencia/integridad (`X-Lookspan-Export-Sha256`, `-Count`, `-Truncated`).
-- **SQLite local (por defecto), driver Postgres para paridad de dialecto** — migraciones versionadas. BD en `~/.lookspan/lookspan.db` por defecto. Pasar una URL `postgres://…` a `--db` / `LOOKSPAN_DB` selecciona el driver Postgres, que corre un motor Postgres **embebido**: mismo esquema, mismas migraciones y mismo dialecto SQL, para validar un despliegue contra Postgres sin levantar un servidor — pero **no** conecta con el host de esa URL y sus datos no sobreviven a un reinicio. Persistir contra un Postgres externo es un paso pendiente; ver [docs/CONFIGURATION.md → Postgres](docs/CONFIGURATION.md#postgres). Retención opcional con `--retention`.
-- **Seguridad** — bind a `127.0.0.1` por defecto; auth opcional `--token`; redacción de credenciales antes de persistir.
+- **SQLite local (por defecto) o Postgres externo** — migraciones versionadas. BD en `~/.lookspan/lookspan.db` por defecto. Pasar una URL `postgres://…` a `--db` / `LOOKSPAN_DB` conecta con ese servidor PostgreSQL y conserva los datos entre reinicios. Ver [docs/CONFIGURATION.md → Postgres](docs/CONFIGURATION.md#postgres). Retención opcional con `--retention`.
+- **Seguridad** — bind a `127.0.0.1` por defecto; los binds no locales requieren `--token`; redacción de credenciales antes de persistir.
 - **CLI en una línea** — `npx lookspan` arranca servidor + dashboard sin instalación global.
 
 ---
@@ -174,8 +174,9 @@ Más ejemplos ejecutables en [`examples/`](examples/).
 
 ## Evaluar y replay
 
-Los SDK drop-in capturan el prompt y la respuesta de cada llamada (`captureContent`,
-activo por defecto; los secretos se redactan en el servidor). Con eso, Lookspan cierra
+Los SDK drop-in pueden capturar el prompt y la respuesta de cada llamada
+(`captureContent`, desactivado por defecto; los secretos se redactan en el servidor).
+Con eso, Lookspan cierra
 el ciclo de *observar* a *mejorar* — abre una traza y usa el panel **Replay & judge**,
 o llama a la API directamente:
 
@@ -193,8 +194,9 @@ curl -X POST localhost:3100/api/traces/<id>/judge -H 'content-type: application/
   -d '{"metric":"correctness"}'
 ```
 
-Para mantener prompts/salidas fuera de Lookspan, pasa `{ captureContent: false }`
-a `observeOpenAI` / `observeAnthropic` — replay y juez quedan entonces deshabilitados.
+Para activar replay/juez, pasa explícitamente `{ captureContent: true }` a
+`observeOpenAI` / `observeAnthropic` solo cuando prompts y salidas sean seguros
+para persistir.
 
 ### Datasets y experimentos
 
@@ -283,7 +285,7 @@ Consulta **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** para la referencia c
 | Arranque | `npx lookspan` (cero infra) | Docker + Postgres + ClickHouse | `pip install` (Python) |
 | Almacenamiento | SQLite local | Postgres + ClickHouse | local / en memoria |
 | Foco | stack **TS/JS + MCP** | plataforma completa (evals, prompts) | evals / RAG (Python) |
-| Tus datos | nunca salen de tu máquina | self-host o nube | local o nube |
+| Tus datos | quedan locales por defecto; Postgres externo opcional | self-host o nube | local o nube |
 | OpenTelemetry | receptor OTLP nativo | sí | sí (OTel-native) |
 
 Lookspan no intenta ser una plataforma completa: apuesta por ser **la capa de

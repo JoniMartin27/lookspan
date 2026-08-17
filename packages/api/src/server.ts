@@ -1,11 +1,17 @@
 import { migrate, openDatabase } from '@lookspan/storage';
 import { createApp } from './app.js';
 import { createContext } from './context.js';
+import { bindsToLoopback } from './host-guard.js';
 
 const PORT = Number(process.env.LOOKSPAN_PORT ?? 3100);
 const HOST = process.env.LOOKSPAN_HOST ?? '127.0.0.1';
+const TOKEN = process.env.LOOKSPAN_TOKEN;
 
 function main(): void {
+  const loopback = bindsToLoopback(HOST);
+  if (!loopback && !TOKEN) {
+    throw new Error(`refusing to expose Lookspan on ${HOST} without LOOKSPAN_TOKEN`);
+  }
   const db = openDatabase({ path: process.env.LOOKSPAN_DB });
   const result = migrate(db);
   if (result.applied.length > 0) {
@@ -13,7 +19,11 @@ function main(): void {
   }
 
   const ctx = createContext(db);
-  const app = createApp({ context: ctx });
+  const app = createApp({
+    context: ctx,
+    authToken: TOKEN,
+    requireLoopbackHost: loopback,
+  });
 
   const server = app.listen(PORT, HOST, () => {
     console.log(`[lookspan/api] listening on http://${HOST}:${PORT}`);

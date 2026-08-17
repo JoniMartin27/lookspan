@@ -90,8 +90,8 @@ dashboard. `lookspan uninstall-desktop` removes it.
 - **Evaluation scores** — attach metrics to a trace (`POST /api/traces/:id/scores`) from an LLM judge, an assertion, or by hand.
 - **Replay & LLM-as-judge** — re-run a trace's captured prompt against the same or a different model and diff cost/latency/output, or have a judge model score the response 0–1. Needs a provider key (env, in-memory only).
 - **Datasets & experiments** — collect prompts into a test set (seed from a trace or add by hand), run the whole set against a model in batch and score each output with the judge — aggregate cost/latency/score per run.
-- **Local SQLite (default), Postgres driver for dialect parity** — versioned migrations. SQLite file at `~/.lookspan/lookspan.db` by default. Passing a `postgres://…` URL to `--db` / `LOOKSPAN_DB` selects the Postgres driver, which runs an **embedded** Postgres engine: same schema, same migrations, same SQL dialect, so you can validate a Postgres-targeted deployment without a server — but it does **not** connect to the host in that URL and its data does not survive a restart. Persisting to an external Postgres server is a planned follow-up; see [docs/CONFIGURATION.md → Postgres](docs/CONFIGURATION.md#postgres). Optional retention with `--retention`.
-- **Security** — binds to `127.0.0.1` by default and only answers requests addressed to it (so a rebound domain gets nothing); no cross-origin access unless you grant it with `--cors-origin`; optional `--token` auth; server-side redaction of credential-looking attributes before storage.
+- **Local SQLite (default) or external Postgres** — versioned migrations. SQLite file at `~/.lookspan/lookspan.db` by default. Passing a `postgres://…` URL to `--db` / `LOOKSPAN_DB` connects to that PostgreSQL server and persists data across restarts. See [docs/CONFIGURATION.md → Postgres](docs/CONFIGURATION.md#postgres). Optional retention with `--retention`.
+- **Security** — binds to `127.0.0.1` by default and only answers requests addressed to it (so a rebound domain gets nothing); non-loopback binds require `--token`; no cross-origin access unless you grant it with `--cors-origin`; server-side redaction of credential-looking attributes before storage.
 - **One-line CLI** — `npx lookspan` starts the server and the dashboard with no global install.
 
 ---
@@ -177,8 +177,8 @@ More runnable examples in [`examples/`](examples/).
 
 ## Evaluate & replay
 
-The drop-in SDKs capture each call's prompt and reply (`captureContent`, on by
-default; secrets are scrubbed server-side). With that, Lookspan can close the
+The drop-in SDKs can capture each call's prompt and reply (`captureContent`, off
+by default; secrets are scrubbed server-side). With that, Lookspan can close the
 loop from *observe* to *improve* — open a trace and use the **Replay & judge**
 panel, or call the API directly:
 
@@ -196,8 +196,8 @@ curl -X POST localhost:3100/api/traces/<id>/judge -H 'content-type: application/
   -d '{"metric":"correctness"}'
 ```
 
-To keep prompts/outputs out of Lookspan entirely, pass `{ captureContent: false }`
-to `observeOpenAI` / `observeAnthropic` — replay & judge then stay disabled.
+To enable replay/judge, explicitly pass `{ captureContent: true }` to
+`observeOpenAI` / `observeAnthropic` only when prompts/outputs are safe to persist.
 
 ### Datasets & experiments
 
@@ -285,7 +285,7 @@ See **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** for the complete flag + e
 | Startup | `npx lookspan` (zero infra) | Docker + Postgres + ClickHouse | `pip install` (Python) |
 | Storage | local SQLite | Postgres + ClickHouse | local / in-memory |
 | Focus | **TS/JS + MCP** stack | full platform (evals, prompts) | evals / RAG (Python) |
-| Your data | never leaves your machine | self-host or cloud | local or cloud |
+| Your data | stays local by default; external Postgres optional | self-host or cloud | local or cloud |
 | OpenTelemetry | native OTLP receiver | yes | yes (OTel-native) |
 | Eval loop | replay-vs-model diff, LLM-as-judge & datasets built in | evals + datasets | evals / experiments |
 

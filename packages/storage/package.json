@@ -2,7 +2,7 @@
   "name": "@lookspan/storage",
   "version": "0.5.3",
   "private": true,
-  "description": "Storage layer for Lookspan: schema, migrations, repositories. SQLite by default, optional Postgres.",
+  "description": "Storage layer for Lookspan: schema, migrations, repositories. SQLite by default, external Postgres supported.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,15 +19,17 @@
   "scripts": {
     "build": "tsc --build",
     "clean": "tsc --build --clean",
-    "migrate": "tsx src/migrations.ts"
+    "migrate": "tsx src/migrate-cli.ts"
   },
   "dependencies": {
     "@lookspan/types": "*",
     "better-sqlite3": "^12.9.0",
+    "pg": "^8.23.0",
     "pg-mem": "^3.0.5"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12"
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/pg": "^8.21.0"
   },
   "license": "MIT"
 }

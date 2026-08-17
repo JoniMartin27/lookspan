@@ -20,8 +20,8 @@
     "clean": "tsc --build --clean"
   },
   "dependencies": {
-    "@lookspan/mcp": "^0.5.2",
-    "@lookspan/types": "^0.5.2"
+    "@lookspan/mcp": "^0.5.3",
+    "@lookspan/types": "^0.5.3"
   },
   "peerDependencies": {
     "openai": ">=4.0.0"

@@ -58,8 +58,10 @@ client.flush()
 ```
 
 Its constructor takes `endpoint` (default `http://127.0.0.1:3100/api/ingest`),
-an optional custom `exporter`, and a `source` label. Always call `client.flush()`
-before your process exits so buffered spans are sent.
+an optional custom `exporter`, a `source` label, and `capture_content` (default
+`False`). Content is omitted from exported spans by default; set
+`capture_content=True` only when prompts and replies are safe to persist. Always
+call `client.flush()` before your process exits so buffered spans are sent.
 
 > More runnable examples live in the
 > [`examples/`](https://github.com/JoniMartin27/lookspan/tree/main/examples)
