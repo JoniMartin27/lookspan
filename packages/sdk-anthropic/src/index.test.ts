@@ -89,13 +89,13 @@ describe('observeAnthropic', () => {
     expect(spans[0].error?.message).toBe('overloaded');
   });
 
-  it('captures request input and joins text blocks into output by default', async () => {
+  it('does not capture request input or output by default', async () => {
     const { spans, exporter } = captureExporter();
     const client = observeAnthropic(fakeClient(), { exporter });
     const messages = [{ role: 'user', content: 'hello' }];
     await client.messages.create({ model: 'claude-sonnet-4-6', messages, max_tokens: 64 });
-    expect(spans[0].input).toMatchObject({ model: 'claude-sonnet-4-6', messages });
-    expect(spans[0].output).toBe('hi');
+    expect(spans[0].input).toBeNull();
+    expect(spans[0].output).toBeNull();
   });
 
   it('accumulates streamed delta text into the span output', async () => {
@@ -113,7 +113,7 @@ describe('observeAnthropic', () => {
         },
       },
     };
-    const client = observeAnthropic(streamClient, { exporter });
+    const client = observeAnthropic(streamClient, { exporter, captureContent: true });
     const stream = await client.messages.create({ model: 'claude-sonnet-4-6', stream: true });
     for await (const _ of stream as AsyncIterable<unknown>) {
       /* consume */
@@ -121,12 +121,12 @@ describe('observeAnthropic', () => {
     expect(spans[0].output).toBe('hello');
   });
 
-  it('omits content when captureContent is false', async () => {
+  it('captures content when captureContent is true', async () => {
     const { spans, exporter } = captureExporter();
-    const client = observeAnthropic(fakeClient(), { exporter, captureContent: false });
+    const client = observeAnthropic(fakeClient(), { exporter, captureContent: true });
     await client.messages.create({ model: 'claude-sonnet-4-6', messages: [] });
-    expect(spans[0].input).toBeNull();
-    expect(spans[0].output).toBeNull();
+    expect(spans[0].input).toMatchObject({ model: 'claude-sonnet-4-6' });
+    expect(spans[0].output).toBe('hi');
   });
 
   it('leaves untraced methods working', async () => {

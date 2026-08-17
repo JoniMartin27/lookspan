@@ -2,6 +2,7 @@
 
 from lookspan import (
     Framework,
+    LookspanClient,
     Span,
     SpanStatus,
     SpanType,
@@ -26,6 +27,20 @@ class _FakeClient:
 
     def close(self) -> None:
         self.closed = True
+
+
+class _CaptureExporter:
+    def __init__(self) -> None:
+        self.spans: list[Span] = []
+
+    def send(self, spans: list[Span]) -> None:
+        self.spans.extend(spans)
+
+    def flush(self) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
 
 
 def _sample_span() -> Span:
@@ -123,3 +138,38 @@ def test_exporter_close_is_idempotent():
     exp.close()
     exp.close()  # second close is a no-op, not a double flush
     assert len(fake.posts) == 1
+
+
+def test_client_omits_content_by_default():
+    exporter = _CaptureExporter()
+    client = LookspanClient(exporter=exporter)
+    span = Span(
+        trace_id="t",
+        span_id="s",
+        parent_span_id=None,
+        type=SpanType.LLM_CALL,
+        name="llm",
+        started_at="2026-06-03T10:00:00Z",
+        status=SpanStatus.OK,
+        framework=Framework.CUSTOM,
+        input={"prompt": "private"},
+        output="private reply",
+    )
+
+    client.emit(span)
+
+    assert exporter.spans[0].input is None
+    assert exporter.spans[0].output is None
+
+
+def test_client_can_opt_in_to_content_capture():
+    exporter = _CaptureExporter()
+    client = LookspanClient(exporter=exporter, capture_content=True)
+    span = _sample_span()
+    span.input = {"prompt": "visible"}
+    span.output = "visible reply"
+
+    client.emit(span)
+
+    assert exporter.spans[0].input == {"prompt": "visible"}
+    assert exporter.spans[0].output == "visible reply"

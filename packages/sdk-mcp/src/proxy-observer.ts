@@ -28,8 +28,8 @@ export interface SdkObserveOptions {
   /**
    * Capture the request params (messages/model) in the span's `input` and the
    * model's reply text in `output`. Enables Replay & LLM-as-judge in the
-   * dashboard. Secrets are scrubbed server-side before storage. Default: true.
-   * Set false to keep prompts/outputs out of Lookspan entirely.
+   * dashboard. Secrets are scrubbed server-side before storage. Default: false.
+   * Set true only when the prompt/reply is safe to persist.
    */
   captureContent?: boolean;
 }
@@ -86,7 +86,7 @@ export function createSdkObserver(spec: ObserverSpec) {
         source: spec.source,
       });
     const provider = options.provider ?? spec.defaultProvider;
-    const captureContent = options.captureContent !== false;
+    const captureContent = options.captureContent === true;
 
     const emitSpan = (
       path: string,

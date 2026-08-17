@@ -17,7 +17,7 @@ an empty default means the feature is off until you set it.
 | `--host <host>` | `LOOKSPAN_HOST` | `127.0.0.1` | Address to bind. Use `0.0.0.0` to expose on your LAN (see Security). While bound to loopback, requests whose `Host` header names anything else are refused with 421 — that is the defence against DNS rebinding, which CORS cannot see. Binding elsewhere lifts the check, since the server is then reachable by whatever name you gave it. |
 | `--db <path\|url>` | `LOOKSPAN_DB` | `~/.lookspan/lookspan.db` | SQLite database file (created if missing) **or** a Postgres connection string (`postgres://…` / `postgresql://…`). See [Postgres](#postgres). |
 | `--retention <dur>` | `LOOKSPAN_RETENTION` | _(none)_ | Prune traces older than `<dur>` (`7d`, `24h`, `30m`). Runs on startup, then at most hourly. Unset = keep everything. |
-| `--token <token>` | `LOOKSPAN_TOKEN` | _(none)_ | Require `Authorization: Bearer <token>` on `/api/*` and `/v1/*` (`/api/health` is exempt). Unset = no auth. |
+| `--token <token>` | `LOOKSPAN_TOKEN` | _(none)_ | Require `Authorization: Bearer <token>` on `/api/*` and `/v1/*` (`/api/health` is exempt). Unset = no auth on loopback only. |
 | `--cors-origin <o>` | `LOOKSPAN_CORS_ORIGIN` | _(none)_ | Browser origins allowed to call the API, comma-separated. Empty means no cross-origin access: the dashboard is served from this same origin and agents post from outside a browser, so nothing normally needs it. Only set it if a browser app on another origin must reach the API — and remember a granted origin can read everything Lookspan has stored. |
 | `--pricing <file>` | `LOOKSPAN_PRICING` | _(built-in table)_ | Load a custom model pricing table (JSON) to keep cost math current. |
 | `--open` | — | `false` | Open the dashboard in your browser on startup. |
@@ -96,44 +96,32 @@ LOOKSPAN_DB=postgres://lookspan:secret@db.internal:5432/lookspan npm run migrate
 
 The connection string is parsed for logging only and the password is redacted
 in startup output. Both drivers implement the **same repository interfaces**
-and the **same schema and migrations** (`v1`…`v6`), so every feature —
+and the **same schema and migrations** (`v1`…`v7`), covering the supported
+repository operations —
 traces, spans, costs, stats, alerts, scores, replays, datasets and runs —
-behaves identically regardless of backend. The SQLite-flavoured SQL the
+uses the same repository contract regardless of backend. The SQLite-flavoured SQL the
 repositories emit is translated to Postgres at the driver boundary
 (`AUTOINCREMENT` → identity columns, `INSERT OR IGNORE` → `ON CONFLICT DO
 NOTHING`, `?`/`@name` params bound as Postgres literals, etc.).
 
 ### Engine and scope
 
-The Postgres driver runs queries through an **in-process Postgres engine**
-([`pg-mem`](https://github.com/oguimbal/pg-mem)). This keeps the repositories'
-existing **synchronous** interface intact (no async rewrite of the API and
-collector) while giving genuine Postgres-dialect, schema and migration parity —
-parity that is verified in CI by running the full repository test-suite against
-the Postgres driver, with **no external Postgres server required**
-(`packages/storage/src/drivers/postgres.parity.test.ts`).
+The normal `postgres://` path connects to the **real external PostgreSQL
+server** using `pg`. The connection is kept in a dedicated worker thread so the
+existing synchronous repository interface remains unchanged while network I/O
+and the PostgreSQL event loop stay off the API thread. Transactions use the
+same connection, so `BEGIN`/`COMMIT`/`ROLLBACK` are real server transactions.
 
-Two consequences to be aware of:
+The password is redacted in startup output. Schema migrations run against the
+configured server, and data survives Lookspan restarts according to the
+server's own durability and backup policy.
 
-- **Nothing is written to the server in your connection string.** The URL
-  selects the driver and is parsed for logging; the host is never dialled, and
-  the data lives in the process and is gone when it exits. The startup line
-  says so. Persisting to an external Postgres _server_ over the wire (the async
-  `pg` client) is a planned follow-up; the driver boundary
-  (`packages/storage/src/drivers/`) is the exact seam that work plugs into —
-  the `SqlDriver` interface, SQL translation and migration parity are already
-  in place. Until then this path is for validating Postgres-targeted schemas,
-  migrations and SQL, not for keeping data.
-- **Transactions are snapshot-based.** pg-mem parses `BEGIN`/`COMMIT`/
-  `ROLLBACK` and then ignores them, so the driver brackets each outermost
-  block with `mem.backup()` and restores that snapshot if the block throws.
-  Nested blocks join the outermost one rather than opening a `SAVEPOINT`,
-  which pg-mem cannot parse.
-- The in-memory engine implements *most* of Postgres but not every construct.
-  One known gap: `DatasetsRepository.list()` uses a correlated scalar subquery
-  in its projection that real Postgres runs fine but `pg-mem` cannot resolve;
-  that specific query is exercised against SQLite in CI. Everything else has
-  full cross-driver coverage.
+The in-memory [`pg-mem`](https://github.com/oguimbal/pg-mem) driver remains
+available only through the internal `postgresMode: 'memory'` option for fast
+dialect/parity tests. It never receives production CLI traffic. Those tests
+continue to cover the translated SQL without requiring a database service;
+set `LOOKSPAN_TEST_POSTGRES_URL` to run the real persistence test against a
+PostgreSQL instance as well.
 
 To opt out entirely and stay on SQLite, simply do nothing — SQLite remains the
 default.

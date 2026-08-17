@@ -112,13 +112,13 @@ describe('observeOpenAI', () => {
     expect(spans[0].usage).toMatchObject({ inputTokens: 7, outputTokens: 3 });
   });
 
-  it('captures request input and reply output by default (for replay/judge)', async () => {
+  it('does not capture request input and reply output by default', async () => {
     const { spans, exporter } = captureExporter();
     const client = observeOpenAI(fakeClient(), { exporter });
     const messages = [{ role: 'user', content: 'hello' }];
     await client.chat.completions.create({ model: 'gpt-4o', messages });
-    expect(spans[0].input).toMatchObject({ model: 'gpt-4o', messages });
-    expect(spans[0].output).toBe('hi');
+    expect(spans[0].input).toBeNull();
+    expect(spans[0].output).toBeNull();
   });
 
   it('accumulates streamed output text into the span', async () => {
@@ -139,7 +139,7 @@ describe('observeOpenAI', () => {
         },
       },
     };
-    const client = observeOpenAI(streamClient, { exporter });
+    const client = observeOpenAI(streamClient, { exporter, captureContent: true });
     const stream = await client.chat.completions.create({ model: 'gpt-4o', stream: true });
     for await (const _ of stream as AsyncIterable<unknown>) {
       /* consume */
@@ -147,12 +147,12 @@ describe('observeOpenAI', () => {
     expect(spans[0].output).toBe('hi!');
   });
 
-  it('omits content when captureContent is false', async () => {
+  it('captures content when captureContent is true', async () => {
     const { spans, exporter } = captureExporter();
-    const client = observeOpenAI(fakeClient(), { exporter, captureContent: false });
+    const client = observeOpenAI(fakeClient(), { exporter, captureContent: true });
     await client.chat.completions.create({ model: 'gpt-4o', messages: [{ role: 'user' }] });
-    expect(spans[0].input).toBeNull();
-    expect(spans[0].output).toBeNull();
+    expect(spans[0].input).toMatchObject({ model: 'gpt-4o' });
+    expect(spans[0].output).toBe('hi');
   });
 
   it('leaves untraced methods working', async () => {

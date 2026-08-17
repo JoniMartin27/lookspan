@@ -233,8 +233,9 @@ describe('the Connect page hands out working snippets', () => {
 });
 
 /**
- * The Postgres driver runs an embedded engine: it never contacts the host in
- * the connection string and its data is gone when the process exits. Every
+ * The Postgres driver uses a worker-backed real PostgreSQL connection, so it
+ * persists data in the server named by the connection string. Documents must
+ * not describe it as embedded, in-memory, or non-persistent. Every
  * place that advertised it claimed "same features" instead, and the claim had
  * to be corrected three separate times in three separate files — README,
  * docs/CONFIGURATION.md, then the docs-site reference and the roadmap.
@@ -243,8 +244,9 @@ describe('the Connect page hands out working snippets', () => {
  * to tell them what that is not.
  */
 describe('the Postgres driver is described honestly', () => {
-  const CAVEAT =
-    /in-process|embedded|not persisted|does not survive|no persiste|no sobreviven|empotrado|embebido/i;
+  const CAPABILITY = /external|server-backed|persist|survive|conecta|conserva|externo|servidor/i;
+  const FALSE_CLAIM =
+    /Postgres driver[\s\S]{0,160}(?:embedded|non[- ]persistent|data (?:is|are) gone|desaparece)/i;
 
   const advertising = files.filter((f) => {
     const src = readFileSync(f, 'utf8');
@@ -258,7 +260,9 @@ describe('the Postgres driver is described honestly', () => {
 
   for (const f of advertising) {
     it(`${label(f)} says what it is not`, () => {
-      expect(readFileSync(f, 'utf8')).toMatch(CAVEAT);
+      const src = readFileSync(f, 'utf8');
+      expect(src).toMatch(CAPABILITY);
+      expect(src).not.toMatch(FALSE_CLAIM);
     });
   }
 });

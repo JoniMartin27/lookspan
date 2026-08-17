@@ -228,7 +228,10 @@ describe('ingest on the Postgres driver', () => {
   let pgCollector: Collector;
 
   beforeEach(() => {
-    pg = openDatabase({ path: 'postgres://lookspan:lookspan@localhost:5432/lookspan_test' });
+    pg = openDatabase({
+      path: 'postgres://lookspan:lookspan@localhost:5432/lookspan_test',
+      postgresMode: 'memory',
+    });
     migrate(pg);
     pgCollector = new Collector({ db: pg });
   });

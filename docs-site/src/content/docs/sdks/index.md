@@ -29,7 +29,7 @@ MCP wrapper accept the same option bag:
 | `sessionId` | `string` | — | Group traces from related agents into a session. |
 | `parentTraceId` | `string` | — | Link this client's traces to a spawning trace (cross-agent handoff). |
 | `provider` | `string` | spec default | Provider label stored on the span. |
-| `captureContent` | `boolean` | `true` | Capture prompt/response so Replay & judge work. Set `false` to keep content out of Lookspan entirely. Secrets are scrubbed server-side regardless. |
+| `captureContent` | `boolean` | `false` | Capture prompt/response so Replay & judge work. Set `true` only when the content is safe to persist. Secrets are scrubbed server-side regardless. |
 
 `agentId`, `sessionId` and `parentTraceId` are what power the
 [sessions & causality](/lookspan/guides/sessions-and-causality/) view;

@@ -46,9 +46,9 @@ It needs a real install (`npm install -g lookspan`) and refuses to run from the
   -v, --version            Show version
 ```
 
-A `postgres://…` value for `--db` selects the Postgres driver, which runs an
-**embedded** engine: it does not write to the server in that url and its data
-does not survive a restart. See
+A `postgres://…` value for `--db` selects the Postgres driver and connects to
+that external server, so data survives Lookspan restarts under PostgreSQL's
+durability policy. See
 [Configuration → Postgres](/lookspan/reference/configuration/#postgres).
 
 Every flag has a `LOOKSPAN_*` environment-variable equivalent

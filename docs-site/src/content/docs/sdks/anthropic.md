@@ -50,5 +50,5 @@ const anthropic = observeAnthropic(new Anthropic(), {
 });
 ```
 
-Set `{ captureContent: false }` to keep prompts and replies out of Lookspan
-(this also disables Replay & judge for those spans).
+Content is omitted by default. Set `{ captureContent: true }` only when prompts
+and replies are safe to persist and you want Replay & judge for those spans.

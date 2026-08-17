@@ -28,19 +28,18 @@ import { type CliFlags, FlagError, parseFlags } from './flags.js';
  * Human-readable DB target for startup logs, with any Postgres password
  * redacted.
  *
- * The Postgres line says *in-process* out loud. The driver runs an embedded
- * Postgres engine and never dials the host in the URL, so printing the
- * connection string on its own reads as "connected to your server" — and the
- * data is gone on restart.
+ * The password is redacted before the connection target is printed. A
+ * postgres:// target is a real external connection; the in-memory dialect
+ * harness is only selected by storage tests.
  */
 function describeDb(target: string): string {
   if (!isPostgresTarget(target)) return target;
   try {
     const url = new URL(target);
     if (url.password) url.password = '***';
-    return `${url.toString()} (postgres, in-process — not persisted to that server)`;
+    return `${url.toString()} (external Postgres)`;
   } catch {
-    return 'postgres (in-process — not persisted to a server)';
+    return 'external Postgres';
   }
 }
 
@@ -343,11 +342,6 @@ function main(): void {
     ].filter(Boolean);
     if (replayProviders.length > 0) {
       console.log(`  Replay/judge: ${replayProviders.join(', ')}`);
-    }
-    const loopback =
-      flags.host === '127.0.0.1' || flags.host === 'localhost' || flags.host === '::1';
-    if (!loopback && !flags.token) {
-      console.log(`  ⚠ Bound to ${flags.host} with no --token: the API is open to your network.`);
     }
     if (!dashboardDir) {
       console.log('  (dashboard not built — run `npm run build` to serve the UI)');

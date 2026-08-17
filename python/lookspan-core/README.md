@@ -38,4 +38,7 @@ client.send([
 client.flush()
 ```
 
+`LookspanClient` omits span `input` and `output` by default. Pass
+`capture_content=True` only when that content is safe to persist.
+
 For framework-specific adapters, see `lookspan-langgraph` and `lookspan-crewai`.

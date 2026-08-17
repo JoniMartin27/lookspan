@@ -18,7 +18,9 @@ stores data in local SQLite — nothing leaves your machine.
 
 - **Exposing beyond loopback** (`--host 0.0.0.0`) requires a token
   (`--token` / `LOOKSPAN_TOKEN`); `/api/*` and `/v1/*` then require
-  `Authorization: Bearer <token>`. The CLI warns if you expose without one.
+  `Authorization: Bearer <token>`. The CLI refuses the exposure without one.
+  Tokens are never accepted in query strings. Put non-loopback deployments
+  behind HTTPS; the dashboard cookie is marked `Secure` when served over HTTPS.
 - **Credential redaction**: the collector masks values of credential-looking
   keys (`authorization`, `api_key`, `token`, `secret`, `password`, `cookie`…)
   in span `input`/`attributes` before persisting.

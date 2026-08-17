@@ -4,7 +4,7 @@ Lookspan ships **five npm packages** and **three PyPI packages**. Internal
 packages (`@lookspan/api`, `collector`, `storage`, `events`) are *not* published
 — they are bundled into the `lookspan` CLI by `scripts/bundle.mjs`.
 
-Every package moves in lockstep; the npm packages are at **0.5.2**. Bump them
+Every package moves in lockstep; the npm packages are at **0.5.3**. Bump them
 together (including the `@lookspan/*` ranges the SDKs depend on and
 `package-lock.json`) before a release.
 
@@ -72,6 +72,7 @@ Requires a PyPI account + API token (`~/.pypirc` or `TWINE_*` env vars).
 
 ## After publishing
 
-- Tag the release: `git tag v0.1.0 && git push --tags`.
+- Tag the release with the version being published, for example:
+  `git tag v0.5.3 && git push --tags`.
 - Update the README install snippets if the package names/versions changed.
 - Record the demo GIF and drop it at the top of the README.

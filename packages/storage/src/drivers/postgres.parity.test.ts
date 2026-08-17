@@ -22,7 +22,7 @@ const PG_URL = 'postgres://lookspan:lookspan@localhost:5432/lookspan_test';
 let db: LookspanDatabase;
 
 beforeEach(() => {
-  db = openDatabase({ path: PG_URL });
+  db = openDatabase({ path: PG_URL, postgresMode: 'memory' });
   migrate(db);
 });
 afterEach(() => db.close());

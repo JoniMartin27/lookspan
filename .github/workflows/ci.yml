@@ -10,6 +10,22 @@ jobs:
   ci:
     name: node
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lookspan
+          POSTGRES_PASSWORD: lookspan
+          POSTGRES_DB: lookspan_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lookspan -d lookspan_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      LOOKSPAN_TEST_POSTGRES_URL: postgres://lookspan:lookspan@127.0.0.1:5432/lookspan_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

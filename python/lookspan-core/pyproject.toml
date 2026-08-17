@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lookspan"
-version = "0.1.1"
+version = "0.5.3"
 description = "Lookspan Python SDK — emit spans from AI agents to the local-first observability dashboard."
 readme = "README.md"
 requires-python = ">=3.10"

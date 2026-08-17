@@ -80,9 +80,9 @@ with `npm install -g lookspan` first.
 
 By default Lookspan stores everything in a single SQLite file at
 `~/.lookspan/lookspan.db`, created on first run. Override it with `--db` /
-`LOOKSPAN_DB`. A `postgres://…` url selects the Postgres driver, which runs an
-**embedded** engine for dialect and migration parity — it does not write to the
-server in that url and its data does not survive a restart. See the
+`LOOKSPAN_DB`. A `postgres://…` URL connects to the external PostgreSQL server
+through the Postgres driver, so its data survives Lookspan restarts according
+to the server's durability policy. See the
 [configuration reference](/lookspan/reference/configuration/).
 
 ## SDK packages

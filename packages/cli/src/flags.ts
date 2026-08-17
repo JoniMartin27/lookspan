@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import type { InferenceKeys } from '@lookspan/api';
+import { bindsToLoopback, type InferenceKeys } from '@lookspan/api';
 import { defaultDatabasePath, parseDuration } from '@lookspan/storage';
 import { AlertCondition, type AlertRule } from '@lookspan/types';
 
@@ -133,13 +133,19 @@ export function parseFlags(argv: string[], env: Env = process.env): CliFlags {
     throw new FlagError(`invalid --port "${portRaw}" (use a number between 1 and 65535)`);
   }
 
+  const host = (values.host as string) ?? env.LOOKSPAN_HOST ?? '127.0.0.1';
+  const token = (values.token as string) ?? env.LOOKSPAN_TOKEN ?? undefined;
+  if (!bindsToLoopback(host) && !token) {
+    throw new FlagError(`refusing to expose Lookspan on ${host} without --token or LOOKSPAN_TOKEN`);
+  }
+
   return {
     port,
-    host: (values.host as string) ?? env.LOOKSPAN_HOST ?? '127.0.0.1',
+    host,
     db: (values.db as string) ?? env.LOOKSPAN_DB ?? defaultDatabasePath(),
     open: Boolean(values.open),
     retentionMs,
-    token: (values.token as string) ?? env.LOOKSPAN_TOKEN ?? undefined,
+    token,
     corsOrigins: parseCorsOrigins((values['cors-origin'] as string) ?? env.LOOKSPAN_CORS_ORIGIN),
     alertRules: buildAlertRules(values, env),
     pricingFile: (values.pricing as string) ?? env.LOOKSPAN_PRICING ?? undefined,

@@ -45,8 +45,24 @@ await build({
   // cannot make a dynamic require work inside ESM output. Inlining it makes the
   // published CLI throw `Dynamic require of "crypto" is not supported` before
   // it prints a single line. `npm run smoke:cli` guards this.
-  external: ['better-sqlite3', 'express', 'cors', 'openai', '@anthropic-ai/sdk', 'pg-mem'],
+  external: ['better-sqlite3', 'express', 'cors', 'openai', '@anthropic-ai/sdk', 'pg-mem', 'pg'],
   logLevel: 'info',
+});
+
+// The external Postgres driver starts its network client in a worker thread.
+// Bundle that entry separately because the main CLI's `new URL()` reference is
+// resolved at runtime from the published dist/ directory.
+await build({
+  entryPoints: [
+    resolve(repoRoot, 'packages', 'storage', 'src', 'drivers', 'external-postgres-worker.ts'),
+  ],
+  outfile: resolve(cliDir, 'dist', 'external-postgres-worker.js'),
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  external: ['pg'],
+  logLevel: 'silent',
 });
 
 // Ship the dashboard inside the package so `npx lookspan` serves it.

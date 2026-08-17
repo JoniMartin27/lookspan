@@ -20,7 +20,7 @@ function pgMemLoadedFor(target: string): string {
   const code = `
     (async () => {
       const { openDatabase } = await import(${JSON.stringify(storage)});
-      const db = openDatabase({ path: ${JSON.stringify(target)} });
+      const db = openDatabase({ path: ${JSON.stringify(target)}, postgresMode: 'memory' });
       const loaded =
         process.moduleLoadList.some((m) => m.includes('pg-mem')) ||
         Object.keys(require('module')._cache).some((k) => k.includes('pg-mem'));

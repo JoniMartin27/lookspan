@@ -27,10 +27,24 @@ describe('defaults', () => {
   });
 });
 
+describe('binding security', () => {
+  it('refuses a non-loopback bind without a token', () => {
+    expect(() => parse(['--host', '0.0.0.0'])).toThrow(
+      'refusing to expose Lookspan on 0.0.0.0 without --token or LOOKSPAN_TOKEN',
+    );
+  });
+
+  it('allows a non-loopback bind when a token is configured', () => {
+    expect(parse(['--host', '0.0.0.0', '--token', 'secret']).host).toBe('0.0.0.0');
+  });
+});
+
 describe('precedence: flag beats environment beats default', () => {
   it('takes the flag when both are given', () => {
     expect(parse(['--port', '4000'], { LOOKSPAN_PORT: '5000' }).port).toBe(4000);
-    expect(parse(['--host', '0.0.0.0'], { LOOKSPAN_HOST: '10.0.0.1' }).host).toBe('0.0.0.0');
+    expect(
+      parse(['--host', '0.0.0.0', '--token', 'secret'], { LOOKSPAN_HOST: '10.0.0.1' }).host,
+    ).toBe('0.0.0.0');
     expect(parse(['--token', 'del-flag'], { LOOKSPAN_TOKEN: 'del-env' }).token).toBe('del-flag');
   });
 

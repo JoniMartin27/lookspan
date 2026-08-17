@@ -3,8 +3,8 @@ title: Replay & diff
 description: Re-run a captured prompt against the same or a different model and diff cost, latency and output.
 ---
 
-The drop-in SDKs capture each call's prompt and reply (`captureContent`, on by
-default; secrets are scrubbed server-side). With that captured content, Lookspan
+The drop-in SDKs can capture each call's prompt and reply (`captureContent`, off
+by default; secrets are scrubbed server-side). With that captured content, Lookspan
 can close the loop from *observe* to *improve*: **replay** a trace's prompt and
 **diff** the result against the original.
 
@@ -46,9 +46,9 @@ curl localhost:3100/api/traces/<id>/replays
 
 ## Keeping content out
 
-Replay only works for spans whose content was captured. To keep prompts/outputs
-out of Lookspan entirely, pass `{ captureContent: false }` to `observeOpenAI` /
-`observeAnthropic` — Replay & judge then stay disabled for those spans.
+Replay only works for spans whose content was captured. Content is omitted by
+default; pass `{ captureContent: true }` to `observeOpenAI` / `observeAnthropic`
+only when the prompt and reply are safe to persist.
 
 ## Next
 
