@@ -38,6 +38,6 @@
     "url": "git+https://github.com/JoniMartin27/lookspan.git",
     "directory": "packages/sdk-mcp"
   },
-  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
+  "homepage": "https://fervon.dev/lookspan/",
   "license": "MIT"
 }

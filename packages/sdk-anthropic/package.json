@@ -39,7 +39,7 @@
     "url": "git+https://github.com/JoniMartin27/lookspan.git",
     "directory": "packages/sdk-anthropic"
   },
-  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
+  "homepage": "https://fervon.dev/lookspan/",
   "keywords": [
     "anthropic",
     "claude",

@@ -53,6 +53,6 @@
     "url": "git+https://github.com/JoniMartin27/lookspan.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/JoniMartin27/lookspan#readme",
+  "homepage": "https://fervon.dev/lookspan/",
   "license": "MIT"
 }
