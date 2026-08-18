@@ -1,0 +1,28 @@
+{
+  "date": "2026-08-18",
+  "repo": {
+    "stars": 7,
+    "watchers": 0,
+    "forks": 2
+  },
+  "traffic": {
+    "uniqueViews": null,
+    "uniqueClones": null,
+    "views": null,
+    "clones": null
+  },
+  "npm": {
+    "cli": 0,
+    "sdkTotal": 0,
+    "sdk": {
+      "@lookspan/anthropic": 0,
+      "@lookspan/openai": 0,
+      "@lookspan/mcp": 0,
+      "@lookspan/collector": 0,
+      "@lookspan/events": 0,
+      "@lookspan/types": 0,
+      "@lookspan/storage": 0,
+      "@lookspan/api": 0
+    }
+  }
+}
