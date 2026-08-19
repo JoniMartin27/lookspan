@@ -5,20 +5,45 @@ build-backend = "hatchling.build"
 [project]
 name = "lookspan-crewai"
 version = "0.5.3"
-description = "Lookspan adapter for CrewAI — emits spans for crew kickoffs, agent execution, tasks, tools, and LLM calls."
+description = "CrewAI observability, local-first: one line of setup traces crew kickoffs, agents, tasks, tools and LLM calls to a Lookspan dashboard on your own machine."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Jonathan Martin" }]
-keywords = ["lookspan", "crewai", "observability", "tracing", "agents"]
+maintainers = [{ name = "Jonathan Martin" }]
+keywords = [
+  "crewai",
+  "lookspan",
+  "observability",
+  "tracing",
+  "spans",
+  "telemetry",
+  "instrumentation",
+  "monitoring",
+  "agents",
+  "multi-agent",
+  "ai",
+  "llm",
+  "llmops",
+  "local-first",
+]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
   "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Debuggers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: System :: Monitoring",
+  "Typing :: Typed",
 ]
 dependencies = [
   "lookspan>=0.5.3",
@@ -27,8 +52,11 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://fervon.dev/lookspan/"
+Documentation = "https://jonimartin27.github.io/lookspan/"
 Repository = "https://github.com/JoniMartin27/lookspan"
 Issues = "https://github.com/JoniMartin27/lookspan/issues"
+Changelog = "https://github.com/JoniMartin27/lookspan/blob/main/CHANGELOG.md"
+Source = "https://github.com/JoniMartin27/lookspan"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lookspan_crewai"]
