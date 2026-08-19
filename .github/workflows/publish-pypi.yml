@@ -1,0 +1,66 @@
+name: Publish (PyPI)
+
+# Publica los tres paquetes Python a PyPI con Trusted Publishing (OIDC):
+# no hay token que guardar ni que revocar — PyPI confía en este workflow
+# concreto de este repo. Alta previa en pypi.org > Manage > Publishing:
+#   owner JoniMartin27 · repo lookspan · workflow publish-pypi.yml · environment pypi
+#
+# Se dispara a mano (workflow_dispatch) o al publicar una release de GitHub.
+# Fail-closed: si el build o `twine check` fallan, no se sube nada.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Construir y validar sin publicar'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build + check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Construir los tres paquetes
+        run: |
+          for pkg in python/lookspan-core python/lookspan-crewai python/lookspan-langgraph; do
+            uv build "$pkg" --out-dir dist
+          done
+
+      - name: Validar metadatos (twine check --strict)
+        run: uvx twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    if: github.event_name == 'release' || inputs.dry_run == false
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/lookspan/
+    permissions:
+      id-token: write   # Trusted Publishing: el OIDC sustituye al token
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Subir a PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
