@@ -29,7 +29,8 @@ dependencies = [
 langgraph = ["langgraph>=0.2.0"]
 
 [project.urls]
-Homepage = "https://github.com/JoniMartin27/lookspan"
+Homepage = "https://fervon.dev/lookspan/"
+Repository = "https://github.com/JoniMartin27/lookspan"
 Issues = "https://github.com/JoniMartin27/lookspan/issues"
 
 [tool.hatch.build.targets.wheel]
