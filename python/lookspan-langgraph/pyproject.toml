@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lookspan-langgraph"
-version = "0.5.3"
+version = "0.6.0"
 description = "LangChain and LangGraph observability, local-first: a callback handler that traces chains, graph nodes, LLM calls and tools to a Lookspan dashboard on your own machine."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -47,7 +47,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "lookspan>=0.5.3",
+  "lookspan>=0.6.0",
   "langchain-core>=0.3.0",
 ]
 

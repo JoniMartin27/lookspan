@@ -2,5 +2,5 @@
 
 from lookspan_langgraph.handler import LookspanCallbackHandler
 
-__version__ = "0.5.3"
+__version__ = "0.6.0"
 __all__ = ["LookspanCallbackHandler"]

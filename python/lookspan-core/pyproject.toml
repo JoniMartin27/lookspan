@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lookspan"
-version = "0.5.3"
+version = "0.6.0"
 description = "Local-first observability for AI agents: emit spans from LangGraph, CrewAI, MCP or your own code to a dashboard that runs on your machine — no cloud, no account, no vendor."
 readme = "README.md"
 requires-python = ">=3.10"

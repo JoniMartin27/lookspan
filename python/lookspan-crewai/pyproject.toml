@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lookspan-crewai"
-version = "0.5.3"
+version = "0.6.0"
 description = "CrewAI observability, local-first: one line of setup traces crew kickoffs, agents, tasks, tools and LLM calls to a Lookspan dashboard on your own machine."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -46,7 +46,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "lookspan>=0.5.3",
+  "lookspan>=0.6.0",
   "crewai>=0.80.0",
 ]
 

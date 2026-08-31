@@ -1,6 +1,45 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-08-31
+
+Postgres de verdad como almacén, y el token deja de viajar en la URL.
+
+### Added
+- **Postgres externo como base de datos, con el mismo contrato que SQLite.**
+  `--db postgres://…` (o `LOOKSPAN_DB`) apunta Lookspan a un Postgres ya
+  existente en vez del fichero de `~/.lookspan`. Los dos drivers implementan las
+  mismas interfaces de repositorio y **el mismo esquema y las mismas migraciones**
+  (`v1`…`v7`), así que las vistas, los costes y los exports no saben cuál hay
+  debajo. La cadena de conexión se parsea sólo para el log, con la contraseña
+  redactada.
+
+  El obstáculo era de forma, no de SQL: los repositorios exponen a propósito la
+  API **síncrona** de better-sqlite3, y un cliente de PostgreSQL es asíncrono.
+  El driver mantiene un único cliente `pg` **en un worker thread** y se comunica
+  con él por `SharedArrayBuffer`, de modo que quien llama sigue viendo una API
+  síncrona mientras el socket y el bucle de eventos de `pg` se quedan fuera del
+  hilo de la API. `npm run migrate` acepta la misma URL para migrar sin arrancar
+  el servidor.
+
+### Changed
+- **BREAKING — el token ya no se acepta en `?token=`.** Autenticar poniendo el
+  token en la query string lo deja escrito en el historial del navegador, en los
+  logs de cualquier proxy y en la cabecera `Referer` de lo que salga de la
+  página: es el mismo secreto que protege toda la base de datos cuando el
+  servidor se expone con `--host`. El panel, que es del mismo origen, usa ahora
+  una **cookie `HttpOnly; SameSite=Strict; Secure`**, así que sus `fetch` se
+  autentican sin que el token pase por JavaScript ni por ninguna URL. Los
+  agentes siguen igual: `Authorization: Bearer <token>`.
+
+  **Si automatizaste algo con `?token=…`, deja de funcionar** — pásalo a la
+  cabecera `Authorization`.
+
+### Notes
+- La 0.5.3 se publicó en npm y en PyPI sin etiqueta y sin cerrar su entrada del
+  CHANGELOG; los arreglos que estuvieron meses bajo «Unreleased» **ya iban
+  dentro** y hoy quedan archivados en ella. Esta versión sí lleva etiqueta.
+
+## 0.5.3 — 2026-08-17
 
 The first screen a new user sees had never been audited, and "live" was not.
 
