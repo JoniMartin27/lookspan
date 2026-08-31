@@ -4,7 +4,7 @@
   "description": "Local-first observability dashboard for AI agents. MCP-native. Run it with one command.",
   "type": "module",
   "bin": {
-    "lookspan": "./dist/index.js"
+    "lookspan": "dist/index.js"
   },
   "files": [
     "dist",
