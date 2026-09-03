@@ -2,13 +2,16 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
-// When deploying to GitHub Pages at https://<user>.github.io/lookspan/ the site
-// is served from a sub-path. `BASE` lets the Actions workflow inject `/lookspan`
-// while local `astro dev` / `astro preview` stay at the root.
-// Served from a sub-path on GitHub Pages (https://<user>.github.io/lookspan/).
-// We keep the same base in dev so that the `/lookspan/...` links written in the
-// markdown and sidebar resolve identically locally and in production.
-const SITE = process.env.SITE_URL ?? 'https://jonimartin27.github.io';
+// The docs are published on GitHub Pages, but the account serves its Pages from
+// the custom domain fervon.dev, so this project site really lives at
+// https://fervon.dev/lookspan/ and the jonimartin27.github.io URLs only 301 to
+// it. `site` must be the domain Google actually crawls: pointing it at
+// github.io emitted canonicals and sitemap entries on a different host than the
+// one being served, and Search Console dropped the pages as duplicates whose
+// canonical lives elsewhere. `BASE` stays the sub-path, in dev too, so the
+// `/lookspan/...` links written in the markdown and sidebar resolve identically
+// locally and in production.
+const SITE = process.env.SITE_URL ?? 'https://fervon.dev';
 const BASE = process.env.BASE_PATH ?? '/lookspan';
 
 const GITHUB = 'https://github.com/JoniMartin27/lookspan';
@@ -33,7 +36,10 @@ const socialCard = [
 export default defineConfig({
   site: SITE,
   base: BASE,
-  trailingSlash: 'ignore',
+  // Every internal link and sitemap entry ends in `/`, matching what GitHub
+  // Pages serves, so the canonical of the home is `/lookspan/` instead of the
+  // `/lookspan` that redirected before being indexed.
+  trailingSlash: 'always',
   integrations: [
     starlight({
       title: 'Lookspan',

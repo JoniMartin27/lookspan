@@ -38,7 +38,9 @@ jobs:
       - name: Build site
         run: npm run build
         env:
-          SITE_URL: https://jonimartin27.github.io
+          # fervon.dev is the custom domain the account serves its Pages from:
+          # the github.io URLs 301 here, so canonicals and sitemap must say fervon.dev.
+          SITE_URL: https://fervon.dev
           BASE_PATH: /lookspan
       - uses: actions/upload-pages-artifact@v3
         with:

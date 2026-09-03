@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/lookspan-crewai)](https://pypi.org/project/lookspan-crewai/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/JoniMartin27/lookspan/blob/main/LICENSE)
-[![Docs](https://img.shields.io/badge/docs-lookspan-orange)](https://jonimartin27.github.io/lookspan/)
+[![Docs](https://img.shields.io/badge/docs-lookspan-orange)](https://fervon.dev/lookspan/)
 
 Auto-instruments CrewAI runs and streams every agent step, task, tool call, and
 LLM invocation to your local [Lookspan](https://fervon.dev/lookspan/) dashboard —
@@ -43,7 +43,7 @@ to `LookspanClient`.
 ## Links
 
 - Product page — <https://fervon.dev/lookspan/>
-- Documentation — <https://jonimartin27.github.io/lookspan/>
+- Documentation — <https://fervon.dev/lookspan/>
 - Core SDK — [`lookspan`](https://pypi.org/project/lookspan/) · LangChain/LangGraph — [`lookspan-langgraph`](https://pypi.org/project/lookspan-langgraph/)
 - Source and issues — <https://github.com/JoniMartin27/lookspan>
 

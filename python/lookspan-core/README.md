@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/lookspan)](https://pypi.org/project/lookspan/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/JoniMartin27/lookspan/blob/main/LICENSE)
-[![Docs](https://img.shields.io/badge/docs-lookspan-orange)](https://jonimartin27.github.io/lookspan/)
+[![Docs](https://img.shields.io/badge/docs-lookspan-orange)](https://fervon.dev/lookspan/)
 
 Python SDK for [Lookspan](https://fervon.dev/lookspan/) — emit spans from your AI agents to a
 dashboard that runs **on your own machine**. No cloud, no account, no API key, no data leaving
@@ -73,7 +73,7 @@ You rarely need to build spans by hand — install the adapter for your stack in
 ## Links
 
 - Product page — <https://fervon.dev/lookspan/>
-- Documentation — <https://jonimartin27.github.io/lookspan/>
+- Documentation — <https://fervon.dev/lookspan/>
 - Source and issues — <https://github.com/JoniMartin27/lookspan>
 
 MIT licensed. Part of [Fervon](https://fervon.dev).

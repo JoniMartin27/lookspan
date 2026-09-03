@@ -52,7 +52,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://fervon.dev/lookspan/"
-Documentation = "https://jonimartin27.github.io/lookspan/"
+Documentation = "https://fervon.dev/lookspan/"
 Repository = "https://github.com/JoniMartin27/lookspan"
 Issues = "https://github.com/JoniMartin27/lookspan/issues"
 Changelog = "https://github.com/JoniMartin27/lookspan/blob/main/CHANGELOG.md"

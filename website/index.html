@@ -10,7 +10,12 @@
       content="Lookspan captura cada span —llamadas LLM, herramientas MCP y costes— de tus agentes LangGraph, CrewAI y MCP. Todo corre en tu máquina: sin nube, sin API keys, sin que tus datos salgan de tu equipo."
     />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <link rel="canonical" href="https://github.com/JoniMartin27/lookspan" />
+    <!-- No <link rel="canonical"> on purpose: this landing is a static bundle
+         that can be served from more than one host, and the canonical that used
+         to sit here pointed at the GitHub repo — a different domain, which asks
+         Google to drop this page from the index instead of ranking it. With no
+         tag, each deployment self-canonicalises to the URL it is served from.
+         If the landing ever gets one permanent URL, put it back (absolute). -->
 
     <!-- Open Graph / Twitter.
          The image must be a PNG/JPEG at an ABSOLUTE url: no platform renders
