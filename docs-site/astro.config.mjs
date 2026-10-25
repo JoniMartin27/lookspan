@@ -44,7 +44,7 @@ export default defineConfig({
       head: socialCard,
       // Wraps the stock footer to append the Fervon studio attribution.
       components: { Footer: './src/components/Footer.astro' },
-      social: { github: GITHUB },
+      social: [{ icon: 'github', label: 'GitHub', href: GITHUB }],
       editLink: {
         baseUrl: `${GITHUB}/edit/main/docs-site/`,
       },
